@@ -29,6 +29,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Start Firebase emulators and verify function loads
+      - name: Start Firebase emulators and smoke test signup endpoint
         working-directory: ..
-        run: npx -y firebase-tools@latest emulators:exec --only auth,firestore,functions "node -e \"console.log('emulators_ok')\""
+        run: npx -y firebase-tools@latest emulators:exec --project havets-helte --only auth,firestore,functions,hosting "node scripts/smoke-signup.cjs"
