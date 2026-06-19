@@ -1,0 +1,51 @@
+{
+  "families": [
+    "Arial",
+    "Helvetica Neue"
+  ],
+  "scale": {
+    "heading-1": {
+      "fontFamily": "Arial",
+      "fontSize": "clamp(30px,7vw,40px)",
+      "fontWeight": "700",
+      "lineHeight": null,
+      "source": "css"
+    },
+    "heading-2": {
+      "fontFamily": "Arial",
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": null,
+      "source": "css"
+    },
+    "heading-3": {
+      "fontFamily": "Arial",
+      "fontSize": "18px",
+      "fontWeight": "700",
+      "lineHeight": null,
+      "source": "css"
+    },
+    "body": {
+      "fontFamily": "Helvetica Neue",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "lineHeight": null,
+      "source": "css"
+    },
+    "caption": {
+      "fontFamily": "Helvetica Neue",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "lineHeight": null,
+      "source": "css"
+    }
+  },
+  "fontFaces": [],
+  "rules": {
+    "maxSizesPerScreen": 4,
+    "headingWeightRange": "600-700",
+    "bodyWeight": 400,
+    "lineHeightBody": 1.5,
+    "lineHeightHeading": 1.2
+  }
+}

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seed testdata</title>
+<style>
+  body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;background:#003366;color:#f6f6f6;padding:40px 24px;max-width:520px;margin:0 auto}
+  h1{font-size:20px;margin-bottom:6px}p{font-size:13px;color:#6ebccd;margin-bottom:24px;line-height:1.5}
+  button{padding:12px 24px;background:#003366;border:1px solid #0f4172;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;margin-right:10px;margin-bottom:10px;transition:opacity .15s}
+  button:hover{opacity:.88}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.danger{background:#ea636f;border-color:#ea636f;color:#fff}
+  pre{background:#0f4172;border-radius:10px;padding:16px;font-size:12px;line-height:1.6;overflow:auto;color:#6ebccd;margin-top:20px;white-space:pre-wrap}
+  .warn{background:rgba(244,218,166,.9);color:#232323;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:20px;display:none}
+</style>
+</head>
+<body>
+<h1>🌱 Seed testdata</h1>
+<div class="warn" id="warn">Denne side virker kun lokalt (localhost). Åbn <code>http://localhost:5003/seed.html</code>.</div>
+<p>Opretter Sankt Hans-begivenheden + testbrugere i emulatoren. Kør kun én gang per emulator-session.</p>
+<button id="btnSeed" onclick="seed()">Seed data</button>
+<button class="danger" id="btnClear" onclick="clearData()">Ryd emulator-data</button>
+<pre id="log">Klar…</pre>
+
+<script type="module">
+import { initializeApp }     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, connectFirestoreEmulator,
+         collection, doc, addDoc, deleteDoc, getDocs, serverTimestamp }
+                             from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword }
+                             from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getGroupNameById }   from './groups.js';
+
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+if (!isLocal) {
+  document.getElementById('warn').style.display = 'block';
+  document.getElementById('btnSeed').disabled = true;
+  document.getElementById('btnClear').disabled = true;
+}
+
+const app  = initializeApp({ projectId:'havets-helte', apiKey:'demo', authDomain:'havets-helte.firebaseapp.com' });
+const db   = getFirestore(app);
+const auth = getAuth(app);
+connectFirestoreEmulator(db, 'localhost', 8081);
+connectAuthEmulator(auth, 'http://localhost:9097', { disableWarnings: true });
+
+const log = document.getElementById('log');
+function out(msg) { log.textContent += '\n' + msg; }
+
+async function createSignupViaApi(payload) {
+  const response = await fetch('/api/submitSignup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || 'Signup API fejl');
+  return data;
+}
+
+window.seed = async function() {
+  log.textContent = 'Starter…';
+  document.getElementById('btnSeed').disabled = true;
+
+  try {
+    // ── Leder-konto ─────────────────────────────────────────────────────
+    out('Opretter leder@test.dk …');
+    try {
+      await createUserWithEmailAndPassword(auth, 'leder@test.dk', 'test1234');
+      out('✓ Leder oprettet (leder@test.dk / test1234)');
+    } catch(e) {
+      out('→ Leder eksisterer allerede (OK)');
+    }
+    await signInWithEmailAndPassword(auth, 'leder@test.dk', 'test1234');
+
+    // ── Sankt Hans event ─────────────────────────────────────────────────
+    out('Opretter Sankt Hans event…');
+    const now = serverTimestamp();
+    const slots = [
+      { id:'s1', label:'Drinksboden',        sublabel:'16:00–18:00', capacity:3, requiresAdult:true  },
+      { id:'s2', label:'Drinksboden',        sublabel:'18:00–20:00', capacity:3, requiresAdult:true  },
+      { id:'s3', label:'Drinksboden',        sublabel:'20:00–22:00', capacity:3, requiresAdult:true  },
+      { id:'s4', label:'Skumfidus-station',  sublabel:'16:00–18:00', capacity:3, requiresAdult:false },
+      { id:'s5', label:'Skumfidus-station',  sublabel:'18:00–20:00', capacity:3, requiresAdult:false },
+      { id:'s6', label:'Skumfidus-station',  sublabel:'20:00–22:00', capacity:3, requiresAdult:false },
+    ];
+    const evRef = await addDoc(collection(db, 'events'), {
+      title:       'Sankt Hans på Sluseholmen',
+      description: 'Vi bygger og tænder bålet, sælger drikkevarer og står for skumfidus-stationen. Alt overskud går til spejdergruppen.',
+      dateText:    'Tirsdag 23. juni · 16:00–22:00',
+      location:    'Sluseholmen, ved trappen i bunden af Thad Jones Vej',
+      type:        'timed',
+      active:      true,
+      slots,
+      createdBy:   'seed',
+      created:     now,
+    });
+    out('✓ Event oprettet: ' + evRef.id);
+
+    // ── Opgave-event ─────────────────────────────────────────────────────
+    out('Opretter opgave-event (test)…');
+    const evRef2 = await addDoc(collection(db, 'events'), {
+      title:    'Lejrtur — hjælp til forberedelse',
+      dateText: 'Løbende frem til 1. august',
+      location: '',
+      type:     'task',
+      active:   true,
+      slots: [
+        { id:'t1', label:'Transport af udstyr',    sublabel:'', capacity:2, requiresAdult:false },
+        { id:'t2', label:'Indkøb af madvarer',     sublabel:'', capacity:1, requiresAdult:false },
+        { id:'t3', label:'Hjælp til pakning', sublabel:'', capacity:3, requiresAdult:false },
+      ],
+      createdBy: 'seed',
+      created:   now,
+    });
+    out('✓ Opgave-event oprettet: ' + evRef2.id);
+
+    // ── Testdata: signups ────────────────────────────────────────────────
+    out('Opretter test-tilmeldinger…');
+    const testSignups = [
+      { slotId:'s1', name:'Jonas Hansen',   email:'jonas@test.dk',  adult:true  },
+      { slotId:'s1', name:'Maria Larsen',   email:'maria@test.dk',  adult:false },
+      { slotId:'s2', name:'Peter Madsen',   email:'peter@test.dk',  adult:true  },
+      { slotId:'s4', name:'Anna Christensen', email:'anna@test.dk', adult:false },
+    ];
+    for (const s of testSignups) {
+      await createSignupViaApi({
+        eventId: evRef.id,
+        slotId: s.slotId,
+        name: s.name,
+        email: s.email,
+        adult: s.adult,
+        childMode: false,
+        groupSize: 1,
+        waitlistPreferred: false,
+      });
+      out('  ✓ ' + s.name);
+    }
+
+    // ── Attend-event: Fællesspisning ────────────────────────────────────────
+    out('Opretter fællesspisning-event (attend-slots)…');
+    await addDoc(collection(db, 'events'), {
+      title:       'Fællesspisning — forældre velkommen',
+      description: 'Kom og spis med os efter mødet. Tilmeld dig så vi ved hvor mange vi er.',
+      dateText:    'Mandag 24. august · kl. 18:00',
+      location:    'Klubhuset',
+      type:        'task',
+      active:      true,
+      slots: [
+        { id:'a1', label:'Deltager',   sublabel:'', capacity:0, kind:'attend', price:0, groupMin:1, groupMax:1, requiresAdult:false },
+        { id:'a2', label:'Medbringer dessert', sublabel:'', capacity:5, kind:'attend', price:0, groupMin:1, groupMax:1, requiresAdult:false },
+      ],
+      createdBy: 'seed', created: now,
+    });
+    out('✓ Fællesspisning oprettet');
+
+    // ── Paid + gruppe-event: Nathejk ─────────────────────────────────────
+    out('Opretter Nathejk-event (paid + gruppe-slots)…');
+    await addDoc(collection(db, 'events'), {
+      title:       'Nathejk 2026',
+      description: 'DDS\'s adventurespejderløb. Tilmeld din patrulje og betal samlet. Lederne sørger for tilmelding på nathejk.dk.',
+      dateText:    'Lørdag 12. september',
+      location:    '',
+      type:        'event',
+      active:      true,
+      paymentUrl:  'https://mobilepay.dk/box/TESTLINK',
+      slots: [
+        { id:'n1', label:'Patruljeplads', sublabel:'5 spejdere pr. patrulje', capacity:25, kind:'paid', price:200, groupMin:5, groupMax:5, requiresAdult:false },
+      ],
+      createdBy: 'seed', created: now,
+    });
+    out('✓ Nathejk oprettet');
+
+    // ── Fremmøde: Søspejder-medlemmer ──────────────────────────────────────
+    out('Opretter testmedlemmer (Søspejder)…');
+    const søspejdere = [
+      { name:'Magnus Hansen',     fødselsdato:'2013-03-12', startdato:'2024-04-30', foto:true  },
+      { name:'Anna Larsen',       fødselsdato:'2013-09-05', startdato:'2024-05-01', foto:true  },
+      { name:'Peter Jensen',      fødselsdato:'2014-01-22', startdato:'2024-05-01', foto:false },
+      { name:'Sofie Nielsen',     fødselsdato:'2013-11-08', startdato:'2025-05-05', foto:true  },
+      { name:'Emil Christensen',  fødselsdato:'2014-06-17', startdato:'2025-05-05', foto:false },
+      { name:'Laura Pedersen',    fødselsdato:'2013-07-30', startdato:'2025-06-09', foto:false },
+      { name:'Oliver Andersen',   fødselsdato:'2014-02-14', startdato:'2025-08-18', foto:false },
+      { name:'Emma Thomsen',      fødselsdato:'2013-12-03', startdato:'2025-09-09', foto:false },
+      { name:'Lucas Møller',      fødselsdato:'2014-04-25', startdato:'2025-09-09', foto:false },
+      { name:'Ida Poulsen',       fødselsdato:'2013-08-19', startdato:'2025-09-09', foto:false },
+    ];
+    for (const m of søspejdere) {
+      await addDoc(collection(db, 'members'), {
+        ...m,
+        groupId:'soespejder',
+        groupName:getGroupNameById('soespejder'),
+        gren:getGroupNameById('soespejder'),
+        active:true,
+        created:now
+      });
+      out('  ✓ ' + m.name);
+    }
+
+    // ── Fremmøde: Junior-medlemmer ──────────────────────────────────────────
+    out('Opretter testmedlemmer (Junior)…');
+    const juniorer = [
+      { name:'Mathilde Hansen', fødselsdato:'2016-05-10', startdato:'2024-12-08', foto:false },
+      { name:'Noah Larsen',     fødselsdato:'2016-08-22', startdato:'2024-12-08', foto:false },
+      { name:'Freja Jensen',    fødselsdato:'2017-02-14', startdato:'2025-01-15', foto:false },
+      { name:'William Nielsen', fødselsdato:'2016-11-30', startdato:'2025-01-15', foto:false },
+    ];
+    for (const m of juniorer) {
+      await addDoc(collection(db, 'members'), {
+        ...m,
+        groupId:'junior',
+        groupName:getGroupNameById('junior'),
+        gren:getGroupNameById('junior'),
+        active:true,
+        created:now
+      });
+      out('  ✓ ' + m.name);
+    }
+
+    // ── Fremmøde: Møder ────────────────────────────────────────────────────
+    out('Opretter testmøder…');
+    const meetings = [
+      { date:'2026-06-10', groupId:'soespejder', groupName:getGroupNameById('soespejder'), gren:getGroupNameById('soespejder'), title:'' },
+      { date:'2026-06-16', groupId:'soespejder', groupName:getGroupNameById('soespejder'), gren:getGroupNameById('soespejder'), title:'Sommermøde' },
+      { date:'2026-06-23', groupId:'soespejder', groupName:getGroupNameById('soespejder'), gren:getGroupNameById('soespejder'), title:'' },
+      { date:'2026-06-16', groupId:'junior', groupName:getGroupNameById('junior'), gren:getGroupNameById('junior'), title:'' },
+    ];
+    const meetingRefs = [];
+    for (const m of meetings) {
+      const ref = await addDoc(collection(db, 'meetings'), { ...m, created:now, createdBy:'seed' });
+      meetingRefs.push({ id:ref.id, ...m });
+      out('  ✓ ' + m.groupName + ' · ' + m.date);
+    }
+
+    out('\n✅ Færdig! Åbn http://localhost:5003 for at se resultatet.');
+    out('   Admin: http://localhost:5003/admin.html  →  leder@test.dk / test1234');
+    out('   Fremmøde: http://localhost:5003/attendance.html');
+  } catch(e) {
+    out('\n❌ Fejl: ' + e.message);
+    console.error(e);
+  }
+  document.getElementById('btnSeed').disabled = false;
+};
+
+window.clearData = async function() {
+  if (!confirm('Slet ALT data i emulatoren?')) return;
+  log.textContent = 'Rydder…';
+  document.getElementById('btnClear').disabled = true;
+  try {
+    for (const col of ['events','signups','signupContacts','members','meetings','attendance']) {
+      const snap = await getDocs(collection(db, col));
+      for (const d of snap.docs) await deleteDoc(doc(db, col, d.id));
+      out('✓ ' + col + ' ryddet (' + snap.size + ' dokumenter)');
+    }
+    out('\n✅ Emulator-data ryddet.');
+  } catch(e) { out('\n❌ ' + e.message); }
+  document.getElementById('btnClear').disabled = false;
+};
+</script>
+</body>
+</html>

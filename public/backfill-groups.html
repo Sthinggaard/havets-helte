@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backfill grupper · Havets Helte</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .main{max-width:760px;margin:0 auto;padding:24px 18px 60px}
+  .page-head{margin-bottom:18px}
+  .page-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
+  .page-sub{font-size:13px;color:var(--muted);line-height:1.6}
+  .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+  .card-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:8px}
+  .inline-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .btn-secondary{padding:11px 16px;background:var(--white);border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;font-family:inherit}
+  .btn-secondary:hover{border-color:var(--navy)}
+  .btn-primary-inline{padding:11px 16px;background:var(--navy);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit}
+  .btn-primary-inline:hover{opacity:.88}
+  .btn-primary-inline:disabled,.btn-secondary:disabled{opacity:.6;cursor:not-allowed}
+  .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+  .stat{background:var(--white);border-radius:10px;padding:12px 14px}
+  .stat-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .stat-value{font-size:22px;font-weight:700;color:var(--navy)}
+  .preview-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .preview-row{background:var(--white);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5}
+  .preview-row strong{color:var(--navy)}
+  .preview-row.warn{border:1px solid var(--warn-border);background:var(--warn-bg)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  .log{background:var(--navy-mid);color:#fff;border-radius:12px;padding:14px 16px;font-size:12px;line-height:1.7;white-space:pre-wrap;min-height:120px}
+  .topbar-link{color:#6ebccd;text-decoration:none;font-size:12px}
+  .topbar-link:hover{color:#fff}
+  @media (max-width:640px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="viewLogin" style="display:none">
+  <div class="login-wrap">
+    <div class="login-card">
+      <img class="login-logo" src="havets_helte_logo_final.svg" alt="Havets Helte" width="64" height="64">
+      <div class="login-badge">Havets Helte</div>
+      <div class="login-title">Backfill grupper</div>
+      <div class="login-sub">Log ind med din leder-konto</div>
+      <div class="field"><label for="loginEmail">Mail</label><input type="email" id="loginEmail" autocomplete="email" placeholder="leder@havetshelte.dk"></div>
+      <div class="field"><label for="loginPwd">Adgangskode</label><input type="password" id="loginPwd" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">Log ind</button>
+      <div class="error-msg" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<div id="appShell" style="display:none">
+  <div class="topbar">
+    <div class="topbar-brand"><i class="ti ti-database-cog"></i>Backfill grupper</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <a class="topbar-link" href="admin.html">Lederportal</a>
+      <button class="btn-sm" onclick="doLogout()">Log ud</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="page-head">
+      <div class="page-title">Migrér legacy `gren` til `groupId`</div>
+      <div class="page-sub">
+        Finder medlemmer og møder der mangler <span class="mono">groupId</span> og skriver stabile gruppefelter ud fra eksisterende
+        <span class="mono">groupName</span> eller <span class="mono">gren</span>. Dokumenter med ukendt gruppenavn ændres ikke.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Status</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Medlemmer klar</div>
+          <div class="stat-value" id="membersReady">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Møder klar</div>
+          <div class="stat-value" id="meetingsReady">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Medlemmer ukendt</div>
+          <div class="stat-value" id="membersUnknown">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Møder ukendt</div>
+          <div class="stat-value" id="meetingsUnknown">0</div>
+        </div>
+      </div>
+      <div class="inline-actions">
+        <button class="btn-secondary" id="scanBtn" onclick="scanRecords()">Scan igen</button>
+        <button class="btn-primary-inline" id="runBtn" onclick="runBackfill()" disabled>Kør backfill</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Preview</div>
+      <div id="preview" class="preview-list">
+        <div class="state-msg"><i class="ti ti-loader spinning"></i>Scanner data…</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Log</div>
+      <div id="log" class="log">Klar…</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, connectFirestoreEmulator, collection, doc, getDocs, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, connectAuthEmulator, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { resolveGroupId, resolveGroupName } from './groups.js';
+
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const firebaseConfig = isLocal
+  ? { projectId:'havets-helte', apiKey:'demo', authDomain:'havets-helte.firebaseapp.com' }
+  : await fetch('/__/firebase/init.json').then(r => r.json());
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+if (isLocal) {
+  connectFirestoreEmulator(db, 'localhost', 8081);
+  connectAuthEmulator(auth, 'http://localhost:9097', { disableWarnings: true });
+}
+
+let currentScan = { membersReady: [], meetingsReady: [], membersUnknown: [], meetingsUnknown: [] };
+
+function logLine(line) {
+  const log = document.getElementById('log');
+  log.textContent += `\n${line}`;
+}
+
+function setStats() {
+  document.getElementById('membersReady').textContent = String(currentScan.membersReady.length);
+  document.getElementById('meetingsReady').textContent = String(currentScan.meetingsReady.length);
+  document.getElementById('membersUnknown').textContent = String(currentScan.membersUnknown.length);
+  document.getElementById('meetingsUnknown').textContent = String(currentScan.meetingsUnknown.length);
+  document.getElementById('runBtn').disabled = currentScan.membersReady.length + currentScan.meetingsReady.length === 0;
+}
+
+function renderPreview() {
+  const preview = document.getElementById('preview');
+  const rows = [];
+
+  currentScan.membersReady.slice(0, 5).forEach(item => {
+    rows.push(`<div class="preview-row"><strong>Medlem</strong> ${esc(item.name)}<br><span class="mono">${item.id}</span><br>${esc(item.sourceLabel)} → ${esc(item.patch.groupName)} (${item.patch.groupId})</div>`);
+  });
+  currentScan.meetingsReady.slice(0, 5).forEach(item => {
+    rows.push(`<div class="preview-row"><strong>Møde</strong> ${esc(item.title || item.date)}<br><span class="mono">${item.id}</span><br>${esc(item.sourceLabel)} → ${esc(item.patch.groupName)} (${item.patch.groupId})</div>`);
+  });
+  currentScan.membersUnknown.slice(0, 3).forEach(item => {
+    rows.push(`<div class="preview-row warn"><strong>Ukendt medlem</strong> ${esc(item.name)}<br><span class="mono">${item.id}</span><br>Kan ikke mappe gruppenavn: ${esc(item.sourceLabel || 'tom')}</div>`);
+  });
+  currentScan.meetingsUnknown.slice(0, 3).forEach(item => {
+    rows.push(`<div class="preview-row warn"><strong>Ukendt møde</strong> ${esc(item.title || item.date)}<br><span class="mono">${item.id}</span><br>Kan ikke mappe gruppenavn: ${esc(item.sourceLabel || 'tom')}</div>`);
+  });
+
+  if (rows.length === 0) {
+    preview.innerHTML = '<div class="state-msg"><i class="ti ti-circle-check"></i>Ingen dokumenter kræver backfill.</div>';
+    return;
+  }
+
+  preview.innerHTML = rows.join('');
+}
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function buildPatch(record) {
+  const groupId = resolveGroupId(record);
+  const groupName = resolveGroupName({ groupId }) || resolveGroupName(record);
+  if (!groupId || !groupName) return null;
+  const patch = { groupId, groupName, gren: groupName };
+  const needsUpdate = record.groupId !== groupId || record.groupName !== groupName || record.gren !== groupName;
+  return needsUpdate ? patch : null;
+}
+
+async function collectCollection(collectionName) {
+  const snap = await getDocs(collection(db, collectionName));
+  const ready = [];
+  const unknown = [];
+
+  snap.forEach(docSnap => {
+    const data = docSnap.data();
+    const patch = buildPatch(data);
+    const base = {
+      id: docSnap.id,
+      sourceLabel: data.groupName || data.gren || '',
+      title: data.title || '',
+      date: data.date || '',
+      name: data.name || '',
+      patch,
+    };
+
+    if (patch) ready.push(base);
+    else if (!data.groupId) unknown.push(base);
+  });
+
+  return { ready, unknown };
+}
+
+window.scanRecords = async function() {
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('preview').innerHTML = '<div class="state-msg"><i class="ti ti-loader spinning"></i>Scanner data…</div>';
+  document.getElementById('log').textContent = 'Scanner collections…';
+
+  try {
+    const [members, meetings] = await Promise.all([
+      collectCollection('members'),
+      collectCollection('meetings'),
+    ]);
+    currentScan = {
+      membersReady: members.ready,
+      meetingsReady: meetings.ready,
+      membersUnknown: members.unknown,
+      meetingsUnknown: meetings.unknown,
+    };
+    setStats();
+    renderPreview();
+    logLine(`Medlemmer klar: ${members.ready.length}`);
+    logLine(`Møder klar: ${meetings.ready.length}`);
+    if (members.unknown.length || meetings.unknown.length) {
+      logLine(`Ukendte gruppenavne: ${members.unknown.length + meetings.unknown.length}`);
+    }
+  } catch (error) {
+    console.error(error);
+    document.getElementById('preview').innerHTML = '<div class="state-msg">Fejl ved scanning.</div>';
+    logLine(`Fejl: ${error.message}`);
+  } finally {
+    document.getElementById('scanBtn').disabled = false;
+    document.getElementById('runBtn').disabled = currentScan.membersReady.length + currentScan.meetingsReady.length === 0;
+  }
+};
+
+window.runBackfill = async function() {
+  const total = currentScan.membersReady.length + currentScan.meetingsReady.length;
+  if (!total) return;
+  if (!confirm(`Opdater ${total} dokumenter med groupId/groupName?`)) return;
+
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('scanBtn').disabled = true;
+  logLine(`Starter backfill af ${total} dokumenter…`);
+
+  try {
+    for (const item of currentScan.membersReady) {
+      await updateDoc(doc(db, 'members', item.id), item.patch);
+      logLine(`Member opdateret: ${item.id} -> ${item.patch.groupId}`);
+    }
+    for (const item of currentScan.meetingsReady) {
+      await updateDoc(doc(db, 'meetings', item.id), item.patch);
+      logLine(`Møde opdateret: ${item.id} -> ${item.patch.groupId}`);
+    }
+    logLine('Backfill færdig.');
+    await scanRecords();
+  } catch (error) {
+    console.error(error);
+    logLine(`Fejl under backfill: ${error.message}`);
+  } finally {
+    document.getElementById('scanBtn').disabled = false;
+  }
+};
+
+window.doLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Logger ind…';
+  try {
+    await signInWithEmailAndPassword(auth, email, pwd);
+  } catch (error) {
+    err.textContent = 'Forkert mail eller adgangskode.';
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Log ind';
+  }
+};
+
+window.doLogout = function() { signOut(auth); };
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('viewLogin').style.display = 'none';
+    document.getElementById('appShell').style.display = 'block';
+    scanRecords();
+  } else {
+    document.getElementById('viewLogin').style.display = 'block';
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginBtn').textContent = 'Log ind';
+  }
+});
+</script>
+</body>
+</html>

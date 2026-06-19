@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forældrehelte · Havets Helte</title>
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://havets-helte.web.app">
+<meta property="og:title" content="Forældrehelte — meld dig som frivillig 🔥">
+<meta property="og:description" content="Havets Helte har brug for frivillige forældre til årets opgaver og vagter. Find en opgave der passer dig og meld dig på.">
+<meta property="og:image" content="https://havets-helte.web.app/og-sankthans.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="da_DK">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .hero{background:linear-gradient(135deg,var(--navy-mid),var(--navy));padding:34px 24px 26px;text-align:center}
+  .hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-light);margin-bottom:12px}
+  .hero-badge i{font-size:15px}
+  .hero-title{font-family:Arial,"Helvetica Neue",sans-serif;font-size:25px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-.02em}
+  .hero-desc{font-size:14px;color:var(--teal-light);max-width:380px;margin:0 auto;line-height:1.6}
+
+  .content{background:#fff;min-height:calc(100vh - 170px);border-radius:20px 20px 0 0;margin-top:-2px;padding:26px 18px 48px;max-width:580px;margin-left:auto;margin-right:auto}
+
+  /* Auth bar */
+  .auth-bar{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:16px;min-height:34px}
+  .btn-google{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;font-family:inherit}
+  .btn-google:hover{border-color:var(--navy)}
+  .btn-google img{width:16px;height:16px}
+  .user-chip{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text)}
+  .user-chip .uava{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+  .user-chip .logout{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0}
+
+  /* Mine tilmeldinger */
+  .mine-card{background:#fff;border:1px solid var(--success-border);border-radius:14px;padding:16px;margin-bottom:18px}
+  .mine-card h3{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .mine-card h3 i{color:var(--navy)}
+  .mine-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--white);border-radius:9px;margin-bottom:7px;font-size:13px}
+  .mine-item:last-child{margin-bottom:0}
+  .mine-item .mi-info{flex:1}
+  .mine-item .mi-title{font-weight:500}
+  .mine-item .mi-sub{color:var(--muted);font-size:12px}
+  .mine-cancel{background:none;border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+  .mine-cancel:hover{border-color:var(--danger);color:var(--danger)}
+
+  /* Hub event list */
+  .hub-event{display:block;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:12px;text-decoration:none;color:inherit;transition:box-shadow .2s,border-color .2s}
+  .hub-event:hover{border-color:#b0bfcf;box-shadow:0 0 3px 1px rgb(94,158,214)}
+  .he-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+  .he-title{font-size:17px;font-weight:600;line-height:1.25}
+  .he-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+  .he-meta span{display:flex;align-items:center;gap:4px}
+  .he-meta i{font-size:13px}
+  .he-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .he-type{font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap;flex-shrink:0}
+  .he-type.timed{background:rgba(51,122,183,.12);color:var(--navy-mid)}
+  .he-type.task{background:rgba(244,218,166,.6);color:var(--text)}
+  .he-type.event{background:rgba(44,152,183,.12);color:var(--teal-deep)}
+  .he-foot{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+  .he-spots{display:flex;align-items:center;gap:6px;color:var(--muted)}
+  .he-spots-pill{background:var(--success-bg);color:var(--text);border:1px solid var(--success-border);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500}
+  .he-spots-pill.full{background:var(--white);color:var(--muted);border-color:var(--border)}
+  .he-cta{display:inline-flex;align-items:center;gap:5px;background:var(--danger);color:#fff;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;flex-shrink:0;transition:opacity .15s}
+  .hub-event:hover .he-cta{opacity:.88}
+
+  /* Event detail */
+  .info-strip{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .info-chip{display:flex;align-items:center;gap:8px;background:var(--white);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text)}
+  .info-chip i{font-size:16px;color:var(--navy-mid);flex-shrink:0}
+  .ev-desc{font-size:14px;color:var(--text);line-height:1.7;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:13px 16px;margin-bottom:22px}
+
+  /* Slots */
+  .shift-section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px}
+  .shift-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .shift-time{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--text);flex:1}
+  .shift-time i{font-size:16px;color:var(--navy-mid);flex-shrink:0}
+  .shift-sub{font-size:12px;color:var(--muted);font-weight:400;margin-left:2px}
+  .shift-cap{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+  .cap-open{background:var(--success-bg);color:var(--text);border:1px solid var(--success-border)}
+  .cap-full{background:var(--white);color:var(--muted)}
+  .signups-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  .signup-row{display:flex;align-items:center;gap:9px;padding:8px 12px;background:var(--success-bg);border:1px solid var(--success-border);border-radius:9px;font-size:13px;color:var(--text);font-weight:500}
+  .signup-av{width:26px;height:26px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0}
+  .signup-row-empty{width:100%;background:#fff;border:1.5px dashed var(--border);color:var(--muted);font-family:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+  .signup-row-empty:hover{border-color:var(--navy-mid);background:var(--white);color:var(--navy)}
+  .signup-row-empty .signup-av{background:var(--border);color:var(--muted);font-size:14px;transition:background .15s,color .15s}
+  .signup-row-empty:hover .signup-av{background:var(--navy);color:#fff}
+  .join-btn{width:100%;padding:12px;background:var(--danger);border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;color:#fff;cursor:pointer;transition:opacity .15s}
+  .join-btn:hover{opacity:.88}
+  .join-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;opacity:1}
+  .req-adult-note{font-size:11px;color:var(--text);margin-top:8px;display:flex;align-items:center;gap:5px}
+  /* Venteliste */
+  .waitlist-bar{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:10px}
+  .waitlist-count{background:var(--white);color:var(--muted);border-radius:20px;padding:2px 9px;font-weight:500;font-size:11px}
+  .join-btn-waitlist{background:#fff;border:1.5px dashed var(--border);color:var(--navy-mid)}
+  .join-btn-waitlist:hover{border-color:var(--navy-mid);background:var(--white);opacity:1}
+  .modal-waitlist-banner{background:var(--white);border-radius:9px;padding:9px 13px;font-size:13px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+  .modal-waitlist-banner i{font-size:15px;flex-shrink:0}
+  .mine-waitlist{font-size:11px;font-weight:600;background:var(--white);color:var(--muted);border-radius:10px;padding:2px 7px;margin-left:4px}
+
+  /* Gruppe-faner */
+  .role-tabs{display:flex;gap:8px;margin-bottom:16px}
+  .role-tab{flex:1;padding:11px 8px;border:1px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;background:#fff;transition:all .15s;font-family:inherit}
+  .role-tab.active{border-color:var(--navy);background:var(--navy)}
+  .rt-name{font-size:13px;font-weight:600;color:var(--text)}
+  .role-tab.active .rt-name{color:#fff}
+  .rt-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .role-tab.active .rt-sub{color:var(--teal-light)}
+  .slot-panel{display:none}
+  .slot-panel.active{display:block}
+  .group-adult-note{font-size:12px;color:var(--text);background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:9px 12px;margin-bottom:16px;display:flex;align-items:flex-start;gap:7px;line-height:1.5}
+  .group-adult-note i{font-size:14px;color:var(--text);flex-shrink:0;margin-top:1px}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,15,30,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .modal-overlay.show{display:flex}
+  .modal{background:#fff;border-radius:18px 18px 0 0;padding:24px 20px 32px;width:100%;max-width:580px}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:2px;color:var(--navy)}
+  .modal-sub{font-size:13px;color:var(--muted);margin-bottom:18px}
+  .modal-actions{display:flex;gap:10px;margin-top:4px}
+  .btn-cancel{flex:1;padding:12px;background:var(--white);border:none;border-radius:10px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;font-family:inherit}
+  .btn-confirm{flex:2;padding:12px;background:var(--danger);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn-confirm:hover{opacity:.88}
+  .btn-confirm:disabled{opacity:.6;cursor:not-allowed}
+
+  /* Toast */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:24px;font-size:13px;font-weight:500;transition:transform .3s;z-index:60;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 48px)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast i{color:var(--success);font-size:16px;flex-shrink:0}
+
+  /* Auth bar subtle login */
+  .btn-login-subtle{background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;text-decoration:underline;padding:0}
+  .btn-login-subtle:hover{color:var(--navy)}
+
+  .contact-footer{text-align:center;font-size:13px;color:var(--muted);line-height:1.6;padding-top:16px;border-top:1px solid var(--border);margin-top:20px}
+  .contact-footer a{color:var(--navy);font-weight:500}
+
+  /* Kind-sektioner */
+  .kind-section-head{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--navy);margin:22px 0 10px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+  .kind-section-head i{font-size:16px;color:var(--teal)}
+  .kind-section-head:first-child{margin-top:0}
+
+  /* Group-badge (× antal) */
+  .group-badge{font-size:11px;font-weight:500;padding:2px 6px;border-radius:6px;background:rgba(51,122,183,.12);color:var(--navy-mid);margin-left:4px}
+
+  /* Pris-info under slot */
+  .price-badge{font-size:12px;color:var(--text);background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:7px 12px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .price-badge i{font-size:14px}
+
+  /* Modal pris-banner */
+  .price-info-banner{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--text);display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+  .price-info-banner i{font-size:16px;flex-shrink:0;margin-top:1px}
+
+  /* Join-knap varianter */
+  .join-btn-attend{background:var(--teal)}
+  .join-btn-paid{background:var(--navy-mid)}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .slot-panel.active{animation:fadeIn .15s ease}
+
+  /* Event image + map */
+  .ev-image{width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin-bottom:16px;display:block}
+  .ev-map-wrap{position:relative;width:100%;height:220px;margin-top:12px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--white)}
+  .ev-map{width:100%;height:100%;border:none;display:block}
+  .ev-map-loading{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--muted);background:var(--white)}
+  .ev-map-label{margin-top:6px;text-align:right}
+  .ev-map-open{font-size:12px;color:var(--muted);font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+  .ev-map-open:hover{color:var(--navy)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge"><i class="ti ti-anchor"></i>Havets Helte</div>
+  <div class="hero-title" id="heroTitle">Forældrehelte</div>
+  <div class="hero-desc" id="heroDesc">Vores forening lever af forældre der giver en hånd.</div>
+</div>
+
+<div class="content">
+  <div id="authBar" class="auth-bar"></div>
+  <div id="mineWrap"></div>
+  <div id="view"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter opgaver…</div></div>
+  <div class="contact-footer" id="footer" style="display:none">Havets Helte søspejdere</div>
+</div>
+
+<!-- Signup modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Meld dig på</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-waitlist-banner" id="waitlist-banner" style="display:none">
+      <i class="ti ti-clock"></i>Denne vagt er fyldt — du skrives på ventelisten og vil blive kontaktet hvis der åbner en plads.
+    </div>
+    <div class="field" id="name-field">
+      <label id="name-label">Dit navn</label>
+      <input type="text" id="m-name" placeholder="Fornavn Efternavn" autocomplete="name">
+    </div>
+    <label class="check-row" id="child-row">
+      <input type="checkbox" id="m-child" onchange="toggleChildMode()">
+      Tilmeld et barn
+    </label>
+    <div class="field" id="email-field">
+      <label>Din mail</label>
+      <input type="email" id="m-email" placeholder="din@mail.dk" autocomplete="email">
+    </div>
+    <label class="check-row" id="adult-row" style="display:none">
+      <input type="checkbox" id="m-adult">
+      <span id="adult-row-label">Jeg er 18+ år</span>
+    </label>
+    <div class="field" id="group-field" style="display:none">
+      <label>Antal deltagere <span id="group-range-hint" style="font-weight:400;color:var(--muted)"></span></label>
+      <input type="number" id="m-group-size" min="1" value="1">
+    </div>
+    <div class="price-info-banner" id="price-info-row" style="display:none">
+      <i class="ti ti-credit-card"></i><span id="price-info-text"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuller</button>
+      <button class="btn-confirm" id="confirmBtn" onclick="confirmSignup()">Tilmeld mig</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="ti ti-circle-check"></i><span id="toast-msg">Du er tilmeldt — tak for hjælpen!</span></div>
+
+<script type="module">
+import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, connectFirestoreEmulator,
+         collection, doc, getDoc, deleteDoc,
+         onSnapshot, getDocs, query, where }
+                                from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, connectAuthEmulator,
+         GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+                                from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+// ── Config: auto fra Firebase Hosting i prod, demo-projekt lokalt ──────────
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const firebaseConfig = isLocal
+  ? { projectId:'havets-helte', apiKey:'demo', authDomain:'havets-helte.firebaseapp.com' }
+  : await fetch('/__/firebase/init.json').then(r => r.json());
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+if (isLocal) {
+  connectFirestoreEmulator(db, 'localhost', 8081);
+  connectAuthEmulator(auth, 'http://localhost:9097', { disableWarnings: true });
+}
+
+// ── APPS SCRIPT notifikationer (udfyld efter deploy) ─────────────────────
+const APPS_SCRIPT_URL = '';   // indsæt web-app URL fra Code.gs deployment
+const SHARED_SECRET   = '';   // skal matche SHARED_SECRET i Code.gs
+const SIGNUP_API_URL  = '/api/submitSignup';
+
+function notifySignup(payload) {
+  if (!APPS_SCRIPT_URL) return;
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ ...payload, secret: SHARED_SECRET })
+  }).catch(err => console.error('Notifikation fejlede:', err));
+}
+
+async function submitSignupRequest(payload) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (currentUser) {
+    try {
+      headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
+    } catch (err) {
+      console.error('Kunne ikke hente ID-token:', err);
+    }
+  }
+  const response = await fetch(SIGNUP_API_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data.message || 'Signup API fejl');
+    error.code = data.status || 'error';
+    throw error;
+  }
+  return data;
+}
+
+// ── Routing ───────────────────────────────────────────────────────────────
+const eventId = new URLSearchParams(location.search).get('event');
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+let currentUser = null;
+const googleProvider = new GoogleAuthProvider();
+
+function doGoogleLogin()  { signInWithPopup(auth, googleProvider).catch(() => alert('Login mislykkedes.')); }
+function doGoogleLogout() { signOut(auth); }
+window.doGoogleLogin  = doGoogleLogin;
+window.doGoogleLogout = doGoogleLogout;
+
+function renderAuthBar() {
+  const bar = document.getElementById('authBar');
+  if (currentUser) {
+    const ini = (currentUser.displayName || currentUser.email || '?')
+      .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    bar.innerHTML = `<div class="user-chip">
+      <div class="uava">${esc(ini)}</div>
+      <span>${esc(currentUser.displayName || currentUser.email)}</span>
+      <button class="logout" onclick="doGoogleLogout()">Log ud</button>
+    </div>`;
+  } else {
+    bar.innerHTML = `<button class="btn-login-subtle" onclick="doGoogleLogin()">Log ind med Google</button>`;
+  }
+}
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  renderAuthBar();
+  if (currentUser) loadMine();
+  else document.getElementById('mineWrap').innerHTML = '';
+});
+
+// ── Mine tilmeldinger ─────────────────────────────────────────────────────
+async function loadMine() {
+  const wrap = document.getElementById('mineWrap');
+  if (!currentUser) { wrap.innerHTML = ''; return; }
+  try {
+    const snap = await getDocs(query(collection(db, 'signups'), where('uid', '==', currentUser.uid)));
+    const mine = [];
+    snap.forEach(d => mine.push({ id: d.id, ...d.data() }));
+    if (mine.length === 0) { wrap.innerHTML = ''; return; }
+
+    const titles = {};
+    for (const m of mine) {
+      if (!titles[m.eventId]) {
+        try {
+          const ev = await getDoc(doc(db, 'events', m.eventId));
+          if (ev.exists()) titles[m.eventId] = ev.data();
+        } catch(e) {}
+      }
+    }
+
+    let html = '<div class="mine-card"><h3><i class="ti ti-circle-check"></i>Mine tilmeldinger</h3>';
+    mine.forEach(m => {
+      const ev   = titles[m.eventId];
+      const slot = ev ? (ev.slots || []).find(s => s.id === m.slotId) : null;
+      const sub  = slot ? ([slot.role, slot.sublabel].filter(Boolean).join(' · ') || slot.label) : '';
+      html += `<div class="mine-item">
+        <div class="mi-info">
+          <div class="mi-title">${esc(ev ? ev.title : 'Opgave')}${m.waitlist ? '<span class="mine-waitlist">Venteliste</span>' : ''}</div>
+          <div class="mi-sub">${esc(sub)}</div>
+        </div>
+        <button class="mine-cancel" onclick="cancelSignup('${m.id}')">${m.waitlist ? 'Forlad liste' : 'Afmeld'}</button>
+      </div>`;
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+  } catch(e) { console.error(e); wrap.innerHTML = ''; }
+}
+
+async function cancelSignup(signupId) {
+  if (!confirm('Vil du afmelde denne tilmelding?')) return;
+  try {
+    await deleteDoc(doc(db, 'signups', signupId));
+    try { await deleteDoc(doc(db, 'signupContacts', signupId)); } catch(e) {}
+    loadMine();
+  } catch(e) { console.error(e); alert('Kunne ikke afmelde — prøv igen.'); }
+}
+window.cancelSignup = cancelSignup;
+
+// ── Hub ───────────────────────────────────────────────────────────────────
+function loadHub() {
+  onSnapshot(query(collection(db, 'events'), where('active', '==', true)), snap => {
+    const view = document.getElementById('view');
+    const events = [];
+    snap.forEach(d => events.push({ id: d.id, ...d.data() }));
+    events.sort((a, b) => (b.created?.seconds || 0) - (a.created?.seconds || 0));
+
+    if (events.length === 0) {
+      view.innerHTML = '<div class="state-msg"><i class="ti ti-calendar-off"></i>Der er ingen opgaver lige nu.<br>Kig forbi igen senere!</div>';
+      return;
+    }
+    view.innerHTML = '';
+    events.forEach(ev => renderHubCard(ev, view));
+  });
+  document.getElementById('footer').style.display = 'block';
+}
+
+function renderHubCard(ev, view) {
+  const hasUnlim = (ev.slots || []).some(sl => sl.capacity === 0);
+  const totalCap = hasUnlim ? 0 : (ev.slots || []).reduce((s, sl) => s + (sl.capacity || 0), 0);
+  const a = document.createElement('a');
+  const typeLabel = ev.type === 'timed' ? 'Vagter' : ev.type === 'event' ? 'Event' : 'Opgaver';
+  const ctaLabel  = ev.type === 'event' ? 'Se event' : ev.type === 'timed' ? 'Find en vagt' : 'Se opgaver';
+  a.className = `hub-event type-${ev.type || 'task'}`;
+  a.href = './?event=' + ev.id;
+  a.innerHTML = `
+    <div class="he-head">
+      <div class="he-title">${esc(ev.title)}</div>
+      <span class="he-type ${ev.type}">${typeLabel}</span>
+    </div>
+    <div class="he-meta">
+      ${ev.dateText ? `<span><i class="ti ti-calendar"></i>${esc(ev.dateText)}</span>` : ''}
+      ${ev.location ? `<span><i class="ti ti-map-pin"></i>${esc(ev.location)}</span>`  : ''}
+    </div>
+    ${ev.description ? `<div class="he-desc">${esc(ev.description)}</div>` : ''}
+    <div class="he-foot">
+      <span class="he-spots"><span id="hc-${ev.id}"></span></span>
+      <span class="he-cta">${ctaLabel}<i class="ti ti-arrow-right"></i></span>
+    </div>`;
+  view.appendChild(a);
+
+  onSnapshot(query(collection(db, 'signups'), where('eventId', '==', ev.id)), s => {
+    const taken     = s.docs.reduce((sum, d) => sum + (!d.data().waitlist ? (d.data().groupSize || 1) : 0), 0);
+    const cnt       = document.getElementById('hc-' + ev.id);
+    if (!cnt) return;
+    if (!totalCap) {
+      cnt.innerHTML = `<span class="he-spots-pill">${taken} tilmeldte</span>`;
+    } else {
+      const left = totalCap - taken;
+      const isFull = left <= 0;
+      cnt.innerHTML = isFull
+        ? `<span class="he-spots-pill full">Fuldt</span>`
+        : `<span class="he-spots-pill">${left} ledig${left !== 1 ? 'e' : ''} plads${left !== 1 ? 'er' : ''}</span>`;
+    }
+  });
+}
+
+// ── Event detail ──────────────────────────────────────────────────────────
+let currentEvent = null;
+let signups = [];
+
+async function loadEventDetail(id) {
+  const snap = await getDoc(doc(db, 'events', id));
+  if (!snap.exists() || snap.data().active === false) {
+    document.getElementById('view').innerHTML =
+      '<a class="back-link" href="./"><i class="ti ti-arrow-left"></i>Alle opgaver</a>' +
+      '<div class="state-msg"><i class="ti ti-calendar-off"></i>Opgaven findes ikke længere.</div>';
+    return;
+  }
+  currentEvent = { id, ...snap.data() };
+  document.getElementById('heroTitle').textContent = currentEvent.title;
+  document.getElementById('heroDesc').textContent  = currentEvent.dateText || '';
+
+  onSnapshot(query(collection(db, 'signups'), where('eventId', '==', id)), s => {
+    signups = [];
+    s.forEach(d => signups.push({ id: d.id, ...d.data() }));
+    renderDetail();
+  });
+}
+
+function renderDetail() {
+  const ev = currentEvent;
+
+  // Only confirmed (non-waitlist) signups count against capacity
+  const slotTaken    = slot => signups.filter(s => s.slotId === slot.id && !s.waitlist).reduce((sum, s) => sum + (s.groupSize || 1), 0);
+  const slotWaitlist = slot => signups.filter(s => s.slotId === slot.id &&  s.waitlist).length;
+
+  let html = '<a class="back-link" href="./"><i class="ti ti-arrow-left"></i>Alle opgaver</a>';
+  if (ev.imageUrl) html += `<img class="ev-image" src="${esc(ev.imageUrl)}" alt="${esc(ev.title)}">`;
+  html += '<div class="info-strip">';
+  if (ev.dateText) html += `<div class="info-chip"><i class="ti ti-calendar"></i>${esc(ev.dateText)}</div>`;
+  if (ev.location) html += `<div class="info-chip"><i class="ti ti-map-pin"></i>${esc(ev.location)}</div>`;
+  const typeLabel = ev.type === 'timed' ? 'Vagter' : ev.type === 'event' ? 'Event' : 'Opgaver';
+  const slotWord  = ev.type === 'timed' ? 'vagter' : ev.type === 'event' ? 'pladser' : 'opgaver';
+  html += `<div class="info-chip"><i class="ti ti-${ev.type === 'timed' ? 'clock' : ev.type === 'event' ? 'flag' : 'list'}"></i>${(ev.slots||[]).length} ${slotWord}</div></div>`;
+  if (ev.description) html += `<div class="ev-desc">${esc(ev.description)}</div>`;
+  if (ev.location) {
+    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(ev.location)}`;
+    html += `<div class="ev-map-wrap" id="evMapContainer"><div class="ev-map-loading"><i class="ti ti-loader spinning"></i>Henter kort…</div></div><div class="ev-map-label"><a class="ev-map-open" href="${mapsUrl}" target="_blank" rel="noopener"><i class="ti ti-map"></i>Åbn i Google Maps</a></div>`;
+  }
+
+  // Split by kind (backward-compat: missing kind → volunteer)
+  const slots           = ev.slots || [];
+  const volunteerSlots  = slots.filter(s => !s.kind || s.kind === 'volunteer');
+  const attendSlots     = slots.filter(s => s.kind === 'attend');
+  const paidSlots       = slots.filter(s => s.kind === 'paid');
+
+  const sections = [];
+  if (volunteerSlots.length) sections.push({ kind:'volunteer', slots:volunteerSlots, label:'Hjælp til',    icon:'ti-heart-handshake' });
+  if (attendSlots.length)    sections.push({ kind:'attend',    slots:attendSlots,    label:'Deltag gratis', icon:'ti-users' });
+  if (paidSlots.length)      sections.push({ kind:'paid',      slots:paidSlots,      label:'Deltag',        icon:'ti-ticket' });
+
+  const showKindHeaders = sections.length > 1;
+  let tgCounter = 0;
+
+  sections.forEach(section => {
+    if (showKindHeaders) {
+      html += `<div class="kind-section-head"><i class="ti ${section.icon}"></i>${section.label}</div>`;
+    }
+
+    // Group consecutive same-label slots → tabs
+    const groups = [];
+    for (const slot of section.slots) {
+      const last = groups[groups.length - 1];
+      if (last && last.label === slot.label) {
+        last.slots.push(slot);
+        if (slot.requiresAdult) last.requiresAdult = true;
+      } else {
+        groups.push({ label: slot.label, requiresAdult: !!slot.requiresAdult, slots: [slot] });
+      }
+    }
+    const useTabs = groups.length > 1 && groups.some(g => g.slots.length > 1);
+    const tgId    = tgCounter++;
+
+    if (useTabs) {
+      html += '<div class="role-tabs">';
+      groups.forEach((g, i) => {
+        const gTaken      = g.slots.reduce((n, s) => n + slotTaken(s), 0);
+        const gUnlim      = g.slots.some(s => s.capacity === 0);
+        const gCap        = gUnlim ? 0 : g.slots.reduce((n, s) => n + s.capacity, 0);
+        const gRemaining  = gUnlim ? Infinity : gCap - gTaken;
+        const sub = gRemaining <= 0 ? 'Fuldt besættet' : gUnlim ? `${gTaken} tilmeldte` : `${gRemaining} plads${gRemaining !== 1 ? 'er' : ''} ledig`;
+        html += `<button class="role-tab${i===0?' active':''}" data-tg="${tgId}" onclick="switchGroup(${tgId},${i})">
+          <div class="rt-name">${esc(g.label)}</div>
+          <div class="rt-sub">${sub}</div>
+        </button>`;
+      });
+      html += '</div>';
+    }
+
+    groups.forEach((group, gi) => {
+      if (useTabs) html += `<div class="slot-panel${gi===0?' active':''}" data-tg="${tgId}">`;
+
+      const groupMinAge = group.slots.reduce((m, s) => Math.max(m, s.minAge || (s.requiresAdult ? 18 : 0)), 0);
+      if (groupMinAge > 0) {
+        html += `<div class="group-adult-note"><i class="ti ti-id"></i>Man skal være ${groupMinAge}+ år for at tilmelde sig ${esc(group.label)}. Sæt kryds når du tilmelder dig.</div>`;
+      }
+
+      group.slots.forEach(slot => {
+        const kind      = slot.kind || 'volunteer';
+        const unlim     = slot.capacity === 0;
+        const taken     = slotTaken(slot);
+        const remaining = unlim ? Infinity : Math.max(0, slot.capacity - taken);
+        const inSlot    = signups.filter(s => s.slotId === slot.id);
+        const isGroup   = (slot.groupMax || 1) > 1;
+
+        const confirmedInSlot = inSlot.filter(s => !s.waitlist);
+        const filledRows = confirmedInSlot.map(s => {
+          const ini = s.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+          const gs  = s.groupSize || 1;
+          return `<div class="signup-row"><div class="signup-av">${esc(ini)}</div>${esc(s.name)}${gs > 1 ? `<span class="group-badge">× ${gs}</span>` : ''}${s.adult ? `<span style="margin-left:auto;font-size:11px;color:var(--success)">18+</span>` : ''}</div>`;
+        }).join('');
+        let rows = filledRows;
+
+        // Ledige pladser vises som klikbare rækker (kun individuelle pladser med kendt kapacitet —
+        // gruppepladser viser i stedet "X af Y tilbage" via shift-cap, da gruppestørrelse varierer)
+        const showEmptyRows = !isGroup && !unlim && remaining > 0;
+        if (showEmptyRows) {
+          const emptyLabel = kind === 'paid'
+            ? `Ledig plads — klik for at tilmelde og betale${slot.price ? ' ' + slot.price + ' kr' : ''}`
+            : kind === 'attend'
+            ? 'Ledig plads — klik for at tilmelde dig'
+            : 'Ledig plads — klik for at melde dig på';
+          rows += Array.from({ length: remaining }, () =>
+            `<button type="button" class="signup-row signup-row-empty" onclick="openModal('${slot.id}')">
+              <div class="signup-av"><i class="ti ti-plus"></i></div>${esc(emptyLabel)}
+            </button>`
+          ).join('');
+        }
+
+        const wlCount   = slotWaitlist(slot);
+        const isFull    = !unlim && remaining === 0;
+        const capText   = unlim ? '' : isFull ? 'Fuldt' : remaining + ' ledig' + (remaining > 1 ? 'e' : '');
+        const slotMeta  = [slot.role, slot.sublabel].filter(Boolean).join(' · ');
+        const slotLabel = useTabs
+          ? esc(slotMeta || slot.label)
+          : esc(slot.label) + (slotMeta ? `<span class="shift-sub">${esc(slotMeta)}</span>` : '');
+
+        let btnText, btnClass, btnOnclick, btnDisabled = false;
+        if (isFull) {
+          btnText    = '<i class="ti ti-clock"></i> Skriv dig på ventelisten';
+          btnClass   = 'join-btn join-btn-waitlist';
+          btnOnclick = `openModal('${slot.id}',true)`;
+        } else if (kind === 'paid') {
+          btnText    = `Tilmeld og betal ${slot.price ? slot.price + ' kr' : ''}`;
+          btnClass   = 'join-btn join-btn-paid';
+          btnOnclick = `openModal('${slot.id}')`;
+        } else if (kind === 'attend') {
+          btnText    = '+ Tilmeld dig';
+          btnClass   = 'join-btn join-btn-attend';
+          btnOnclick = `openModal('${slot.id}')`;
+        } else {
+          btnText    = '+ Meld dig på';
+          btnClass   = 'join-btn';
+          btnOnclick = `openModal('${slot.id}')`;
+        }
+
+        html += `<div class="shift-section">
+          <div class="shift-header">
+            <div class="shift-time">
+              ${!useTabs ? `<i class="ti ti-${ev.type==='timed'?'clock':ev.type==='event'?'flag':'point'}"></i>` : ''}
+              ${slotLabel}
+            </div>
+            ${capText ? `<span class="shift-cap ${isFull?'cap-full':'cap-open'}">${capText}</span>` : ''}
+          </div>
+          <div class="signups-list">${rows}</div>
+          ${wlCount > 0 ? `<div class="waitlist-bar"><i class="ti ti-clock" style="font-size:13px"></i><span class="waitlist-count">${wlCount} på venteliste</span></div>` : ''}
+          ${kind === 'paid' && slot.price ? `<div class="price-badge"><i class="ti ti-credit-card"></i>Pris: ${slot.price} kr pr. tilmelding</div>` : ''}
+          ${showEmptyRows ? '' : `<button class="${btnClass}" onclick="${btnOnclick}">${btnText}</button>`}
+        </div>`;
+      });
+
+      if (useTabs) html += '</div>'; // luk .slot-panel
+    });
+  });
+
+  document.getElementById('view').innerHTML = html;
+  if (ev.location) loadEventMap(ev.location);
+}
+
+function loadEventMap(location) {
+  const container = document.getElementById('evMapContainer');
+  if (!container) return;
+  const iframe = document.createElement('iframe');
+  iframe.className = 'ev-map';
+  iframe.loading = 'lazy';
+  iframe.allowFullscreen = true;
+  iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(location)}&output=embed`;
+  iframe.onload = () => container.querySelector('.ev-map-loading')?.remove();
+  container.appendChild(iframe);
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────
+let pendingSlot      = null;
+let pendingWaitlist  = false;
+
+function openModal(slotId, isWaitlist = false) {
+  const slot = currentEvent.slots.find(s => s.id === slotId);
+  pendingSlot     = slot;
+  pendingWaitlist = isWaitlist;
+  const kind = slot.kind || 'volunteer';
+
+  document.getElementById('modal-title').textContent = currentEvent.title;
+  document.getElementById('modal-sub').textContent   = slot.sublabel ? slot.label + ' · ' + slot.sublabel : slot.label;
+
+  // Child toggle only for volunteer
+  document.getElementById('child-row').style.display   = kind === 'volunteer' ? 'flex' : 'none';
+  document.getElementById('m-child').checked           = false;
+  document.getElementById('email-field').style.display = 'block';
+  document.getElementById('name-label').textContent    = 'Dit navn';
+  document.getElementById('m-name').placeholder        = 'Fornavn Efternavn';
+
+  // Age row
+  const slotMinAge = slot.minAge || (slot.requiresAdult ? 18 : 0);
+  const ageRow = document.getElementById('adult-row');
+  ageRow.style.display = slotMinAge > 0 ? 'flex' : 'none';
+  document.getElementById('adult-row-label').textContent = `Jeg er ${slotMinAge}+ år`;
+  document.getElementById('m-adult').checked = false;
+
+  // Group picker
+  const grpSize   = slot.groupSize || slot.groupMax || 1;
+  const isGroup   = grpSize > 1;
+  const groupField = document.getElementById('group-field');
+  if (isGroup) {
+    const slotTaken = signups.filter(s => s.slotId === slot.id).reduce((n, s) => n + (s.groupSize || 1), 0);
+    const gs = document.getElementById('m-group-size');
+    gs.min   = grpSize;
+    gs.max   = grpSize;
+    gs.value = grpSize;
+    document.getElementById('group-range-hint').textContent = `(${grpSize} personer)`;
+    groupField.style.display = 'block';
+  } else {
+    groupField.style.display = 'none';
+  }
+
+  // Price info for paid
+  const priceRow = document.getElementById('price-info-row');
+  if (kind === 'paid' && slot.price) {
+    document.getElementById('price-info-text').textContent =
+      `Pris: ${slot.price} kr — du videresendes til MobilePay efter tilmelding.`;
+    priceRow.style.display = 'flex';
+  } else {
+    priceRow.style.display = 'none';
+  }
+
+  // Waitlist banner
+  const wlBanner = document.getElementById('waitlist-banner');
+  wlBanner.style.display = isWaitlist ? 'flex' : 'none';
+
+  // Confirm button text
+  const confirmBtn = document.getElementById('confirmBtn');
+  confirmBtn.textContent = isWaitlist ? 'Skriv mig på ventelisten'
+    : kind === 'paid' && slot.price ? `Tilmeld og betal ${slot.price} kr`
+    : kind === 'attend' ? 'Tilmeld mig'
+    : 'Meld mig på';
+
+  if (currentUser) {
+    if (currentUser.displayName) document.getElementById('m-name').value  = currentUser.displayName;
+    if (currentUser.email)       document.getElementById('m-email').value = currentUser.email;
+  }
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('m-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  document.getElementById('waitlist-banner').style.display = 'none';
+  pendingWaitlist = false;
+  document.getElementById('m-child').checked            = false;
+  document.getElementById('email-field').style.display  = 'block';
+  document.getElementById('name-label').textContent     = 'Dit navn';
+  document.getElementById('m-name').placeholder         = 'Fornavn Efternavn';
+  document.getElementById('m-name').value               = '';
+  document.getElementById('m-email').value              = '';
+  document.getElementById('m-adult').checked            = false;
+  document.getElementById('group-field').style.display  = 'none';
+  document.getElementById('price-info-row').style.display = 'none';
+  document.getElementById('confirmBtn').textContent     = 'Meld mig på';
+  pendingSlot = null;
+}
+
+function toggleChildMode() {
+  const isChild = document.getElementById('m-child').checked;
+  document.getElementById('email-field').style.display = isChild ? 'none' : 'block';
+  document.getElementById('name-label').textContent    = isChild ? 'Barnets navn' : 'Dit navn';
+  document.getElementById('m-name').placeholder        = isChild ? 'Barnets navn' : 'Fornavn Efternavn';
+  const slotMinAge = pendingSlot?.minAge || (pendingSlot?.requiresAdult ? 18 : 0);
+  if (isChild) {
+    document.getElementById('m-adult').checked         = false;
+    document.getElementById('adult-row').style.display = 'none';
+  } else if (slotMinAge > 0) {
+    document.getElementById('adult-row').style.display = 'flex';
+  }
+}
+
+async function confirmSignup() {
+  const name    = document.getElementById('m-name').value.trim();
+  const email   = document.getElementById('m-email').value.trim();
+  const adult   = document.getElementById('m-adult').checked;
+  const isChild = document.getElementById('m-child').checked;
+
+  if (!name) { alert('Udfyld dit navn.'); return; }
+  if (!isChild) {
+    if (!email)                { alert('Udfyld din mail.'); return; }
+    if (!email.includes('@'))  { alert('Tjek mailadressen — den ser ikke rigtig ud.'); return; }
+  }
+
+  const slot      = pendingSlot;
+  const isWl      = pendingWaitlist;
+  const kind      = slot.kind || 'volunteer';
+  const isGroup   = (slot.groupSize || slot.groupMax || 1) > 1;
+  const groupSize = isGroup ? (parseInt(document.getElementById('m-group-size').value) || 1) : 1;
+  const taken     = signups.filter(s => s.slotId === slot.id && !s.waitlist).reduce((sum, s) => sum + (s.groupSize || 1), 0);
+
+  if (!isWl && slot.capacity !== 0 && taken + groupSize > slot.capacity) {
+    alert('Pladsen blev desværre netop fyldt. Prøv ventelisten.');
+    closeModal(); return;
+  }
+
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.textContent = 'Tilmelder…';
+
+  try {
+    const signupResult = await submitSignupRequest({
+      eventId: currentEvent.id,
+      slotId: slot.id,
+      name,
+      email: isChild ? '' : email,
+      adult,
+      childMode: isChild,
+      groupSize,
+      waitlistPreferred: isWl,
+    });
+
+    notifySignup({
+      eventTitle: currentEvent.title,
+      slotLabel:  slot.sublabel ? slot.label + ' · ' + slot.sublabel : slot.label,
+      name, email: isChild ? '' : email, adult: isChild ? false : adult,
+      location:    currentEvent.location || '',
+      dateText:    currentEvent.dateText  || '',
+      groupSize,
+      price:       slot.price || 0,
+      cancelToken: signupResult.cancelToken || '',
+      waitlist:    signupResult.waitlist,
+    });
+
+    if (typeof gtag === 'function') gtag('event', 'tilmelding', { opgave: currentEvent.title, slot: slot.label });
+
+    closeModal();
+    const slotName  = slot.sublabel ? slot.label + ' · ' + slot.sublabel : slot.label;
+    const toastText = signupResult.waitlist
+      ? `Sat på venteliste: ${slotName}`
+      : kind === 'paid'
+      ? `Tilmeldt: ${slotName} — du videresendes til betaling`
+      : kind === 'attend'
+      ? `Tilmeldt: ${slotName} — vi glæder os til at se dig!`
+      : `Tilmeldt: ${slotName} — tak for hjælpen!`;
+    document.getElementById('toast-msg').textContent = toastText;
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), kind === 'paid' ? 3000 : 6000);
+
+    if (!signupResult.waitlist && kind === 'paid' && currentEvent.paymentUrl) {
+      setTimeout(() => window.open(currentEvent.paymentUrl, '_blank'), 400);
+    }
+    if (currentUser) loadMine();
+  } catch(e) {
+    console.error(e);
+    if (e?.code === 'full') {
+      alert('Pladsen blev desværre netop fyldt. Prøv ventelisten.');
+      closeModal();
+    } else if (e?.code === 'not_found') {
+      alert('Opgaven blev ændret eller findes ikke længere. Opdatér siden og prøv igen.');
+      closeModal();
+    } else {
+      alert('Noget gik galt — prøv igen.');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = kind === 'paid' && slot.price ? `Tilmeld og betal ${slot.price} kr` : kind === 'attend' ? 'Tilmeld mig' : 'Meld mig på';
+  }
+}
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function switchGroup(tgId, idx) {
+  document.querySelectorAll(`.role-tab[data-tg="${tgId}"]`).forEach((t, i)  => t.classList.toggle('active', i === idx));
+  document.querySelectorAll(`.slot-panel[data-tg="${tgId}"]`).forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+window.openModal     = openModal;
+window.switchGroup   = switchGroup;
+window.closeModal    = closeModal;
+window.confirmSignup = confirmSignup;
+window.toggleChildMode = toggleChildMode;
+
+// ── Start ─────────────────────────────────────────────────────────────────
+if (eventId) loadEventDetail(eventId);
+else         loadHub();
+</script>
+</body>
+</html>

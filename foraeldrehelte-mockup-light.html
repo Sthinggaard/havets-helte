@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forældrehelte · designforslag (havetshelte.dk hvidt tema)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root{
+    /* havetshelte-design palette, light roles — same 20 hex values as the dark variant */
+    --bg:#f6f6f6; --surface:#ffffff; --row-bg:#f6f6f6;
+    --text:#232323; --navy:#003366; --navy-mid:#0f4172; --muted:#7c7c7c;
+    --border:#cbcbcb; --border-soft:#e9e9e9;
+    --success:#c9e1bd; --warning:#f4daa6; --coral:#ea636f;
+    --accent:#337ab7; --teal:#2c98b7; --teal-deep:#146e88; --teal-light:#6ebccd;
+
+    --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-display: Arial, "Helvetica Neue", sans-serif;
+
+    --radius-sm:4px; --radius-md:12px; --radius-lg:20px; --radius-xl:50px; --radius-pill:999px;
+
+    --shadow-flat: 0 2px 2px rgba(0,0,0,.08);
+    --shadow-soft: 0 0 5px #666666;
+
+    --dur-fast:150ms; --dur-base:200ms; --dur-slow:300ms; --dur-slower:400ms;
+    --ease-out: ease-out; --ease: ease-in-out;
+
+    --z-sticky:10; --z-modal:1000; --z-toast:1260;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh}
+
+  .draft-banner{background:var(--navy);border-bottom:1px solid var(--navy);color:#fff;
+    font-size:13px;text-align:center;padding:10px 20px;letter-spacing:.02em}
+  .draft-banner b{color:var(--teal-light)}
+
+  /* ── Utility top bar (mirrors havetshelte.dk nav) ───────── */
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:15px 20px;max-width:991px;margin:0 auto}
+  .topbar-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);
+    font-weight:700;font-size:14px;letter-spacing:.04em;color:var(--navy);text-decoration:none}
+  .topbar-brand i{font-size:18px;color:var(--navy)}
+  .topbar-link{font-size:13px;color:var(--muted);text-decoration:none}
+  .topbar-link:hover{color:var(--navy)}
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero{background:linear-gradient(135deg,var(--navy-mid),var(--navy));
+    padding:40px 20px 60px;text-align:center;position:relative;overflow:hidden}
+  .hero::after{content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 80% -10%, rgba(110,188,205,.18), transparent 60%);pointer-events:none}
+  .hero-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--teal-light);margin-bottom:15px}
+  .hero-title{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,7vw,40px);
+    color:#fff;letter-spacing:-.01em;margin-bottom:10px}
+  .hero-desc{font-size:15px;color:var(--teal-light);max-width:380px;margin:0 auto;line-height:1.5}
+
+  /* ── Auth bar ─────────────────────────────────────────── */
+  .auth-bar{max-width:600px;margin:-20px auto 0;padding:0 20px;display:flex;justify-content:flex-end;
+    position:relative;z-index:var(--z-sticky)}
+  .user-chip{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-pill);padding:5px 15px 5px 5px;font-size:13px;box-shadow:var(--shadow-flat)}
+  .uava{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .logout{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;
+    font-family:inherit;padding:0;margin-left:5px}
+
+  /* ── Content sheet ────────────────────────────────────── */
+  .content{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;margin-top:-15px;
+    max-width:600px;margin-left:auto;margin-right:auto;padding:30px 20px 60px;position:relative;
+    box-shadow:0 -2px 10px rgba(0,0,0,.05)}
+
+  .section-label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--navy-mid);display:flex;align-items:center;gap:10px;margin:40px 0 15px}
+  .section-label:first-child{margin-top:0}
+  .section-label i{font-size:15px;color:var(--teal)}
+
+  /* ── Mine tilmeldinger ────────────────────────────────── */
+  .mine-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+    padding:20px;margin-bottom:10px;box-shadow:var(--shadow-flat)}
+  .mine-card h3{font-size:14px;font-weight:700;margin-bottom:15px;display:flex;align-items:center;gap:10px;color:var(--navy)}
+  .mine-card h3 i{color:var(--navy)}
+  .mine-item{display:flex;align-items:center;gap:10px;padding:10px 15px;background:var(--row-bg);
+    border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin-bottom:10px;font-size:13px}
+  .mine-item:last-child{margin-bottom:0}
+  .mi-title{font-weight:600}
+  .mi-sub{color:var(--muted);font-size:12px;margin-top:5px}
+  .mine-cancel{margin-left:auto;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:5px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit;flex-shrink:0}
+  .mine-cancel:hover{border-color:var(--coral);color:var(--coral)}
+
+  /* ── Hub event cards ──────────────────────────────────── */
+  .hub-event{display:block;background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-md);
+    padding:20px;margin-bottom:15px;text-decoration:none;color:inherit;
+    transition:box-shadow var(--dur-base) var(--ease),border-color var(--dur-base) var(--ease)}
+  .hub-event:hover{border-color:var(--border);box-shadow:var(--shadow-flat)}
+  .he-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .he-title{font-size:17px;font-weight:600;line-height:1.3;color:var(--text)}
+  .he-type{font-size:11px;font-weight:700;padding:5px 10px;border-radius:var(--radius-pill);white-space:nowrap;flex-shrink:0}
+  .he-type.timed{background:rgba(51,122,183,.12);color:var(--navy-mid)}
+  .he-type.task{background:rgba(244,218,166,.6);color:var(--text)}
+  .he-type.event{background:rgba(44,152,183,.12);color:var(--teal-deep)}
+  .he-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+  .he-meta span{display:flex;align-items:center;gap:5px}
+  .he-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:15px}
+  .he-foot{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+  .he-spots-pill{background:rgba(201,225,189,.45);color:var(--text);border:1px solid rgba(201,225,189,.9);
+    border-radius:var(--radius-pill);padding:5px 10px;font-size:12px;font-weight:600}
+  .he-spots-pill.full{background:var(--row-bg);color:var(--muted);border-color:var(--border-soft)}
+  .he-cta{display:inline-flex;align-items:center;gap:5px;background:var(--coral);color:#fff;
+    border-radius:var(--radius-pill);padding:5px 15px;font-size:12px;font-weight:700;flex-shrink:0;
+    transition:opacity var(--dur-fast) var(--ease)}
+  .hub-event:hover .he-cta{opacity:.88}
+
+  /* ── Event detail ─────────────────────────────────────── */
+  .info-strip{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .info-chip{display:flex;align-items:center;gap:10px;background:var(--row-bg);border:1px solid var(--border-soft);
+    border-radius:var(--radius-sm);padding:10px 15px;font-size:13px;color:var(--text)}
+  .info-chip i{font-size:16px;color:var(--navy-mid)}
+  .ev-desc{font-size:20px;font-weight:400;line-height:1.5;background:var(--row-bg);
+    border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+    padding:15px 20px;margin-bottom:25px;color:var(--text)}
+
+  .role-tabs{display:flex;gap:10px;margin-bottom:20px}
+  .role-tab{flex:1;padding:10px;border:1px solid var(--border-soft);border-radius:var(--radius-sm);text-align:center;
+    cursor:pointer;background:var(--surface);transition:all var(--dur-fast) var(--ease);font-family:inherit}
+  .role-tab.active{border-color:var(--navy);background:var(--navy)}
+  .rt-name{font-size:13px;font-weight:700;color:var(--text)}
+  .role-tab.active .rt-name{color:#fff}
+  .rt-sub{font-size:11px;color:var(--muted);margin-top:5px}
+  .role-tab.active .rt-sub{color:var(--teal-light)}
+
+  .slot-panel{display:none}
+  .slot-panel.active{display:block;animation:fadeIn var(--dur-base) var(--ease)}
+
+  .shift-section{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+    padding:20px;margin-bottom:15px;box-shadow:var(--shadow-flat)}
+  .shift-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:15px}
+  .shift-time{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;flex:1;color:var(--text)}
+  .shift-time i{color:var(--navy-mid)}
+  .shift-cap{font-size:11px;font-weight:700;padding:5px 10px;border-radius:var(--radius-pill);white-space:nowrap;flex-shrink:0}
+  .cap-open{background:rgba(201,225,189,.45);color:var(--text);border:1px solid rgba(201,225,189,.9)}
+  .cap-full{background:var(--row-bg);color:var(--muted);border:1px solid var(--border-soft)}
+
+  .signups-list{display:flex;flex-direction:column;gap:10px;margin-bottom:15px}
+  .signup-row{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(201,225,189,.25);
+    border:1px solid rgba(201,225,189,.9);border-radius:var(--radius-sm);font-size:13px;color:var(--text);font-weight:500}
+  .signup-av{width:25px;height:25px;border-radius:50%;background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+
+  .join-btn{width:100%;padding:10px;background:var(--coral);border:none;border-radius:var(--radius-sm);
+    font-size:14px;font-weight:700;font-family:inherit;color:#fff;cursor:pointer;
+    transition:opacity var(--dur-fast) var(--ease)}
+  .join-btn:hover{opacity:.88}
+  .join-btn:disabled{background:var(--border-soft);color:var(--muted);cursor:not-allowed;opacity:1}
+  .join-btn-paid{background:var(--navy-mid)}
+  .join-btn-waitlist{background:transparent;border:1.5px dashed var(--border);color:var(--navy-mid)}
+  .join-btn-waitlist:hover{border-color:var(--navy-mid);opacity:1;background:rgba(15,65,114,.05)}
+
+  .price-badge{font-size:12px;color:var(--text);background:rgba(244,218,166,.4);border:1px solid rgba(244,218,166,.9);
+    border-radius:var(--radius-sm);padding:10px;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+
+  .waitlist-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:10px}
+  .waitlist-count{background:var(--row-bg);border:1px solid var(--border-soft);color:var(--muted);
+    border-radius:var(--radius-pill);padding:5px 10px;font-weight:600;font-size:11px}
+
+  /* ── Inputs ───────────────────────────────────────────── */
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+  .field input{width:100%;padding:10px 15px;border:1px solid var(--border);border-radius:var(--radius-sm);
+    font-size:15px;font-family:inherit;color:var(--text);background:var(--row-bg)}
+  .field input:focus{outline:none;border-color:var(--navy-mid)}
+  .check-row{display:flex;align-items:center;gap:10px;margin-bottom:15px;font-size:13px;cursor:pointer;color:var(--text)}
+  .check-row input{width:15px;height:15px;accent-color:var(--navy)}
+  .field-error{font-size:12px;color:var(--coral);margin-bottom:15px}
+
+  /* ── Modal ────────────────────────────────────────────── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,15,30,.55);display:none;align-items:center;
+    justify-content:center;z-index:var(--z-modal);padding:20px}
+  .modal-overlay.show{display:flex;animation:fadeIn var(--dur-base) var(--ease)}
+  .modal{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-xl);
+    padding:35px 30px;width:100%;max-width:420px;
+    box-shadow:var(--shadow-soft)}
+  .modal-title{font-size:18px;font-weight:700;margin-bottom:5px;color:var(--navy)}
+  .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+  .modal-actions{display:flex;gap:10px;margin-top:5px}
+  .btn-cancel{flex:1;padding:10px;background:var(--row-bg);border:1px solid var(--border-soft);
+    border-radius:var(--radius-sm);font-size:14px;color:var(--muted);cursor:pointer;font-family:inherit}
+  .btn-confirm{flex:2;padding:10px;background:var(--coral);border:none;border-radius:var(--radius-sm);
+    font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;
+    transition:opacity var(--dur-fast) var(--ease)}
+  .btn-confirm:hover{opacity:.88}
+
+  /* ── Toast ────────────────────────────────────────────── */
+  .toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--navy);
+    color:#fff;padding:10px 20px;border-radius:var(--radius-pill);font-size:13px;font-weight:500;
+    transition:transform var(--dur-slow) var(--ease);z-index:var(--z-toast);display:flex;align-items:center;gap:10px;
+    max-width:calc(100vw - 40px)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast i{color:var(--success)}
+
+  .contact-footer{text-align:center;font-size:13px;color:var(--muted);line-height:1.6;padding-top:20px;
+    border-top:1px solid var(--border-soft);margin-top:30px}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+
+<div class="draft-banner"><b>Designforslag</b> · havetshelte.dk's hvide tema anvendt på Forældrehelte · ikke i drift</div>
+
+<div class="topbar">
+  <a class="topbar-brand" href="#"><i class="ti ti-anchor"></i>HAVETS HELTE</a>
+  <a class="topbar-link" href="admin.html">Leder-login</a>
+</div>
+
+<div class="hero">
+  <div class="hero-badge"><i class="ti ti-anchor"></i>Havets Helte</div>
+  <div class="hero-title">Forældrehelte</div>
+  <div class="hero-desc">Vores forening lever af forældre der giver en hånd.</div>
+</div>
+
+<div class="auth-bar">
+  <div class="user-chip">
+    <div class="uava">ST</div>
+    <span>Søren T.</span>
+    <button class="logout">Log ud</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="section-label" id="mine-label"><i class="ti ti-circle-check"></i>Mine tilmeldinger</div>
+  <div class="mine-card" id="mine-card">
+    <div class="mine-item">
+      <div>
+        <div class="mi-title">Søndagsvagter i klubhuset</div>
+        <div class="mi-sub">Formiddag · 10:00 – 12:00</div>
+      </div>
+      <button class="mine-cancel" onclick="cancelSignup(this)">Afmeld</button>
+    </div>
+  </div>
+
+  <div class="section-label"><i class="ti ti-list"></i>Aktive opgaver</div>
+
+  <a class="hub-event" href="#">
+    <div class="he-head">
+      <div class="he-title">Søndagsvagter i klubhuset</div>
+      <span class="he-type timed">Vagter</span>
+    </div>
+    <div class="he-meta">
+      <span><i class="ti ti-calendar"></i>Hver søndag i juni</span>
+      <span><i class="ti ti-map-pin"></i>Klubhuset, havnen</span>
+    </div>
+    <div class="he-desc">Hold åbent og hold øje med de yngste mens de øver knob og søsætning.</div>
+    <div class="he-foot">
+      <span class="he-spots-pill">3 ledige pladser</span>
+      <span class="he-cta">Find en vagt<i class="ti ti-arrow-right"></i></span>
+    </div>
+  </a>
+
+  <a class="hub-event" href="#">
+    <div class="he-head">
+      <div class="he-title">Sankthansbål – hjælp til opsætning</div>
+      <span class="he-type task">Opgaver</span>
+    </div>
+    <div class="he-meta">
+      <span><i class="ti ti-calendar"></i>Fredag 19. juni, kl. 16</span>
+      <span><i class="ti ti-map-pin"></i>Stranden ved klubhuset</span>
+    </div>
+    <div class="he-desc">Vi skal bygge bålet, stille borde op og hænge lys i træerne før gæsterne kommer.</div>
+    <div class="he-foot">
+      <span class="he-spots-pill full">Fuldt</span>
+      <span class="he-cta">Se opgaver<i class="ti ti-arrow-right"></i></span>
+    </div>
+  </a>
+
+  <a class="hub-event" href="#">
+    <div class="he-head">
+      <div class="he-title">Nathejk 2026</div>
+      <span class="he-type event">Event</span>
+    </div>
+    <div class="he-meta">
+      <span><i class="ti ti-calendar"></i>Løbende tilmelding</span>
+      <span><i class="ti ti-map-pin"></i>Tilmelding patruljevis</span>
+    </div>
+    <div class="he-desc">Det Danske Spejderkorps' adventurespejderløb. Foreningen samler penge ind og tilmelder patruljer samlet.</div>
+    <div class="he-foot">
+      <span class="he-spots-pill">2 patruljer tilbage</span>
+      <span class="he-cta">Se event<i class="ti ti-arrow-right"></i></span>
+    </div>
+  </a>
+
+  <div class="section-label"><i class="ti ti-anchor"></i>Eksempel: åbnet opgave</div>
+
+  <div class="info-strip">
+    <div class="info-chip"><i class="ti ti-calendar"></i>Hver søndag i juni</div>
+    <div class="info-chip"><i class="ti ti-map-pin"></i>Klubhuset, havnen</div>
+    <div class="info-chip"><i class="ti ti-clock"></i>2 vagter</div>
+  </div>
+  <div class="ev-desc">Hold åbent og hold øje med de yngste mens de øver knob og søsætning. Én voksen pr. vagt er nok.</div>
+
+  <div class="role-tabs">
+    <div class="role-tab active">
+      <div class="rt-name">Formiddag</div>
+      <div class="rt-sub">1 plads ledig</div>
+    </div>
+    <div class="role-tab">
+      <div class="rt-name">Eftermiddag</div>
+      <div class="rt-sub">Fuldt besat</div>
+    </div>
+  </div>
+
+  <div class="shift-section">
+    <div class="shift-header">
+      <div class="shift-time"><i class="ti ti-clock"></i>10:00 – 12:00</div>
+      <span class="shift-cap cap-open">1 ledig</span>
+    </div>
+    <div class="signups-list">
+      <div class="signup-row"><div class="signup-av">MJ</div>Mette Jensen<span style="margin-left:auto;font-size:11px">18+</span></div>
+    </div>
+    <button class="join-btn" onclick="openModal()">+ Meld dig på</button>
+  </div>
+
+  <div class="section-label"><i class="ti ti-ticket"></i>Eksempel: betalt deltagelse</div>
+  <div class="shift-section">
+    <div class="shift-header">
+      <div class="shift-time"><i class="ti ti-flag"></i>Patrulje (5 personer)</div>
+      <span class="shift-cap cap-open">2 grupper tilbage</span>
+    </div>
+    <div class="price-badge"><i class="ti ti-credit-card"></i>Pris: 200 kr pr. patrulje</div>
+    <button class="join-btn join-btn-paid" onclick="openModal()">Tilmeld og betal 200 kr</button>
+  </div>
+
+  <div class="section-label"><i class="ti ti-users"></i>Eksempel: fuldt + venteliste</div>
+  <div class="shift-section">
+    <div class="shift-header">
+      <div class="shift-time"><i class="ti ti-point"></i>Opstilling fredag</div>
+      <span class="shift-cap cap-full">Fuldt</span>
+    </div>
+    <div class="waitlist-bar"><i class="ti ti-clock-hour-4"></i>Venteliste<span class="waitlist-count">2 på listen</span></div>
+    <button class="join-btn join-btn-waitlist">+ Sæt mig på ventelisten</button>
+  </div>
+
+  <div class="contact-footer">Havets Helte søspejdere</div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">Søndagsvagter i klubhuset</div>
+    <div class="modal-sub">Formiddag · 10:00 – 12:00</div>
+    <div class="field">
+      <label>Dit navn</label>
+      <input type="text" id="m-name" placeholder="Fornavn Efternavn">
+    </div>
+    <div class="field">
+      <label>Din mail</label>
+      <input type="email" id="m-email" placeholder="din@mail.dk">
+    </div>
+    <label class="check-row"><input type="checkbox" id="m-adult">Jeg er 18+ år</label>
+    <div class="field-error" id="modal-error" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuller</button>
+      <button class="btn-confirm" onclick="confirmDemo()">Meld mig på</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="ti ti-circle-check"></i><span id="toast-msg">Tilmeldt. Tak for hjælpen!</span></div>
+
+<script>
+  function openModal(){ document.getElementById('modal-overlay').classList.add('show'); }
+  function closeModal(){
+    document.getElementById('modal-overlay').classList.remove('show');
+    document.getElementById('m-name').value = '';
+    document.getElementById('m-email').value = '';
+    document.getElementById('m-adult').checked = false;
+    document.getElementById('modal-error').style.display = 'none';
+  }
+  function showToast(message){
+    document.getElementById('toast-msg').textContent = message;
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+  function confirmDemo(){
+    const name  = document.getElementById('m-name').value.trim();
+    const email = document.getElementById('m-email').value.trim();
+    const adult = document.getElementById('m-adult').checked;
+    const error = document.getElementById('modal-error');
+    if (!name)              { error.textContent = 'Udfyld dit navn.'; error.style.display = 'block'; return; }
+    if (!email.includes('@')) { error.textContent = 'Udfyld en gyldig mail.'; error.style.display = 'block'; return; }
+    if (!adult)              { error.textContent = 'Sæt kryds i "Jeg er 18+ år". Vagten kræver en voksen.'; error.style.display = 'block'; return; }
+    closeModal();
+    showToast('Tilmeldt. Tak for hjælpen!');
+  }
+  function cancelSignup(btn){
+    if (!confirm('Vil du afmelde "Søndagsvagter i klubhuset"? Pladsen bliver ledig for andre.')) return;
+    const card = document.getElementById('mine-card');
+    btn.closest('.mine-item').remove();
+    if (!card.querySelector('.mine-item')) {
+      card.remove();
+      document.getElementById('mine-label').remove();
+    }
+    showToast('Afmeldt. Vagten er ledig igen.');
+  }
+  document.querySelectorAll('.role-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

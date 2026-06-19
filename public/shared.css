@@ -1,0 +1,58 @@
+/* Shared design system for Havets Helte — admin.html, index.html, attendance.html.
+   Edit colors, fields, and buttons here once; every page picks it up. */
+
+:root{
+  --navy:#003366;--navy-mid:#0f4172;--teal:#2c98b7;--teal-deep:#146e88;--teal-light:#6ebccd;
+  --white:#f6f6f6;--text:#232323;--muted:#7c7c7c;--border:#cbcbcb;
+  --success:#c9e1bd;--success-bg:rgba(201,225,189,.45);--success-border:rgba(201,225,189,.9);
+  --danger:#ea636f;--danger-bg:rgba(234,99,111,.1);
+  --warn-bg:rgba(244,218,166,.4);--warn-border:rgba(244,218,166,.9);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;background:var(--white);min-height:100vh;color:var(--text)}
+
+/* ── Topbar (admin / attendance) ── */
+.topbar{background:var(--navy-mid);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.topbar-brand{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--teal-light)}
+.topbar-brand i{font-size:18px}
+.btn-sm{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff}
+.btn-sm:hover{background:rgba(255,255,255,.1)}
+
+/* ── Login card ── */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 2px 2px rgba(0,0,0,.08)}
+.login-logo{display:block;width:64px;height:64px;margin:0 auto 16px}
+.login-badge{text-align:center;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy-mid);margin-bottom:16px}
+.login-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+
+/* ── Form fields (every form: login, event form, signup modal, member/meeting forms) ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);background:var(--white)}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(15,65,114,.18)}
+.field textarea{resize:vertical;min-height:80px}
+.field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%237c7c7c' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.field.has-error input,.field.has-error textarea,.field.has-error select{border-color:var(--danger);background:var(--danger-bg)}
+.field-error{font-size:12px;color:var(--danger);margin-top:6px;display:none}
+.field.has-error .field-error{display:block}
+.check-row{display:flex;align-items:center;gap:9px;padding:8px 0;margin-bottom:6px;font-size:13px;cursor:pointer;color:var(--text)}
+.check-row input{width:18px;height:18px;accent-color:var(--navy);flex-shrink:0}
+
+/* ── Buttons ── */
+.btn-primary{width:100%;padding:12px;background:var(--navy);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+
+/* ── Status / navigation ── */
+.error-msg{font-size:13px;color:var(--danger);margin-top:10px;display:none}
+.error-msg.show{display:block}
+.state-msg{text-align:center;padding:50px 20px;color:var(--muted)}
+.state-msg i{font-size:36px;color:var(--border);margin-bottom:10px;display:block}
+.back-link{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:16px;font-weight:500;cursor:pointer}
+.back-link:hover{color:var(--navy)}
+
+/* ── Motion ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinning{animation:spin 1s linear infinite}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}

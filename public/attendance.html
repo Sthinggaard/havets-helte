@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fremmøde · Havets Helte</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  :root{
+    --navy:#003366;--navy-mid:#0f4172;--teal:#2c98b7;--teal-deep:#146e88;--teal-light:#6ebccd;
+    --white:#f6f6f6;--text:#232323;--muted:#7c7c7c;--border:#cbcbcb;
+    --success:#c9e1bd;--success-bg:rgba(201,225,189,.45);--success-border:rgba(201,225,189,.9);
+    --danger:#ea636f;--danger-bg:rgba(234,99,111,.1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;background:var(--white);min-height:100vh;color:var(--text)}
+
+  /* ── Topbar ── */
+  .topbar{background:var(--navy-mid);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.1);position:sticky;top:0;z-index:10}
+  .topbar-brand{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--teal-light)}
+  .topbar-brand i{font-size:18px}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .btn-sm{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff}
+  .btn-sm:hover{background:rgba(255,255,255,.1)}
+  .btn-back{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--teal-light);background:none;border:none;cursor:pointer;font-family:inherit;padding:6px 0}
+  .btn-back:hover{color:#fff}
+  .btn-back i{font-size:16px}
+
+  /* ── Login ── */
+  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .login-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 2px 2px rgba(0,0,0,.08)}
+  .login-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy-mid);margin-bottom:16px}
+  .login-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
+  .login-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px}
+  .field input{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);background:var(--white)}
+  .field input:focus{outline:none;border-color:var(--navy-mid)}
+  .btn-login{width:100%;padding:12px;background:var(--navy);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn-login:hover{opacity:.88}
+  .btn-login:disabled{opacity:.6;cursor:not-allowed}
+  .error-msg{font-size:13px;color:var(--danger);margin-top:10px;display:none}
+  .error-msg.show{display:block}
+
+  /* ── Main content ── */
+  .main{max-width:600px;margin:0 auto;padding:20px 16px 60px}
+
+  /* ── Meeting list ── */
+  .section-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;margin-top:20px}
+  .section-label:first-child{margin-top:0}
+  .meeting-card{background:#fff;border-radius:14px;padding:18px;margin-bottom:10px;cursor:pointer;transition:transform .12s,box-shadow .12s;display:flex;align-items:center;gap:14px}
+  .meeting-card:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.15)}
+  .meeting-card:active{transform:translateY(0)}
+  .meeting-gren-av{width:44px;height:44px;border-radius:12px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+  .meeting-info{flex:1}
+  .meeting-gren{font-size:15px;font-weight:600;color:var(--navy)}
+  .meeting-meta{font-size:13px;color:var(--muted);margin-top:2px}
+  .meeting-count{font-size:12px;color:var(--muted);margin-top:4px}
+  .badge-today{font-size:11px;font-weight:600;padding:3px 8px;border-radius:8px;background:var(--success-bg);color:var(--text);flex-shrink:0}
+  .state-msg{text-align:center;padding:50px 20px;color:var(--muted)}
+  .state-msg i{font-size:36px;color:var(--border);margin-bottom:10px;display:block}
+
+  /* ── Attendance header ── */
+  .att-header{background:#fff;border-radius:14px;padding:18px;margin-bottom:12px}
+  .att-title{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:2px}
+  .att-date{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .att-summary{display:flex;gap:12px;margin-bottom:14px}
+  .att-chip{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500}
+  .att-chip.present{background:var(--success-bg);color:var(--text)}
+  .att-chip.absent{background:var(--white);color:var(--muted)}
+
+  /* ── Filter tabs ── */
+  .filter-tabs{display:flex;gap:6px}
+  .filter-tab{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--muted);font-family:inherit}
+  .filter-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+  /* ── Member rows ── */
+  .member-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;margin-bottom:8px;cursor:pointer;transition:background .1s;border:2px solid transparent;user-select:none}
+  .member-row.arrived{background:var(--success-bg);border-color:var(--success-border)}
+  .member-row.waiting{background:var(--white);border-color:var(--border)}
+  .member-row:active{opacity:.6}
+  .member-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+  .member-row.arrived .member-av{background:var(--teal-deep);color:#fff}
+  .member-row.waiting .member-av{background:var(--border);color:#fff}
+  .member-name{flex:1;font-size:15px;font-weight:500}
+  .member-row.waiting .member-name{color:var(--muted)}
+  .member-check{color:var(--teal-deep);font-size:18px;flex-shrink:0}
+  .member-row.updating{opacity:.5;pointer-events:none}
+
+  /* ── Empty states ── */
+  .empty-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:32px 20px;text-align:center;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- ── Login ──────────────────────────────────────────────────────────── -->
+<div id="viewLogin" style="display:none">
+  <div class="login-wrap">
+    <div class="login-card">
+      <img class="login-logo" src="havets_helte_logo_final.svg" alt="Havets Helte" width="64" height="64">
+      <div class="login-badge">Havets Helte</div>
+      <div class="login-title">Fremmøde</div>
+      <div class="login-sub">Log ind med din leder-konto</div>
+      <div class="field"><label for="loginEmail">Mail</label><input type="email" id="loginEmail" autocomplete="email" placeholder="leder@havetshelte.dk"></div>
+      <div class="field"><label for="loginPwd">Adgangskode</label><input type="password" id="loginPwd" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">Log ind</button>
+      <div class="error-msg" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── App shell ───────────────────────────────────────────────────────── -->
+<div id="appShell" style="display:none">
+
+  <!-- Meeting list view -->
+  <div id="viewMeetingList">
+    <div class="topbar">
+      <div class="topbar-brand"><i class="ti ti-checkbox"></i>Fremmøde</div>
+      <div class="topbar-right">
+        <span style="font-size:12px;color:#6ebccd" id="topbarEmail"></span>
+        <button class="btn-sm" onclick="doLogout()">Log ud</button>
+      </div>
+    </div>
+    <div class="main" id="meetingListContent">
+      <div class="state-msg"><i class="ti ti-loader spinning"></i>Henter møder…</div>
+    </div>
+  </div>
+
+  <!-- Attendance view -->
+  <div id="viewAttendance" style="display:none">
+    <div class="topbar">
+      <button class="btn-back" onclick="backToMeetings()"><i class="ti ti-arrow-left"></i>Alle møder</button>
+      <div class="topbar-right">
+        <a href="admin.html" style="font-size:12px;color:#6ebccd;text-decoration:none">Admin</a>
+        <button class="btn-sm" onclick="doLogout()">Log ud</button>
+      </div>
+    </div>
+    <div class="main">
+      <div class="att-header" id="attHeader"></div>
+      <div class="filter-tabs" id="filterTabs" style="display:none;margin-bottom:12px">
+        <button class="filter-tab active" onclick="setFilter('all')">Alle</button>
+        <button class="filter-tab" onclick="setFilter('waiting')">Ikke ankommet</button>
+        <button class="filter-tab" onclick="setFilter('arrived')">Ankommet</button>
+      </div>
+      <div id="memberListContent"></div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinning{display:inline-block;animation:spin 1s linear infinite}
+</style>
+
+<script type="module">
+import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, connectFirestoreEmulator,
+         collection, doc, getDocs, setDoc, deleteDoc,
+         onSnapshot, query, where, serverTimestamp }
+                                  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, connectAuthEmulator,
+         signInWithEmailAndPassword, onAuthStateChanged, signOut }
+                                  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { groupInitials, resolveGroupId, resolveGroupName } from './groups.js';
+
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const firebaseConfig = isLocal
+  ? { projectId:'havets-helte', apiKey:'demo', authDomain:'havets-helte.firebaseapp.com' }
+  : await fetch('/__/firebase/init.json').then(r => r.json());
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+if (isLocal) {
+  connectFirestoreEmulator(db, 'localhost', 8081);
+  connectAuthEmulator(auth, 'http://localhost:9097', { disableWarnings: true });
+}
+
+function groupName(record) {
+  return resolveGroupName(record) || 'Ukendt gren';
+}
+
+function memberMatchesMeetingGroup(member, meeting) {
+  const meetingGroupId = resolveGroupId(meeting);
+  const memberGroupId = resolveGroupId(member);
+  if (meetingGroupId) return memberGroupId === meetingGroupId;
+  return groupName(member) === groupName(meeting);
+}
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+window.doLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  err.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Logger ind…';
+  try {
+    await signInWithEmailAndPassword(auth, email, pwd);
+  } catch(e) {
+    err.textContent = 'Forkert mail eller adgangskode.';
+    err.classList.add('show');
+    btn.disabled = false; btn.textContent = 'Log ind';
+  }
+};
+
+window.doLogout = function() { signOut(auth); };
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('viewLogin').style.display = 'none';
+    document.getElementById('appShell').style.display = 'block';
+    document.getElementById('topbarEmail').textContent = user.email;
+    loadMeetings();
+  } else {
+    document.getElementById('viewLogin').style.display = 'block';
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginBtn').textContent = 'Log ind';
+  }
+});
+
+// ── Meeting list ──────────────────────────────────────────────────────────
+async function loadMeetings() {
+  showMeetingList();
+  const content = document.getElementById('meetingListContent');
+  try {
+    const snap = await getDocs(collection(db, 'meetings'));
+    const meetings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    meetings.sort((a, b) => a.date.localeCompare(b.date));
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayMeetings    = meetings.filter(m => m.date === today);
+    const upcomingMeetings = meetings.filter(m => m.date > today);
+    const pastMeetings     = meetings.filter(m => m.date < today).reverse();
+
+    if (meetings.length === 0) {
+      content.innerHTML = '<div class="state-msg"><i class="ti ti-calendar-off"></i>Ingen møder oprettet endnu.<br>Opret møder i <a href="admin.html" style="color:#0f4172">Lederportalen</a>.</div>';
+      return;
+    }
+
+    content.innerHTML = '';
+
+    if (todayMeetings.length > 0) {
+      content.insertAdjacentHTML('beforeend', '<div class="section-label">I dag</div>');
+      todayMeetings.forEach(m => content.appendChild(buildMeetingCard(m, true)));
+    }
+    if (upcomingMeetings.length > 0) {
+      content.insertAdjacentHTML('beforeend', '<div class="section-label">Kommende</div>');
+      upcomingMeetings.forEach(m => content.appendChild(buildMeetingCard(m, false)));
+    }
+    if (pastMeetings.length > 0) {
+      content.insertAdjacentHTML('beforeend', '<div class="section-label">Tidligere</div>');
+      pastMeetings.forEach(m => content.appendChild(buildMeetingCard(m, false)));
+    }
+  } catch(e) {
+    console.error(e);
+    content.innerHTML = '<div class="state-msg">Fejl ved hentning af møder.</div>';
+  }
+}
+
+function buildMeetingCard(m, isToday) {
+  const d = new Date(m.date + 'T12:00:00');
+  const dStr = d.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long' });
+  const initials = groupInitials(m);
+  const meetingGroup = groupName(m);
+  const card = document.createElement('div');
+  card.className = 'meeting-card';
+  card.onclick = () => openMeeting(m);
+  card.innerHTML = `
+    <div class="meeting-gren-av">${esc(initials)}</div>
+    <div class="meeting-info">
+      <div class="meeting-gren">${esc(meetingGroup)}${m.title ? ' — ' + esc(m.title) : ''}</div>
+      <div class="meeting-meta">${dStr}</div>
+    </div>
+    ${isToday ? '<div class="badge-today">I dag</div>' : '<i class="ti ti-chevron-right" style="color:var(--muted)"></i>'}`;
+  return card;
+}
+
+// ── Attendance view ───────────────────────────────────────────────────────
+let currentMeeting  = null;
+let allMembers      = [];
+let currentArrived  = new Set();
+let currentFilter   = 'all';
+let unsubAttendance = null;
+
+async function openMeeting(meeting) {
+  currentMeeting = meeting;
+
+  const memberSnap = await getDocs(collection(db, 'members'));
+  allMembers = memberSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(member => member.active !== false)
+    .filter(member => memberMatchesMeetingGroup(member, meeting));
+  allMembers.sort((a, b) => a.name.localeCompare(b.name, 'da'));
+
+  const d = new Date(meeting.date + 'T12:00:00');
+  const dStr = d.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const meetingGroup = groupName(meeting);
+  document.getElementById('attHeader').innerHTML = `
+    <div class="att-title">${esc(meetingGroup)}${meeting.title ? ' — ' + esc(meeting.title) : ''}</div>
+    <div class="att-date">${dStr}</div>
+    <div class="att-summary">
+      <div class="att-chip present" id="chipArrived">— ankommet</div>
+      <div class="att-chip absent"  id="chipWaiting">— afventer</div>
+    </div>`;
+
+  currentFilter = 'all';
+  if (unsubAttendance) unsubAttendance();
+  unsubAttendance = onSnapshot(
+    query(collection(db, 'attendance'), where('meetingId', '==', meeting.id)),
+    snap => {
+      currentArrived = new Set(snap.docs.map(d => d.data().memberId));
+      renderAttendanceList();
+    }
+  );
+
+  showAttendanceView();
+}
+
+function renderAttendanceList() {
+  const arrivedCount = currentArrived.size;
+  const waitingCount = allMembers.length - currentArrived.size;
+  const ca = document.getElementById('chipArrived');
+  const cw = document.getElementById('chipWaiting');
+  if (ca) ca.textContent = `${arrivedCount} ankommet`;
+  if (cw) cw.textContent = `${waitingCount} ikke ankommet`;
+
+  document.getElementById('filterTabs').style.display = 'flex';
+
+  if (allMembers.length === 0) {
+    document.getElementById('memberListContent').innerHTML =
+      '<div class="empty-card">Ingen aktive medlemmer i denne gren endnu.<br>Tilføj dem i <a href="admin.html" style="color:#0f4172">Lederportalen</a>.</div>';
+    return;
+  }
+
+  const visible = allMembers.filter(m => {
+    if (currentFilter === 'arrived') return currentArrived.has(m.id);
+    if (currentFilter === 'waiting') return !currentArrived.has(m.id);
+    return true;
+  });
+
+  document.getElementById('memberListContent').innerHTML = visible.map(m => {
+    const isArrived = currentArrived.has(m.id);
+    const ini = m.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    return `<div class="member-row ${isArrived ? 'arrived' : 'waiting'}"
+                 data-member-id="${m.id}"
+                 onclick="toggleArrived('${m.id}')">
+      <div class="member-av">${esc(ini)}</div>
+      <div class="member-name">${esc(m.name)}</div>
+      ${isArrived ? '<div class="member-status"><i class="ti ti-check"></i><span>Ankommet</span></div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+window.setFilter = function(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['all','waiting','arrived'][i] === f);
+  });
+  renderAttendanceList();
+};
+
+window.toggleArrived = async function(memberId) {
+  if (!currentMeeting) return;
+  const row = document.querySelector(`[data-member-id="${memberId}"]`);
+  if (row) row.classList.add('updating');
+
+  const docId  = `${currentMeeting.id}_${memberId}`;
+  const docRef = doc(db, 'attendance', docId);
+  const isArrived = row?.classList.contains('arrived');
+
+  try {
+    if (isArrived) {
+      await deleteDoc(docRef);
+    } else {
+      await setDoc(docRef, {
+        meetingId: currentMeeting.id,
+        memberId,
+        arrived:   true,
+        markedAt:  serverTimestamp(),
+        markedBy:  auth.currentUser?.uid || '',
+      });
+    }
+  } catch(e) {
+    console.error(e);
+    if (row) row.classList.remove('updating');
+    alert('Kunne ikke opdatere fremmøde — prøv igen.');
+  }
+};
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function showMeetingList() {
+  document.getElementById('viewMeetingList').style.display = 'block';
+  document.getElementById('viewAttendance').style.display  = 'none';
+}
+
+function showAttendanceView() {
+  document.getElementById('viewMeetingList').style.display = 'none';
+  document.getElementById('viewAttendance').style.display  = 'block';
+}
+
+window.backToMeetings = function() {
+  if (unsubAttendance) { unsubAttendance(); unsubAttendance = null; }
+  currentMeeting = null;
+  allMembers     = [];
+  currentArrived = new Set();
+  currentFilter  = 'all';
+  document.getElementById('filterTabs').style.display = 'none';
+  loadMeetings();
+};
+</script>
+</body>
+</html>

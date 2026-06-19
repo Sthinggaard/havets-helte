@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lederportal · Havets Helte</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ── Layout ── */
+  .topbar-user{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--teal-light)}
+  .topbar-user span{color:#fff}
+  .main{max-width:700px;margin:0 auto;padding:24px 18px 60px}
+
+  /* ── Dashboard ── */
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .section-title{font-size:18px;font-weight:700;color:var(--navy)}
+  .btn-new{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:var(--danger);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn-new:hover{opacity:.88}
+
+  .event-card{background:#fff;border-radius:14px;padding:18px;margin-bottom:12px}
+  .ec-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .ec-title{font-size:16px;font-weight:600}
+  .ec-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .ec-meta span{display:flex;align-items:center;gap:4px}
+  .badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px}
+  .badge-active{background:var(--success-bg);color:var(--text)}
+  .badge-inactive{background:var(--white);color:var(--muted)}
+  .ec-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn-action{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border:1px solid var(--border);background:#fff;color:var(--text)}
+  .btn-action:hover{border-color:var(--navy)}
+  .btn-action.danger{color:var(--danger)}
+  .btn-action.danger:hover{border-color:var(--danger);background:var(--danger-bg)}
+  .btn-action.success{color:var(--text);border-color:var(--success-border)}
+  .btn-action.success:hover{background:var(--success-bg)}
+
+  /* ── Event form ── */
+  .form-card{background:#fff;border-radius:14px;padding:24px}
+  .form-title{font-size:17px;font-weight:700;margin-bottom:20px}
+  .form-row{display:flex;gap:12px}
+  .form-row .field{flex:1}
+  .divider{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 12px;display:flex;align-items:center;gap:8px}
+  .divider::after{content:'';flex:1;height:1px;background:var(--border)}
+  .form-actions{display:flex;gap:10px;margin-top:24px}
+  .btn-secondary{flex:1;padding:11px;background:var(--white);border:none;border-radius:10px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;font-family:inherit}
+  .btn-save{flex:2;padding:11px;background:var(--navy);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn-save:hover{opacity:.88}
+  .btn-save:disabled{opacity:.6;cursor:not-allowed}
+
+  /* Slot builder */
+  .slot-row{background:var(--white);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px}
+  .slot-row.has-error .sl-label{border-color:var(--danger);background:var(--danger-bg)}
+  .slot-row.has-error .field-error{display:block}
+  .si-field-label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:4px}
+  .slot-inputs{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .slot-inputs .si-label{flex:2;min-width:130px}
+  .slot-inputs .si-role{flex:1;min-width:110px}
+  .slot-inputs .si-sub{flex:2;min-width:120px}
+  .slot-inputs .si-cap{width:104px}
+  .slot-inputs .si-kind{min-width:110px}
+  .slot-inputs input,.slot-inputs select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;width:100%}
+  .slot-inputs input:focus,.slot-inputs select:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(15,65,114,.18)}
+  .btn-rm-slot{padding:10px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0}
+  .btn-rm-slot:hover{border-color:var(--danger);color:var(--danger)}
+  .btn-add-slot{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:#fff;border:1px dashed var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;font-family:inherit;margin-top:4px}
+  .btn-add-slot:hover{border-color:var(--navy);color:var(--navy)}
+  .slots-error{font-size:13px;color:var(--danger);margin:6px 0 0;display:none}
+  .slots-error.show{display:block}
+  .slot-extras{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+  .slot-extras label{display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+  .slot-extras input[type=checkbox]{accent-color:var(--navy);width:14px;height:14px}
+  .slot-group-size{display:flex;align-items:center;gap:5px}
+  .slot-group-size input{padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);background:#fff;width:60px}
+
+  /* Collapsible field group (image upload, payment extras) */
+  .collapsible{display:none;margin-bottom:14px}
+  .collapsible.visible{display:block}
+
+  /* Location map preview */
+  .loc-map-wrap{position:relative;width:100%;height:180px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+  .loc-map{width:100%;height:100%;border:none;display:block}
+  .loc-map-loading{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--muted);background:#fff}
+
+  /* Image upload */
+  .img-dropzone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:border-color .15s}
+  .img-dropzone:hover{border-color:var(--navy-mid);color:var(--navy)}
+  .img-dropzone:focus-visible{outline:none;border-color:var(--navy-mid);color:var(--navy);box-shadow:0 0 0 3px rgba(15,65,114,.18)}
+  .img-dropzone i{font-size:26px;display:block;margin-bottom:6px;color:var(--border)}
+  .img-dropzone:hover i{color:var(--navy-mid)}
+  .img-preview{width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-top:10px;display:none}
+  .img-preview.show{display:block}
+  .img-status{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px}
+  .img-clear{background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;font-family:inherit;padding:0;margin-top:4px;text-decoration:underline;display:none}
+  .img-clear.show{display:inline}
+
+  /* ── Signups view ── */
+  .signups-card{background:#fff;border-radius:14px;padding:20px;margin-bottom:16px}
+  .sv-slot-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .sv-slot-title{font-size:14px;font-weight:600}
+  .sv-cap{font-size:12px;color:var(--muted)}
+  .sv-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--white);border-radius:9px;margin-bottom:6px;font-size:13px}
+  .sv-row:last-child{margin-bottom:0}
+  .sv-av{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+  .sv-info{flex:1}
+  .sv-name{font-weight:500}
+  .sv-email{font-size:12px;color:var(--muted)}
+  .sv-adult{font-size:11px;color:var(--text);font-weight:500}
+  .btn-del-signup{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--muted);cursor:pointer;font-family:inherit}
+  .btn-del-signup:hover{border-color:var(--danger);color:var(--danger)}
+  .sv-empty{font-size:13px;color:var(--muted);padding:8px 0}
+
+  /* Views */
+  [data-view]{display:none}
+  [data-view].active{display:block}
+  #viewLogin{display:none}
+  #viewLogin.active{display:flex}
+
+  /* ── Section nav ── */
+  .section-nav{background:var(--navy-mid);display:flex;border-bottom:1px solid rgba(255,255,255,.1);overflow-x:auto;scrollbar-width:none}
+  .section-nav::-webkit-scrollbar{display:none}
+  .section-btn{padding:11px 18px;font-size:13px;font-weight:500;color:var(--teal-light);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;font-family:inherit;transition:color .15s;margin-bottom:-1px;white-space:nowrap;flex-shrink:0}
+  .section-btn.active{color:#fff;border-bottom-color:var(--danger)}
+  .section-btn:hover:not(.active){color:#fff}
+
+  /* ── Sub-nav ── */
+  .sub-nav{display:flex;gap:6px;margin-bottom:20px;background:#fff;border-radius:10px;padding:4px}
+  .sub-btn{flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:500;background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s}
+  .sub-btn.active{background:var(--navy);color:#fff}
+
+  /* ── Add form (inline) ── */
+  .add-form{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .add-form .field{margin-bottom:0;flex:1;min-width:130px}
+  .add-form .btn-add{padding:10px 16px;background:var(--navy);border:none;border-radius:9px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
+  .add-form .btn-add:hover{opacity:.88}
+
+  /* ── Slot kind extras ── */
+  .si-kind select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;color:var(--text);background:#fff;cursor:pointer}
+  .slot-extras{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:6px}
+  .slot-price-wrap{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+  .slot-price-wrap input,.slot-group-minmax input{width:68px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit}
+  .slot-adult-wrap,.slot-group-wrap,.slot-unlim-wrap{display:flex;align-items:center;gap:5px;padding:6px 0;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .slot-adult-wrap input,.slot-group-wrap input,.slot-unlim-wrap input{width:16px;height:16px;accent-color:var(--navy);flex-shrink:0}
+  .si-cap .slot-unlim-wrap{margin-top:6px;font-size:11px}
+  .sl-cap:disabled{background:var(--white);color:var(--muted)}
+  .slot-group-minmax{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+
+  /* ── Paid toggle ── */
+  .btn-paid{padding:5px 10px;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid var(--border);background:#fff;color:var(--muted)}
+  .btn-paid:hover{border-color:var(--success-border);color:var(--text)}
+  .btn-paid.is-paid{background:var(--success-bg);border-color:var(--success-border);color:var(--text);font-weight:500}
+
+  /* ── Members list ── */
+  .gren-section{margin-bottom:16px}
+  .gren-header{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-left:2px}
+  .member-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;border-radius:10px;margin-bottom:6px}
+  .member-av{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+  .member-name{font-size:14px;font-weight:500;flex:1}
+  .member-toolbar{display:flex;gap:6px;margin-bottom:16px;background:#fff;border-radius:10px;padding:4px}
+  .member-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .member-filters select{flex:1;min-width:140px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%237c7c7c' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+  .member-day-chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;background:rgba(51,122,183,.12);color:var(--navy-mid)}
+  .member-status-chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px}
+  .member-status-chip.active{background:var(--success-bg);color:var(--text)}
+  .member-status-chip.inactive{background:var(--white);color:var(--muted);border:1px solid var(--border)}
+  .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+  .summary-card{background:#fff;border-radius:12px;padding:16px}
+  .summary-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .summary-value{font-size:24px;font-weight:700;color:var(--navy)}
+  .history-list{display:flex;flex-direction:column;gap:10px}
+  .history-row{background:#fff;border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .history-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+  .history-meta{font-size:12px;color:var(--muted);line-height:1.5}
+  .history-badge{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;white-space:nowrap}
+  .history-badge.present{background:var(--success-bg);color:var(--text);border:1px solid var(--success-border)}
+  .history-badge.absent{background:var(--white);color:var(--muted);border:1px solid var(--border)}
+  .history-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;background:#fff;border-radius:10px;padding:4px}
+  .trend-list{display:flex;flex-direction:column;gap:12px}
+  .trend-card{background:#fff;border-radius:12px;padding:16px}
+  .trend-bar{height:10px;border-radius:999px;background:var(--white);overflow:hidden;margin-top:10px}
+  .trend-bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--navy-mid))}
+  .trend-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  @media (max-width:640px){.summary-grid{grid-template-columns:1fr}.history-row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- ── Login ─────────────────────────────────────────────────────────── -->
+<div id="viewLogin" data-view>
+  <div class="login-wrap">
+    <div class="login-card">
+      <img class="login-logo" src="havets_helte_logo_final.svg" alt="Havets Helte" width="64" height="64">
+      <div class="login-badge">Havets Helte</div>
+      <div class="login-title">Lederportal</div>
+      <div class="login-sub">Log ind med din leder-konto</div>
+      <div class="field"><label>Mail</label><input type="email" id="loginEmail" autocomplete="email" placeholder="leder@havetshelte.dk"></div>
+      <div class="field"><label>Adgangskode</label><input type="password" id="loginPwd" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">Log ind</button>
+      <div class="error-msg" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── App shell (authenticated) ─────────────────────────────────────── -->
+<div id="appShell" style="display:none">
+  <div class="topbar">
+    <div class="topbar-brand"><i class="ti ti-anchor"></i>Lederportal</div>
+    <div class="topbar-user"><span id="topbarEmail"></span><button class="btn-sm" onclick="doLogout()">Log ud</button></div>
+  </div>
+  <div class="section-nav">
+    <button class="section-btn active" onclick="showSection('vagter')">Vagter</button>
+    <button class="section-btn" onclick="showSection('opgaver')">Opgaver</button>
+    <button class="section-btn" onclick="showSection('arrangementer')">Arrangementer</button>
+    <button class="section-btn" onclick="showSection('attendance')">Fremmøde</button>
+    <button class="section-btn" onclick="showSection('members')">Medlemmer</button>
+  </div>
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div id="viewDash" data-view>
+      <div class="section-head">
+        <div class="section-title" id="dashTitle">Vagter</div>
+        <button class="btn-new" onclick="openForm()"><i class="ti ti-plus"></i><span id="dashNewLabel">Ny vagt</span></button>
+      </div>
+      <div id="eventList"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter…</div></div>
+    </div>
+
+    <!-- Event form -->
+    <div id="viewForm" data-view>
+      <div class="back-link" onclick="showDash()"><i class="ti ti-arrow-left"></i>Annullér</div>
+      <div class="form-card">
+        <div class="form-title" id="formTitle">Ny opgave</div>
+        <input type="hidden" id="formEventId">
+        <div class="field" id="fTitleField">
+          <label for="fTitle">Titel *</label>
+          <input type="text" id="fTitle" placeholder="Sankt Hans på Sluseholmen" oninput="this.closest('.field').classList.remove('has-error')">
+          <div class="field-error">Udfyld opgavens titel.</div>
+        </div>
+        <div class="field"><label for="fDesc">Beskrivelse</label><textarea id="fDesc" placeholder="Kort beskrivelse til forældrene…"></textarea></div>
+        <div class="form-row">
+          <div class="field"><label for="fDate">Dato-tekst</label><input type="text" id="fDate" placeholder="Tirsdag 23. juni"></div>
+          <div class="field"><label for="fLoc">Sted</label><input type="text" id="fLoc" placeholder="Sluseholmen" oninput="onLocationInput()"></div>
+        </div>
+        <div class="collapsible loc-map-wrap" id="locMapWrap"></div>
+        <input type="hidden" id="fType">
+        <div class="collapsible" id="imgUploadWrap">
+          <label for="fImageFile" style="display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px">Billede</label>
+          <input type="file" id="fImageFile" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+          <div class="img-dropzone" tabindex="0" role="button" aria-label="Vælg billede" onclick="document.getElementById('fImageFile').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('fImageFile').click();}">
+            <i class="ti ti-photo-up"></i>
+            Klik for at vælge billede
+          </div>
+          <img id="imgPreview" class="img-preview" alt="">
+          <div class="img-status" id="imgStatus"></div>
+          <button class="img-clear" id="imgClear" onclick="clearImage()">Fjern billede</button>
+        </div>
+
+        <div class="divider">Pladser</div>
+        <div id="slotsList"></div>
+        <button class="btn-add-slot" onclick="addSlotRow()"><i class="ti ti-plus"></i>Tilføj plads</button>
+        <div class="slots-error" id="slotsError">Tilføj mindst én plads.</div>
+
+        <div class="collapsible" id="eventExtrasWrap">
+          <div class="divider">Betaling</div>
+          <div class="form-row">
+            <div class="field"><label for="fPayUrl">MobilePay-link</label><input type="url" id="fPayUrl" placeholder="https://mobilepay.dk/…"></div>
+            <div class="field" style="max-width:160px"><label for="fCancelDays">Aflysningsfrist (dage)</label><input type="number" id="fCancelDays" min="0" placeholder="3"></div>
+          </div>
+        </div>
+
+        <div class="form-actions" style="flex-direction:column;align-items:stretch">
+          <label class="check-row"><input type="checkbox" id="fActive" checked>Aktiv (synlig for forældre)</label>
+          <div style="display:flex;gap:10px">
+            <button class="btn-secondary" onclick="showDash()">Annullér</button>
+            <button class="btn-save" id="saveBtn" onclick="saveEvent()">Gem opgave</button>
+          </div>
+          <div class="error-msg" id="formErr" role="alert"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signups view -->
+    <div id="viewSignups" data-view>
+      <div class="back-link" onclick="showDash()"><i class="ti ti-arrow-left"></i><span id="backToListLabel">Alle vagter</span></div>
+      <div id="signupsContent"></div>
+    </div>
+
+    <!-- Members list -->
+    <div id="viewMembers" data-view>
+      <div class="section-head">
+        <div class="section-title">Medlemmer</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a href="backfill-groups.html" class="btn-action" style="text-decoration:none"><i class="ti ti-database-cog"></i>Backfill grupper</a>
+          <button class="btn-new" onclick="openMemberForm()"><i class="ti ti-plus"></i>Nyt medlem</button>
+        </div>
+      </div>
+      <div class="member-toolbar">
+        <button class="sub-btn active" id="memberFilterAll" onclick="setMemberFilter('all')">Alle</button>
+        <button class="sub-btn" id="memberFilterActive" onclick="setMemberFilter('active')">Aktive</button>
+        <button class="sub-btn" id="memberFilterInactive" onclick="setMemberFilter('inactive')">Inaktive</button>
+      </div>
+      <div class="member-filters">
+        <select id="memberGrenFilter" onchange="setMemberGrenFilter(this.value)"></select>
+        <select id="memberDayFilter" onchange="setMemberDayFilter(this.value)"></select>
+      </div>
+      <div id="memberList"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter…</div></div>
+    </div>
+
+    <!-- Member form -->
+    <div id="viewMemberForm" data-view>
+      <div class="back-link" onclick="showMembers()"><i class="ti ti-arrow-left"></i>Annullér</div>
+      <div class="form-card">
+        <div class="form-title" id="memberFormTitle">Nyt medlem</div>
+        <input type="hidden" id="formMemberId">
+        <div class="form-row">
+          <div class="field"><label>Navn *</label><input id="mName" placeholder="Fornavn Efternavn"></div>
+          <div class="field"><label>Gren *</label><select id="mGren"></select></div>
+        </div>
+        <div class="field"><label>Mødedag</label><select id="mDay"></select></div>
+        <div class="form-row">
+          <div class="field"><label>Fødselsdato</label><input type="date" id="mFoedsel"></div>
+          <div class="field"><label>Startdato</label><input type="date" id="mStart"></div>
+        </div>
+        <label class="check-row"><input type="checkbox" id="mFoto"> Foto modtaget</label>
+        <label class="check-row"><input type="checkbox" id="mActive" checked>Aktivt medlem</label>
+        <div class="form-actions">
+          <button class="btn-secondary" onclick="showMembers()">Annullér</button>
+          <button class="btn-save" onclick="saveMember()">Gem medlem</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Member attendance history -->
+    <div id="viewMemberHistory" data-view>
+      <div class="back-link" onclick="showMembers()"><i class="ti ti-arrow-left"></i>Tilbage til medlemmer</div>
+      <div id="memberHistoryContent"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter historik…</div></div>
+    </div>
+
+    <!-- Meetings list -->
+    <div id="viewMeetings" data-view>
+      <div class="section-head">
+        <div class="section-title">Fremmøde</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-action" onclick="viewAttendanceTrends()"><i class="ti ti-chart-bar"></i>Trends</button>
+          <button class="btn-new" onclick="openMeetingForm()"><i class="ti ti-plus"></i>Nyt møde</button>
+        </div>
+      </div>
+      <a href="attendance.html" style="display:flex;align-items:center;gap:8px;background:var(--navy);color:#fff;padding:13px 16px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:600;margin-bottom:16px">
+        <i class="ti ti-checkbox" style="font-size:18px;color:#6ebccd"></i>
+        Åbn fremmøde-app
+        <i class="ti ti-arrow-right" style="margin-left:auto;opacity:.6"></i>
+      </a>
+      <div id="meetingList"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter…</div></div>
+    </div>
+
+    <!-- Meeting form -->
+    <div id="viewMeetingForm" data-view>
+      <div class="back-link" onclick="showMeetings()"><i class="ti ti-arrow-left"></i>Annullér</div>
+      <div class="form-card">
+        <div class="form-title" id="meetingFormTitle">Nyt møde</div>
+        <input type="hidden" id="formMeetingId">
+        <div class="field"><label>Dato *</label><input type="date" id="mtDate"></div>
+        <div class="field"><label>Gren *</label><select id="mtGren"></select></div>
+        <div class="field"><label>Titel</label><input id="mtTitle" placeholder="Valgfri (fx Sommermøde)"></div>
+        <div class="form-actions">
+          <button class="btn-secondary" onclick="showMeetings()">Annullér</button>
+          <button class="btn-save" onclick="saveMeeting()">Gem møde</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meeting attendance summary -->
+    <div id="viewMeetingHistory" data-view>
+      <div class="back-link" onclick="showMeetings()"><i class="ti ti-arrow-left"></i>Tilbage til møder</div>
+      <div id="meetingHistoryContent"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter fremmøde…</div></div>
+    </div>
+
+    <!-- Attendance trends -->
+    <div id="viewAttendanceTrends" data-view>
+      <div class="back-link" onclick="showMeetings()"><i class="ti ti-arrow-left"></i>Tilbage til møder</div>
+      <div id="attendanceTrendsContent"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter trends…</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, connectFirestoreEmulator,
+         collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc,
+         onSnapshot, query, where, serverTimestamp }
+                                  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, connectAuthEmulator,
+         signInWithEmailAndPassword, onAuthStateChanged, signOut }
+                                  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getStorage, connectStorageEmulator,
+         ref as storageRef, uploadBytesResumable, getDownloadURL }
+                                  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+import { populateGroupSelect, resolveGroupId, resolveGroupName,
+         GROUP_OPTIONS, DAY_OPTIONS, populateDaySelect, getDayNameById } from './groups.js';
+
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const firebaseConfig = isLocal
+  ? { projectId:'havets-helte', apiKey:'demo', authDomain:'havets-helte.firebaseapp.com' }
+  : await fetch('/__/firebase/init.json').then(r => r.json());
+
+const app     = initializeApp(firebaseConfig);
+const db      = getFirestore(app);
+const auth    = getAuth(app);
+const storage = getStorage(app);
+
+populateGroupSelect(document.getElementById('mGren'));
+populateGroupSelect(document.getElementById('mtGren'));
+populateDaySelect(document.getElementById('mDay'));
+
+function populateMemberFilterSelects() {
+  const grenFilter = document.getElementById('memberGrenFilter');
+  grenFilter.innerHTML = '<option value="">Alle grene</option>' +
+    GROUP_OPTIONS.map(g => `<option value="${g.id}">${g.label}</option>`).join('');
+  const dayFilter = document.getElementById('memberDayFilter');
+  dayFilter.innerHTML = '<option value="">Alle dage</option>' +
+    DAY_OPTIONS.map(d => `<option value="${d.id}">${d.label}</option>`).join('');
+}
+populateMemberFilterSelects();
+
+if (isLocal) {
+  connectFirestoreEmulator(db, 'localhost', 8081);
+  connectAuthEmulator(auth, 'http://localhost:9097', { disableWarnings: true });
+  connectStorageEmulator(storage, 'localhost', 9199);
+}
+
+function groupName(record) {
+  return resolveGroupName(record) || 'Ukendt gren';
+}
+
+function matchesGroup(leftRecord, rightRecord) {
+  const leftGroupId = resolveGroupId(leftRecord);
+  const rightGroupId = resolveGroupId(rightRecord);
+  if (leftGroupId && rightGroupId) return leftGroupId === rightGroupId;
+  return groupName(leftRecord) === groupName(rightRecord);
+}
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(filename, headers, rows) {
+  const csv = [headers, ...rows]
+    .map(row => row.map(csvCell).join(','))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+}
+
+function slugifyFilename(value, fallback = 'export') {
+  return String(value || fallback)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || fallback;
+}
+
+function isoMonthsAgo(months) {
+  const date = new Date();
+  date.setMonth(date.getMonth() - months);
+  return date.toISOString().slice(0, 10);
+}
+
+function filterMeetingsByPeriod(meetings, period) {
+  if (period === 'all') return meetings;
+  const fromDate = period === '6m' ? isoMonthsAgo(6) : isoMonthsAgo(12);
+  return meetings.filter(meeting => (meeting.date || '') >= fromDate);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  err.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Logger ind…';
+  try {
+    await signInWithEmailAndPassword(auth, email, pwd);
+  } catch(e) {
+    err.textContent = 'Forkert mail eller adgangskode.';
+    err.classList.add('show');
+    btn.disabled = false; btn.textContent = 'Log ind';
+  }
+}
+
+function doLogout() { signOut(auth); }
+window.doLogin  = doLogin;
+window.doLogout = doLogout;
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    document.getElementById('viewLogin').classList.remove('active');
+    document.getElementById('appShell').style.display = 'block';
+    document.getElementById('topbarEmail').textContent = user.email;
+    showDash();
+  } else {
+    document.getElementById('viewLogin').classList.add('active');
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginBtn').textContent = 'Log ind';
+  }
+});
+
+// ── Event type / section config ─────────────────────────────────────────────
+const EVENT_TYPES = {
+  vagter:        { type: 'timed', title: 'Vagter',        newLabel: 'Ny vagt',        formNew: 'Ny vagt',        formEdit: 'Rediger vagt',        saveLabel: 'Gem vagt',        empty: 'Ingen vagter endnu.<br>Opret en ny ovenfor.' },
+  opgaver:       { type: 'task',  title: 'Opgaver',       newLabel: 'Ny opgave',       formNew: 'Ny opgave',       formEdit: 'Rediger opgave',       saveLabel: 'Gem opgave',       empty: 'Ingen opgaver endnu.<br>Opret en ny ovenfor.' },
+  arrangementer: { type: 'event', title: 'Arrangementer', newLabel: 'Nyt arrangement', formNew: 'Nyt arrangement', formEdit: 'Rediger arrangement', saveLabel: 'Gem arrangement', empty: 'Ingen arrangementer endnu.<br>Opret en ny ovenfor.' },
+};
+const SECTION_ORDER = ['vagter', 'opgaver', 'arrangementer', 'attendance', 'members'];
+let currentSection = 'vagter';
+function sectionForType(type) {
+  return Object.keys(EVENT_TYPES).find(k => EVENT_TYPES[k].type === type) || 'vagter';
+}
+
+// ── View routing ──────────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('#appShell [data-view]').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+window.showDash = function(section) {
+  currentSection = section || currentSection;
+  document.querySelectorAll('.section-btn').forEach((b, i) =>
+    b.classList.toggle('active', SECTION_ORDER[i] === currentSection));
+  document.getElementById('dashTitle').textContent    = EVENT_TYPES[currentSection].title;
+  document.getElementById('dashNewLabel').textContent = EVENT_TYPES[currentSection].newLabel;
+  showView('viewDash');
+  loadDashboard(EVENT_TYPES[currentSection].type);
+};
+
+// ── Dashboard ─────────────────────────────────────────────────────────────
+let unsubDash = null;
+
+function loadDashboard(type) {
+  if (unsubDash) unsubDash();
+  unsubDash = onSnapshot(query(collection(db, 'events'), where('type', '==', type)), snap => {
+    const events = [];
+    snap.forEach(d => events.push({ id: d.id, ...d.data() }));
+    events.sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      return (b.created?.seconds || 0) - (a.created?.seconds || 0);
+    });
+    const list = document.getElementById('eventList');
+    if (events.length === 0) {
+      list.innerHTML = `<div class="state-msg"><i class="ti ti-calendar-off"></i>${EVENT_TYPES[currentSection].empty}</div>`;
+      return;
+    }
+    list.innerHTML = '';
+    events.forEach(ev => {
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      card.innerHTML = `
+        <div class="ec-head">
+          <div>
+            <div class="ec-title">${esc(ev.title)}</div>
+          </div>
+          <span class="badge ${ev.active ? 'badge-active' : 'badge-inactive'}">${ev.active ? 'Aktiv' : 'Inaktiv'}</span>
+        </div>
+        <div class="ec-meta">
+          ${ev.dateText  ? `<span><i class="ti ti-calendar"></i>${esc(ev.dateText)}</span>` : ''}
+          ${ev.location  ? `<span><i class="ti ti-map-pin"></i>${esc(ev.location)}</span>`  : ''}
+          <span><i class="ti ti-layers"></i>${(ev.slots||[]).length} ${(ev.slots||[]).length === 1 ? 'plads' : 'pladser'}</span>
+        </div>
+        <div class="ec-actions">
+          <button class="btn-action" onclick="viewSignups('${ev.id}')"><i class="ti ti-users"></i>Tilmeldinger</button>
+          <button class="btn-action" onclick="openForm('${ev.id}')"><i class="ti ti-edit"></i>Rediger</button>
+          <button class="btn-action" onclick="toggleActive('${ev.id}',${!ev.active})">
+            <i class="ti ti-${ev.active ? 'eye-off' : 'eye'}"></i>${ev.active ? 'Deaktivér' : 'Aktivér'}
+          </button>
+          <button class="btn-action danger" onclick="deleteEvent('${ev.id}')"><i class="ti ti-trash"></i>Slet</button>
+        </div>`;
+      list.appendChild(card);
+    });
+  });
+}
+
+async function toggleActive(eventId, active) {
+  try { await updateDoc(doc(db, 'events', eventId), { active }); }
+  catch(e) { console.error(e); alert('Kunne ikke opdatere.'); }
+}
+
+async function deleteEvent(eventId) {
+  const signupSnap = await getDocs(query(collection(db, 'signups'), where('eventId', '==', eventId)));
+  const count = signupSnap.size;
+  const msg = count > 0
+    ? `Slet opgaven? Der er ${count} tilmelding${count !== 1 ? 'er' : ''} der også slettes.`
+    : 'Slet opgaven?';
+  if (!confirm(msg)) return;
+  try {
+    const dels = [];
+    signupSnap.forEach(d => {
+      dels.push(deleteDoc(doc(db, 'signups', d.id)));
+      dels.push(deleteDoc(doc(db, 'signupContacts', d.id)).catch(() => {}));
+    });
+    await Promise.all(dels);
+    await deleteDoc(doc(db, 'events', eventId));
+  } catch(e) { console.error(e); alert('Sletning fejlede.'); }
+}
+
+window.toggleActive = toggleActive;
+window.deleteEvent  = deleteEvent;
+
+// ── Event form ────────────────────────────────────────────────────────────
+let slotCounter    = 0;
+let pendingImageUrl = '';
+let currentImageUrl = '';
+
+function refreshPaymentVisibility() {
+  const anyPaid = Array.from(document.querySelectorAll('#slotsList .sl-kind')).some(sel => sel.value === 'paid');
+  document.getElementById('eventExtrasWrap').classList.toggle('visible', anyPaid);
+}
+
+window.handleImageUpload = async function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const status  = document.getElementById('imgStatus');
+  const preview = document.getElementById('imgPreview');
+  const clear   = document.getElementById('imgClear');
+
+  status.textContent = 'Uploader…';
+  preview.classList.remove('show');
+
+  try {
+    const path = `events/${crypto.randomUUID()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const fileRef = storageRef(storage, path);
+    await new Promise((resolve, reject) => {
+      const task = uploadBytesResumable(fileRef, file);
+      task.on('state_changed',
+        snap => { status.textContent = `Uploader… ${Math.round(snap.bytesTransferred/snap.totalBytes*100)}%`; },
+        reject,
+        resolve
+      );
+    });
+    pendingImageUrl = await getDownloadURL(fileRef);
+    preview.src = pendingImageUrl;
+    preview.classList.add('show');
+    clear.classList.add('show');
+    status.textContent = 'Billede klar ✓';
+  } catch(e) {
+    console.error(e);
+    status.textContent = 'Upload fejlede — prøv igen';
+  }
+};
+
+function clearImage() {
+  pendingImageUrl = '';
+  currentImageUrl = '';
+  document.getElementById('fImageFile').value = '';
+  const preview = document.getElementById('imgPreview');
+  preview.src = '';
+  preview.classList.remove('show');
+  document.getElementById('imgClear').classList.remove('show');
+  document.getElementById('imgStatus').textContent = '';
+}
+window.clearImage = clearImage;
+
+function setImagePreview(url) {
+  currentImageUrl = url || '';
+  pendingImageUrl = '';
+  const preview = document.getElementById('imgPreview');
+  const clear   = document.getElementById('imgClear');
+  if (url) {
+    preview.src = url;
+    preview.classList.add('show');
+    clear.classList.add('show');
+    document.getElementById('imgStatus').textContent = 'Eksisterende billede';
+  } else {
+    preview.src = '';
+    preview.classList.remove('show');
+    clear.classList.remove('show');
+    document.getElementById('imgStatus').textContent = '';
+  }
+}
+
+let locMapTimer = null;
+
+window.onLocationInput = function() {
+  clearTimeout(locMapTimer);
+  const value = document.getElementById('fLoc').value.trim();
+  if (!value) {
+    document.getElementById('locMapWrap').classList.remove('visible');
+    return;
+  }
+  locMapTimer = setTimeout(() => updateLocationMap(value), 600);
+};
+
+function updateLocationMap(value) {
+  const wrap = document.getElementById('locMapWrap');
+  wrap.classList.add('visible');
+  wrap.innerHTML = '<div class="loc-map-loading"><i class="ti ti-loader spinning"></i>Henter kort…</div>';
+  const iframe = document.createElement('iframe');
+  iframe.className = 'loc-map';
+  iframe.loading  = 'lazy';
+  iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(value)}&output=embed`;
+  iframe.onload = () => wrap.querySelector('.loc-map-loading')?.remove();
+  wrap.appendChild(iframe);
+}
+
+window.openForm = function(eventId) {
+  document.getElementById('formEventId').value = eventId || '';
+  document.getElementById('slotsList').innerHTML = '';
+  slotCounter = 0;
+  clearImage();
+  document.getElementById('imgUploadWrap').classList.remove('visible');
+  document.getElementById('eventExtrasWrap').classList.remove('visible');
+  document.getElementById('fTitleField').classList.remove('has-error');
+  document.getElementById('slotsError').classList.remove('show');
+  document.getElementById('formErr').classList.remove('show');
+  clearTimeout(locMapTimer);
+  document.getElementById('locMapWrap').classList.remove('visible');
+  showView('viewForm');
+
+  if (eventId) {
+    getDoc(doc(db, 'events', eventId)).then(snap => {
+      if (!snap.exists()) return;
+      const ev   = snap.data();
+      const type = ev.type || EVENT_TYPES[currentSection].type;
+      const cfg  = EVENT_TYPES[sectionForType(type)];
+      document.getElementById('fType').value            = type;
+      document.getElementById('formTitle').textContent  = cfg.formEdit;
+      document.getElementById('saveBtn').textContent    = cfg.saveLabel;
+      document.getElementById('fTitle').value        = ev.title || '';
+      document.getElementById('fDesc').value         = ev.description || '';
+      document.getElementById('fDate').value         = ev.dateText || '';
+      document.getElementById('fLoc').value          = ev.location || '';
+      if (ev.location) updateLocationMap(ev.location);
+      document.getElementById('fActive').checked     = ev.active !== false;
+      document.getElementById('fPayUrl').value       = ev.paymentUrl || '';
+      document.getElementById('fCancelDays').value   = ev.cancelDeadlineDays || '';
+      (ev.slots || []).forEach(s => addSlotRow(s));
+      document.getElementById('imgUploadWrap').classList.toggle('visible', type === 'event');
+      if (type === 'event') setImagePreview(ev.imageUrl || '');
+      document.getElementById('fTitle').focus();
+    });
+  } else {
+    const type = EVENT_TYPES[currentSection].type;
+    const cfg  = EVENT_TYPES[currentSection];
+    document.getElementById('fType').value            = type;
+    document.getElementById('formTitle').textContent  = cfg.formNew;
+    document.getElementById('saveBtn').textContent    = cfg.saveLabel;
+    document.getElementById('fTitle').value        = '';
+    document.getElementById('fDesc').value         = '';
+    document.getElementById('fDate').value         = '';
+    document.getElementById('fLoc').value          = '';
+    document.getElementById('fActive').checked     = true;
+    document.getElementById('fPayUrl').value       = '';
+    document.getElementById('fCancelDays').value   = '';
+    document.getElementById('imgUploadWrap').classList.toggle('visible', type === 'event');
+    addSlotRow();
+    document.getElementById('fTitle').focus();
+  }
+};
+
+window.addSlotRow = function(slot) {
+  const id      = slot?.id || ('s' + Date.now() + (slotCounter++));
+  const kind    = slot?.kind || 'volunteer';
+  const isGrp   = (slot?.groupMax || 1) > 1;
+  const isAdult = !!(slot && (slot.minAge >= 18 || slot.requiresAdult));
+  const isPaid  = kind === 'paid';
+  const capVal  = !slot ? 3 : slot.capacity === 0 ? '' : (slot.capacity || 3);
+  const row     = document.createElement('div');
+  row.className = 'slot-row';
+  row.dataset.slotId = id;
+  row.innerHTML = `
+    <div class="slot-inputs">
+      <div class="si-label">
+        <label class="si-field-label" for="${id}-label">Navn / tidsrum *</label>
+        <input id="${id}-label" class="sl-label" placeholder="fx Drinksboden" value="${esc(slot?.label || '')}" oninput="this.closest('.slot-row').classList.remove('has-error')">
+        <div class="field-error">Udfyld navn/tidsrum.</div>
+      </div>
+      <div class="si-role">
+        <label class="si-field-label" for="${id}-role">Rolle</label>
+        <select id="${id}-role" class="sl-role">
+          <option value=""${!slot?.role?' selected':''}>Ingen rolle</option>
+          <option value="Vagt"${slot?.role==='Vagt'?' selected':''}>Vagt</option>
+          <option value="Hjælper"${slot?.role==='Hjælper'?' selected':''}>Hjælper</option>
+          <option value="Ansvarlig"${slot?.role==='Ansvarlig'?' selected':''}>Ansvarlig</option>
+          <option value="Koordinator"${slot?.role==='Koordinator'?' selected':''}>Koordinator</option>
+          <option value="Leder"${slot?.role==='Leder'?' selected':''}>Leder</option>
+        </select>
+      </div>
+      <div class="si-sub">
+        <label class="si-field-label" for="${id}-sub">Detalje</label>
+        <input id="${id}-sub" class="sl-sub" placeholder="fx 16:00–18:00" value="${esc(slot?.sublabel || '')}">
+      </div>
+      <div class="si-cap">
+        <label class="si-field-label" for="${id}-cap">Pladser</label>
+        <input id="${id}-cap" class="sl-cap" type="number" min="1" max="999" value="${capVal}" ${slot?.capacity === 0 ? 'disabled' : ''}>
+        <label class="slot-unlim-wrap">
+          <input class="sl-unlim" type="checkbox"${slot?.capacity === 0?' checked':''} onchange="updateSlotUnlim(this)"> <span>∞ Ubegr.</span>
+        </label>
+      </div>
+      <div class="si-kind">
+        <label class="si-field-label" for="${id}-kind">Deltagelse</label>
+        <select id="${id}-kind" class="sl-kind" onchange="updateSlotKind(this)">
+          <option value="volunteer"${kind==='volunteer'?' selected':''}>Frivillig</option>
+          <option value="attend"${kind==='attend'?' selected':''}>Tilmeld</option>
+          <option value="paid"${kind==='paid'?' selected':''}>Betalt</option>
+        </select>
+      </div>
+      <button class="btn-rm-slot" onclick="removeSlot(this)" title="Slet plads" aria-label="Fjern plads">×</button>
+    </div>
+    <div class="slot-extras">
+      <label class="slot-adult-wrap">
+        <input class="sl-adult" type="checkbox"${isAdult?' checked':''}> <span>Kræver 18+ år</span>
+      </label>
+      <label class="slot-group-wrap">
+        <input class="sl-group" type="checkbox"${isGrp?' checked':''} onchange="updateSlotGroup(this)"> <span>Gruppetilmelding</span>
+      </label>
+      <span class="slot-group-size" style="display:${isGrp?'flex':'none'}">
+        <span>antal pr. gruppe</span>
+        <input class="sl-gsize" type="number" min="2" max="99" value="${slot?.groupSize||slot?.groupMax||5}">
+      </span>
+      <span class="slot-price-wrap" style="display:${isPaid?'flex':'none'}">
+        <span>Pris</span>
+        <input class="sl-price" type="number" min="0" value="${slot?.price || ''}" placeholder="200">
+        <span>kr</span>
+      </span>
+    </div>`;
+  document.getElementById('slotsList').appendChild(row);
+  document.getElementById('slotsError').classList.remove('show');
+  refreshPaymentVisibility();
+};
+
+window.removeSlot = function(btn) {
+  btn.closest('.slot-row').remove();
+  refreshPaymentVisibility();
+};
+
+window.saveEvent = async function() {
+  document.getElementById('fTitleField').classList.remove('has-error');
+  document.getElementById('slotsError').classList.remove('show');
+  document.getElementById('formErr').classList.remove('show');
+  document.querySelectorAll('#slotsList .slot-row.has-error').forEach(r => r.classList.remove('has-error'));
+
+  let firstInvalid = null;
+  const markInvalid = el => { if (!firstInvalid) firstInvalid = el; };
+
+  const title = document.getElementById('fTitle').value.trim();
+  if (!title) {
+    document.getElementById('fTitleField').classList.add('has-error');
+    markInvalid(document.getElementById('fTitle'));
+  }
+
+  const slotRows = document.querySelectorAll('#slotsList .slot-row');
+  if (slotRows.length === 0) {
+    document.getElementById('slotsError').classList.add('show');
+    markInvalid(document.getElementById('slotsError'));
+  }
+
+  const slots = [];
+  for (const row of slotRows) {
+    const label = row.querySelector('.sl-label').value.trim();
+    if (!label) {
+      row.classList.add('has-error');
+      markInvalid(row.querySelector('.sl-label'));
+      continue;
+    }
+    const kind    = row.querySelector('.sl-kind').value || 'volunteer';
+    const isGrp   = row.querySelector('.sl-group').checked;
+    const grpSize = isGrp ? (parseInt(row.querySelector('.sl-gsize').value) || 2) : 1;
+    const isAdult = row.querySelector('.sl-adult').checked;
+    const unlim   = row.querySelector('.sl-unlim').checked;
+    const price   = kind === 'paid' ? (parseInt(row.querySelector('.sl-price').value) || 0) : 0;
+    slots.push({
+      id:            row.dataset.slotId,
+      label,
+      role:          row.querySelector('.sl-role').value,
+      sublabel:      row.querySelector('.sl-sub').value.trim(),
+      capacity:      unlim ? 0 : (parseInt(row.querySelector('.sl-cap').value) || 1),
+      kind,
+      price,
+      groupSize:     grpSize,
+      groupMin:      grpSize,
+      groupMax:      grpSize,
+      minAge:        isAdult ? 18 : 0,
+      requiresAdult: isAdult,
+    });
+  }
+
+  if (firstInvalid) {
+    firstInvalid.focus();
+    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const eventData = {
+    title,
+    description:        document.getElementById('fDesc').value.trim(),
+    dateText:           document.getElementById('fDate').value.trim(),
+    location:           document.getElementById('fLoc').value.trim(),
+    type:               document.getElementById('fType').value,
+    active:             document.getElementById('fActive').checked,
+    paymentUrl:         document.getElementById('fPayUrl').value.trim(),
+    cancelDeadlineDays: parseInt(document.getElementById('fCancelDays').value) || 0,
+    imageUrl:           pendingImageUrl || currentImageUrl || '',
+    slots,
+  };
+
+  const btn = document.getElementById('saveBtn');
+  const saveLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Gemmer…';
+
+  try {
+    const eventId = document.getElementById('formEventId').value;
+    if (eventId) {
+      await updateDoc(doc(db, 'events', eventId), eventData);
+    } else {
+      await addDoc(collection(db, 'events'), {
+        ...eventData,
+        createdBy: auth.currentUser?.uid || '',
+        created:   serverTimestamp(),
+      });
+    }
+    showDash();
+  } catch(e) {
+    console.error(e);
+    const err = document.getElementById('formErr');
+    err.textContent = 'Gemning fejlede — tjek din forbindelse og prøv igen.';
+    err.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = saveLabel;
+  }
+};
+
+// ── Signups view ──────────────────────────────────────────────────────────
+let currentSignupsEventId = null;
+let currentSignupsExportRows = [];
+let currentSignupsExportName = 'tilmeldinger';
+let currentReminderExportRows = [];
+let currentReminderEmails = [];
+let currentMemberHistoryFilter = 'all';
+let currentMeetingHistoryFilter = 'all';
+let currentMemberHistoryState = null;
+let currentMeetingHistoryState = null;
+let currentAttendanceTrendsFilter = '12m';
+let currentAttendanceTrendsState = null;
+
+window.viewSignups = async function(eventId) {
+  currentSignupsEventId = eventId;
+  document.getElementById('backToListLabel').textContent = 'Alle ' + EVENT_TYPES[currentSection].title.toLowerCase();
+  showView('viewSignups');
+  const content = document.getElementById('signupsContent');
+  content.innerHTML = '<div class="state-msg"><i class="ti ti-loader spinning"></i>Henter tilmeldinger…</div>';
+
+  try {
+    const [evSnap, signupSnap, contactSnap] = await Promise.all([
+      getDoc(doc(db, 'events', eventId)),
+      getDocs(query(collection(db, 'signups'),        where('eventId', '==', eventId))),
+      getDocs(query(collection(db, 'signupContacts'), where('eventId', '==', eventId))),
+    ]);
+
+    if (!evSnap.exists()) { content.innerHTML = '<div class="state-msg">Opgave ikke fundet.</div>'; return; }
+    const ev = evSnap.data();
+
+    const signups  = {};
+    signupSnap.forEach(d  => { signups[d.id]  = { id: d.id,  ...d.data() }; });
+    const contacts = {};
+    contactSnap.forEach(d => { contacts[d.id] = { id: d.id,  ...d.data() }; });
+
+    const signupUnits = signup => signup.groupSize || 1;
+    currentSignupsExportRows = [];
+    currentSignupsExportName = ev.title || 'tilmeldinger';
+    currentReminderExportRows = [];
+    currentReminderEmails = [];
+
+    const totalCount = signupSnap.size;
+    let html = `<div style="margin-bottom:16px">
+      <div style="font-size:18px;font-weight:600;color:#003366;margin-bottom:4px">${esc(ev.title)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="font-size:13px;color:#7c7c7c">${totalCount} tilmeldinger i alt</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-action" onclick="copyReminderEmails()"><i class="ti ti-mail"></i>Kopiér emails</button>
+          <button class="btn-action" onclick="exportReminderCsv()"><i class="ti ti-bell-ringing"></i>Påmindelses-CSV</button>
+          <button class="btn-action" onclick="exportCurrentSignupsCsv()"><i class="ti ti-download"></i>Eksportér CSV</button>
+        </div>
+      </div>
+    </div>`;
+
+    (ev.slots || []).forEach(slot => {
+      const inSlot    = Object.values(signups).filter(s => s.slotId === slot.id);
+      const confirmed = inSlot.filter(s => !s.waitlist);
+      const waitlist  = inSlot.filter(s =>  s.waitlist);
+      const confirmedUnits = confirmed.reduce((sum, signup) => sum + signupUnits(signup), 0);
+      const label     = [slot.role, slot.sublabel].filter(Boolean).join(' · ') || slot.label;
+      const fullLabel = slot.label + (label && label !== slot.label ? ' · ' + label : '');
+
+      html += `<div class="signups-card">
+        <div class="sv-slot-head">
+          <div class="sv-slot-title">${esc(fullLabel)}</div>
+          <div class="sv-cap">${slot.capacity ? `${confirmedUnits}/${slot.capacity}` : `${confirmedUnits} bekræftede`}${waitlist.length ? ` · ${waitlist.length} venteliste` : ''}</div>
+        </div>`;
+
+      if (confirmed.length === 0) {
+        html += '<div class="sv-empty">Ingen tilmeldte endnu</div>';
+      } else {
+        const isPaidSlot = slot.kind === 'paid';
+        confirmed.forEach(s => {
+          const contact = contacts[s.id];
+          const ini     = s.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+          const gs      = s.groupSize || 1;
+          if (contact?.email) {
+            currentReminderEmails.push(contact.email);
+            currentReminderExportRows.push([
+              ev.title,
+              fullLabel,
+              s.name,
+              contact.email,
+              ev.dateText || '',
+              ev.location || '',
+              gs,
+            ]);
+          }
+          currentSignupsExportRows.push([
+            ev.title,
+            fullLabel,
+            'Bekræftet',
+            s.name,
+            contact?.email || '',
+            s.adult ? 'Ja' : 'Nej',
+            gs,
+            s.paid ? 'Ja' : 'Nej',
+          ]);
+          html += `<div class="sv-row">
+            <div class="sv-av">${esc(ini)}</div>
+            <div class="sv-info">
+              <div class="sv-name">${esc(s.name)}${s.adult ? ' <span class="sv-adult">18+</span>' : ''}${gs > 1 ? ` <span style="font-size:11px;color:var(--muted)">× ${gs}</span>` : ''}</div>
+              <div class="sv-email">${contact?.email ? esc(contact.email) : '<em>intet email</em>'}</div>
+            </div>
+            ${isPaidSlot ? `<button class="btn-paid${s.paid?' is-paid':''}" onclick="togglePaid('${s.id}')">${s.paid?'✓ Betalt':'Marker betalt'}</button>` : ''}
+            <button class="btn-del-signup" onclick="deleteSignup('${s.id}','${eventId}')"><i class="ti ti-x"></i></button>
+          </div>`;
+        });
+      }
+
+      if (waitlist.length > 0) {
+        html += `<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px">Venteliste</div>`;
+        waitlist.forEach((s, i) => {
+          const contact = contacts[s.id];
+          const ini     = s.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+          currentSignupsExportRows.push([
+            ev.title,
+            fullLabel,
+            'Venteliste',
+            s.name,
+            contact?.email || '',
+            s.adult ? 'Ja' : 'Nej',
+            s.groupSize || 1,
+            s.paid ? 'Ja' : 'Nej',
+          ]);
+          html += `<div class="sv-row" style="opacity:.85">
+            <div class="sv-av" style="background:#e0e5ef;color:var(--muted)">${esc(ini)}</div>
+            <div class="sv-info">
+              <div class="sv-name">${i + 1}. ${esc(s.name)}</div>
+              <div class="sv-email">${contact?.email ? esc(contact.email) : '<em>intet email</em>'}</div>
+            </div>
+            <button class="btn-action success" onclick="promoteWaitlist('${s.id}','${eventId}')"><i class="ti ti-arrow-up"></i>Rykop</button>
+            <button class="btn-del-signup" onclick="deleteSignup('${s.id}','${eventId}')"><i class="ti ti-x"></i></button>
+          </div>`;
+        });
+      }
+
+      html += '</div>';
+    });
+
+    content.innerHTML = html;
+  } catch(e) {
+    console.error(e);
+    content.innerHTML = '<div class="state-msg">Fejl ved hentning — tjek at du er logget ind.</div>';
+  }
+};
+
+window.exportCurrentSignupsCsv = function() {
+  if (currentSignupsExportRows.length === 0) {
+    alert('Der er ingen tilmeldinger at eksportere.');
+    return;
+  }
+  downloadCsv(
+    `${slugifyFilename(currentSignupsExportName, 'tilmeldinger')}.csv`,
+    ['Event', 'Plads', 'Status', 'Navn', 'Email', '18+', 'Antal', 'Betalt'],
+    currentSignupsExportRows
+  );
+};
+
+window.copyReminderEmails = async function() {
+  const uniqueEmails = [...new Set(currentReminderEmails.filter(Boolean))];
+  if (uniqueEmails.length === 0) {
+    alert('Der er ingen email-adresser at kopiere for denne opgave.');
+    return;
+  }
+  try {
+    await copyTextToClipboard(uniqueEmails.join('; '));
+    alert(`Kopieret ${uniqueEmails.length} email-adresser.`);
+  } catch (e) {
+    console.error(e);
+    alert('Kunne ikke kopiere email-adresser.');
+  }
+};
+
+window.exportReminderCsv = function() {
+  if (currentReminderExportRows.length === 0) {
+    alert('Der er ingen modtagere at eksportere for denne opgave.');
+    return;
+  }
+  downloadCsv(
+    `${slugifyFilename(currentSignupsExportName, 'paamindelse')}-paamindelse.csv`,
+    ['Event', 'Plads', 'Navn', 'Email', 'Dato', 'Sted', 'Antal'],
+    currentReminderExportRows
+  );
+};
+
+window.deleteSignup = async function(signupId, eventId) {
+  if (!confirm('Slet denne tilmelding?')) return;
+  try {
+    await deleteDoc(doc(db, 'signups', signupId));
+    try { await deleteDoc(doc(db, 'signupContacts', signupId)); } catch(e) {}
+    viewSignups(eventId);
+  } catch(e) { console.error(e); alert('Kunne ikke slette.'); }
+};
+
+window.promoteWaitlist = async function(signupId, eventId) {
+  if (!confirm('Rykop fra venteliste til bekræftet tilmelding?')) return;
+  try {
+    const [signupSnap, eventSnap] = await Promise.all([
+      getDoc(doc(db, 'signups', signupId)),
+      getDoc(doc(db, 'events', eventId)),
+    ]);
+    if (!signupSnap.exists() || !eventSnap.exists()) {
+      alert('Tilmelding eller opgave findes ikke længere.');
+      return;
+    }
+    const signup = signupSnap.data();
+    const event = eventSnap.data();
+    const slot = (event.slots || []).find(s => s.id === signup.slotId);
+    if (!slot) {
+      alert('Pladsen findes ikke længere på opgaven.');
+      return;
+    }
+    if (slot.capacity !== 0) {
+      const slotSignups = await getDocs(query(collection(db, 'signups'), where('eventId', '==', eventId), where('slotId', '==', signup.slotId)));
+      const taken = slotSignups.docs.reduce((sum, docSnap) => {
+        const data = docSnap.data();
+        if (docSnap.id === signupId || data.waitlist) return sum;
+        return sum + (data.groupSize || 1);
+      }, 0);
+      const nextUnits = signup.groupSize || 1;
+      if (taken + nextUnits > slot.capacity) {
+        alert('Pladsen er fyldt. Fjern en eksisterende tilmelding først.');
+        return;
+      }
+    }
+    await updateDoc(doc(db, 'signups', signupId), { waitlist: false });
+    viewSignups(eventId);
+  } catch(e) { console.error(e); alert('Kunne ikke rykke op.'); }
+};
+
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ── Slot builder helpers ──────────────────────────────────────────────────
+window.updateSlotKind = function(sel) {
+  const isPaid = sel.value === 'paid';
+  sel.closest('.slot-row').querySelector('.slot-price-wrap').style.display = isPaid ? 'flex' : 'none';
+  const wrap     = document.getElementById('eventExtrasWrap');
+  const wasShown = wrap.classList.contains('visible');
+  refreshPaymentVisibility();
+  if (isPaid && !wasShown) wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.updateSlotUnlim = function(chk) {
+  const cap = chk.closest('.slot-row').querySelector('.sl-cap');
+  cap.disabled = chk.checked;
+  if (chk.checked) cap.value = '';
+};
+
+window.updateSlotGroup = function(chk) {
+  chk.closest('.slot-row').querySelector('.slot-group-size').style.display = chk.checked ? 'flex' : 'none';
+};
+
+// ── Paid toggle ───────────────────────────────────────────────────────────
+window.togglePaid = async function(signupId) {
+  try {
+    const snap = await getDoc(doc(db, 'signups', signupId));
+    if (!snap.exists()) return;
+    await updateDoc(doc(db, 'signups', signupId), { paid: !snap.data().paid });
+    if (currentSignupsEventId) viewSignups(currentSignupsEventId);
+  } catch(e) { console.error(e); alert('Kunne ikke opdatere betalingsstatus.'); }
+};
+
+// ── Section management ────────────────────────────────────────────────────
+window.showSection = function(section) {
+  if (EVENT_TYPES[section]) { showDash(section); return; }
+  document.querySelectorAll('.section-btn').forEach((b, i) =>
+    b.classList.toggle('active', SECTION_ORDER[i] === section));
+  if (section === 'attendance') { showView('viewMeetings'); loadMeetingsAdmin(); }
+  else                          { showView('viewMembers');  loadMembersAdmin();  }
+};
+
+// ── Members CRUD ──────────────────────────────────────────────────────────
+let unsubMembers = null;
+let currentMemberFilter = 'all';
+let currentMemberGrenFilter = '';
+let currentMemberDayFilter = '';
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T12:00:00');
+  return d.toLocaleDateString('da-DK', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function loadMembersAdmin() {
+  if (unsubMembers) unsubMembers();
+  unsubMembers = onSnapshot(collection(db, 'members'), snap => {
+    const members = [];
+    snap.forEach(d => members.push({ id: d.id, ...d.data() }));
+    members.sort((a, b) =>
+      groupName(a).localeCompare(groupName(b), 'da') || a.name.localeCompare(b.name, 'da'));
+    const list = document.getElementById('memberList');
+    if (!list) return;
+    const filteredMembers = members.filter(member => {
+      if (currentMemberFilter === 'active' && member.active === false) return false;
+      if (currentMemberFilter === 'inactive' && member.active !== false) return false;
+      if (currentMemberGrenFilter && resolveGroupId(member) !== currentMemberGrenFilter) return false;
+      if (currentMemberDayFilter && (member.day || '') !== currentMemberDayFilter) return false;
+      return true;
+    });
+    if (filteredMembers.length === 0) {
+      const emptyText = members.length === 0
+        ? 'Ingen medlemmer endnu.'
+        : 'Ingen medlemmer matcher de valgte filtre.';
+      list.innerHTML = `<div class="state-msg"><i class="ti ti-users"></i>${emptyText}</div>`;
+      return;
+    }
+    const grene = {};
+    filteredMembers.forEach(m => {
+      const key = groupName(m);
+      if (!grene[key]) grene[key] = [];
+      grene[key].push(m);
+    });
+    list.innerHTML = '';
+    Object.entries(grene).forEach(([gren, mems]) => {
+      const section = document.createElement('div');
+      section.className = 'gren-section';
+      section.insertAdjacentHTML('beforeend',
+        `<div class="gren-header">${esc(gren)} · ${mems.length} ${mems.length === 1 ? 'barn' : 'børn'}</div>`);
+      mems.forEach(m => {
+        const ini  = m.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        const card = document.createElement('div');
+        card.className = 'event-card';
+        card.innerHTML = `
+          <div class="ec-head">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="member-av" style="width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${esc(ini)}</div>
+              <div>
+                <div class="ec-title">${esc(m.name)}</div>
+                <div class="ec-meta" style="margin-top:2px">
+                  <span class="member-status-chip ${m.active === false ? 'inactive' : 'active'}">${m.active === false ? 'Inaktiv' : 'Aktiv'}</span>
+                  ${m.day ? `<span class="member-day-chip">${esc(getDayNameById(m.day))}</span>` : ''}
+                  ${m.fødselsdato ? `<span><i class="ti ti-cake"></i>${fmtDate(m.fødselsdato)}</span>` : ''}
+                  ${m.startdato   ? `<span><i class="ti ti-calendar-plus"></i>${fmtDate(m.startdato)}</span>` : ''}
+                  ${m.foto        ? `<span><i class="ti ti-camera"></i>Foto</span>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ec-actions">
+            <button class="btn-action" onclick="openMemberForm('${m.id}')"><i class="ti ti-edit"></i>Rediger</button>
+            <button class="btn-action" onclick="viewMemberHistory('${m.id}')"><i class="ti ti-list-check"></i>Historik</button>
+            <button class="btn-action ${m.active === false ? 'success' : ''}" onclick="toggleMemberActive('${m.id}',${m.active === false})">
+              <i class="ti ti-${m.active === false ? 'user-check' : 'user-off'}"></i>${m.active === false ? 'Genaktivér' : 'Sæt inaktiv'}
+            </button>
+            <button class="btn-action danger" onclick="deleteMember('${m.id}')"><i class="ti ti-trash"></i>Slet</button>
+          </div>`;
+        section.appendChild(card);
+      });
+      list.appendChild(section);
+    });
+  });
+}
+
+window.setMemberFilter = function(filter) {
+  currentMemberFilter = filter;
+  document.getElementById('memberFilterAll').classList.toggle('active', filter === 'all');
+  document.getElementById('memberFilterActive').classList.toggle('active', filter === 'active');
+  document.getElementById('memberFilterInactive').classList.toggle('active', filter === 'inactive');
+  loadMembersAdmin();
+};
+
+window.setMemberGrenFilter = function(groupId) {
+  currentMemberGrenFilter = groupId;
+  loadMembersAdmin();
+};
+
+window.setMemberDayFilter = function(dayId) {
+  currentMemberDayFilter = dayId;
+  loadMembersAdmin();
+};
+
+window.openMemberForm = function(id) {
+  document.getElementById('formMemberId').value          = id || '';
+  document.getElementById('memberFormTitle').textContent = id ? 'Rediger medlem' : 'Nyt medlem';
+  document.getElementById('mName').value    = '';
+  populateGroupSelect(document.getElementById('mGren'));
+  populateDaySelect(document.getElementById('mDay'));
+  document.getElementById('mFoedsel').value = '';
+  document.getElementById('mStart').value   = '';
+  document.getElementById('mFoto').checked  = false;
+  document.getElementById('mActive').checked = true;
+  showView('viewMemberForm');
+  if (id) {
+    getDoc(doc(db, 'members', id)).then(snap => {
+      const m = snap.data() || {};
+      document.getElementById('mName').value    = m.name        || '';
+      populateGroupSelect(document.getElementById('mGren'), resolveGroupId(m));
+      populateDaySelect(document.getElementById('mDay'), m.day || '');
+      document.getElementById('mFoedsel').value = m.fødselsdato || '';
+      document.getElementById('mStart').value   = m.startdato   || '';
+      document.getElementById('mFoto').checked  = !!m.foto;
+      document.getElementById('mActive').checked = m.active !== false;
+      document.getElementById('mName').focus();
+    });
+  } else {
+    document.getElementById('mName').focus();
+  }
+};
+
+window.showMembers = function() {
+  showView('viewMembers');
+  loadMembersAdmin();
+};
+
+window.saveMember = async function() {
+  const id   = document.getElementById('formMemberId').value;
+  const name = document.getElementById('mName').value.trim();
+  const groupId = document.getElementById('mGren').value;
+  const gren = resolveGroupName({ groupId });
+  if (!name || !groupId) { alert('Udfyld navn og gren.'); return; }
+  const data = {
+    name,
+    groupId,
+    groupName: gren,
+    gren,
+    day: document.getElementById('mDay').value || '',
+    fødselsdato: document.getElementById('mFoedsel').value || '',
+    startdato:   document.getElementById('mStart').value   || '',
+    foto:        document.getElementById('mFoto').checked,
+    active:      document.getElementById('mActive').checked,
+  };
+  try {
+    if (id) {
+      await updateDoc(doc(db, 'members', id), data);
+    } else {
+      await addDoc(collection(db, 'members'), { ...data, created: serverTimestamp() });
+    }
+    showMembers();
+  } catch(e) { console.error(e); alert('Fejl ved gemning.'); }
+};
+
+window.toggleMemberActive = async function(id, nextActive) {
+  const prompt = nextActive ? 'Genaktivér dette medlem?' : 'Sæt dette medlem som inaktivt?';
+  if (!confirm(prompt)) return;
+  try {
+    await updateDoc(doc(db, 'members', id), { active: nextActive });
+    loadMembersAdmin();
+  } catch(e) {
+    console.error(e);
+    alert('Kunne ikke opdatere medlemsstatus.');
+  }
+};
+
+window.deleteMember = async function(id) {
+  if (!confirm('Slet dette medlem?')) return;
+  try { await deleteDoc(doc(db, 'members', id)); } catch(e) { alert('Sletning fejlede.'); }
+};
+
+window.viewMemberHistory = async function(memberId) {
+  showView('viewMemberHistory');
+  const content = document.getElementById('memberHistoryContent');
+  content.innerHTML = '<div class="state-msg"><i class="ti ti-loader spinning"></i>Henter historik…</div>';
+  try {
+    const [memberSnap, meetingsSnap, attendanceSnap] = await Promise.all([
+      getDoc(doc(db, 'members', memberId)),
+      getDocs(collection(db, 'meetings')),
+      getDocs(query(collection(db, 'attendance'), where('memberId', '==', memberId))),
+    ]);
+    if (!memberSnap.exists()) {
+      content.innerHTML = '<div class="state-msg">Medlem ikke fundet.</div>';
+      return;
+    }
+    const member = { id: memberId, ...memberSnap.data() };
+    const meetings = meetingsSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(meeting => matchesGroup(meeting, member))
+      .sort((a, b) => b.date.localeCompare(a.date));
+    const arrivedSet = new Set(attendanceSnap.docs.map(d => d.data().meetingId));
+    currentMemberHistoryState = { member, meetings, arrivedSet };
+    currentMemberHistoryFilter = 'all';
+    renderMemberHistory();
+  } catch (e) {
+    console.error(e);
+    content.innerHTML = '<div class="state-msg">Fejl ved hentning af historik.</div>';
+  }
+};
+
+function renderMemberHistory() {
+  const content = document.getElementById('memberHistoryContent');
+  const state = currentMemberHistoryState;
+  if (!state) return;
+  const { member, meetings, arrivedSet } = state;
+  const visibleMeetings = filterMeetingsByPeriod(meetings, currentMemberHistoryFilter);
+  const total = visibleMeetings.length;
+  const arrivedCount = visibleMeetings.filter(meeting => arrivedSet.has(meeting.id)).length;
+  const percentage = total ? Math.round(arrivedCount / total * 100) : 0;
+
+  let html = `
+    <div class="section-head">
+      <div>
+        <div class="section-title">${esc(member.name)}</div>
+        <div class="history-meta">${esc(groupName(member))}${member.active === false ? ' · Inaktiv' : ''}</div>
+      </div>
+    </div>
+    <div class="history-toolbar">
+      <button class="sub-btn ${currentMemberHistoryFilter === 'all' ? 'active' : ''}" onclick="setMemberHistoryFilter('all')">Alt</button>
+      <button class="sub-btn ${currentMemberHistoryFilter === '12m' ? 'active' : ''}" onclick="setMemberHistoryFilter('12m')">12 mdr</button>
+      <button class="sub-btn ${currentMemberHistoryFilter === '6m' ? 'active' : ''}" onclick="setMemberHistoryFilter('6m')">6 mdr</button>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Møder i perioden</div>
+        <div class="summary-value">${total}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Registreret fremmøde</div>
+        <div class="summary-value">${arrivedCount}${total ? ` <span style="font-size:14px;color:var(--muted)">(${percentage}%)</span>` : ''}</div>
+      </div>
+    </div>
+  `;
+
+  if (visibleMeetings.length === 0) {
+    html += '<div class="state-msg"><i class="ti ti-calendar-off"></i>Ingen møder i den valgte periode.</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  html += '<div class="history-list">';
+  visibleMeetings.forEach(meeting => {
+    const isPresent = arrivedSet.has(meeting.id);
+    const prettyDate = new Date(meeting.date + 'T12:00:00').toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    html += `
+      <div class="history-row">
+        <div>
+          <div class="history-title">${esc(meeting.title || 'Møde')}</div>
+          <div class="history-meta">${esc(prettyDate)} · ${esc(groupName(meeting))}</div>
+        </div>
+        <div class="history-badge ${isPresent ? 'present' : 'absent'}">${isPresent ? 'Ankommet' : 'Ikke registreret'}</div>
+      </div>`;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+}
+
+window.setMemberHistoryFilter = function(filter) {
+  currentMemberHistoryFilter = filter;
+  renderMemberHistory();
+};
+
+// ── Meetings CRUD ─────────────────────────────────────────────────────────
+let unsubMeetings = null;
+
+function loadMeetingsAdmin() {
+  if (unsubMeetings) unsubMeetings();
+  unsubMeetings = onSnapshot(collection(db, 'meetings'), snap => {
+    const meetings = [];
+    snap.forEach(d => meetings.push({ id: d.id, ...d.data() }));
+    meetings.sort((a, b) => b.date.localeCompare(a.date));
+    const list = document.getElementById('meetingList');
+    if (!list) return;
+    if (meetings.length === 0) {
+      list.innerHTML = '<div class="state-msg"><i class="ti ti-calendar"></i>Ingen møder endnu.</div>';
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    list.innerHTML = '';
+    meetings.forEach(m => {
+      const d    = new Date(m.date + 'T12:00:00');
+      const dStr = d.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long' });
+      const isToday = m.date === today;
+      const meetingGroup = groupName(m);
+      const card = document.createElement('div');
+      card.className = 'event-card';
+      card.innerHTML = `
+        <div class="ec-head">
+          <div><div class="ec-title">${esc(meetingGroup)}${m.title ? ' — ' + esc(m.title) : ''}</div></div>
+          ${isToday ? '<span class="badge badge-active">I dag</span>' : ''}
+        </div>
+        <div class="ec-meta"><span><i class="ti ti-calendar"></i>${dStr}</span></div>
+        <div class="ec-actions">
+          <button class="btn-action" onclick="viewMeetingHistory('${m.id}')"><i class="ti ti-list-details"></i>Fremmøde</button>
+          <button class="btn-action" onclick="openMeetingForm('${m.id}')"><i class="ti ti-edit"></i>Rediger</button>
+          <button class="btn-action danger" onclick="deleteMeeting('${m.id}')"><i class="ti ti-trash"></i>Slet</button>
+        </div>`;
+      list.appendChild(card);
+    });
+  });
+}
+
+window.openMeetingForm = function(id) {
+  document.getElementById('formMeetingId').value           = id || '';
+  document.getElementById('meetingFormTitle').textContent  = id ? 'Rediger møde' : 'Nyt møde';
+  document.getElementById('mtDate').value  = '';
+  populateGroupSelect(document.getElementById('mtGren'));
+  document.getElementById('mtTitle').value = '';
+  showView('viewMeetingForm');
+  if (id) {
+    getDoc(doc(db, 'meetings', id)).then(snap => {
+      const m = snap.data() || {};
+      document.getElementById('mtDate').value  = m.date  || '';
+      populateGroupSelect(document.getElementById('mtGren'), resolveGroupId(m));
+      document.getElementById('mtTitle').value = m.title || '';
+      document.getElementById('mtDate').focus();
+    });
+  } else {
+    document.getElementById('mtDate').focus();
+  }
+};
+
+window.showMeetings = function() {
+  showView('viewMeetings');
+  loadMeetingsAdmin();
+};
+
+window.saveMeeting = async function() {
+  const id    = document.getElementById('formMeetingId').value;
+  const date  = document.getElementById('mtDate').value;
+  const groupId = document.getElementById('mtGren').value;
+  const gren  = resolveGroupName({ groupId });
+  const title = document.getElementById('mtTitle').value.trim();
+  if (!date || !groupId) { alert('Udfyld dato og gren.'); return; }
+  try {
+    if (id) {
+      await updateDoc(doc(db, 'meetings', id), { date, groupId, groupName: gren, gren, title });
+    } else {
+      await addDoc(collection(db, 'meetings'), {
+        date, groupId, groupName: gren, gren, title, created: serverTimestamp(), createdBy: auth.currentUser?.uid || '',
+      });
+    }
+    showMeetings();
+  } catch(e) { console.error(e); alert('Fejl ved gemning.'); }
+};
+
+window.deleteMeeting = async function(id) {
+  if (!confirm('Slet dette møde? Fremmøde-data for mødet slettes også.')) return;
+  try {
+    const attSnap = await getDocs(query(collection(db, 'attendance'), where('meetingId', '==', id)));
+    await Promise.all(attSnap.docs.map(d => deleteDoc(doc(db, 'attendance', d.id))));
+    await deleteDoc(doc(db, 'meetings', id));
+  } catch(e) { console.error(e); alert('Sletning fejlede.'); }
+};
+
+window.viewMeetingHistory = async function(meetingId) {
+  showView('viewMeetingHistory');
+  const content = document.getElementById('meetingHistoryContent');
+  content.innerHTML = '<div class="state-msg"><i class="ti ti-loader spinning"></i>Henter fremmøde…</div>';
+  try {
+    const [meetingSnap, membersSnap, attendanceSnap] = await Promise.all([
+      getDoc(doc(db, 'meetings', meetingId)),
+      getDocs(collection(db, 'members')),
+      getDocs(query(collection(db, 'attendance'), where('meetingId', '==', meetingId))),
+    ]);
+    if (!meetingSnap.exists()) {
+      content.innerHTML = '<div class="state-msg">Møde ikke fundet.</div>';
+      return;
+    }
+    const meeting = { id: meetingId, ...meetingSnap.data() };
+    const members = membersSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(member => member.active !== false)
+      .filter(member => matchesGroup(member, meeting))
+      .sort((a, b) => a.name.localeCompare(b.name, 'da'));
+    const arrivedSet = new Set(attendanceSnap.docs.map(d => d.data().memberId));
+    const arrivedCount = members.filter(member => arrivedSet.has(member.id)).length;
+    const waitingCount = members.length - arrivedCount;
+    const prettyDate = new Date(meeting.date + 'T12:00:00').toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    const meetingExportRows = members.map(member => [
+      groupName(meeting),
+      meeting.title || '',
+      meeting.date,
+      member.name,
+      groupName(member),
+      member.active === false ? 'Nej' : 'Ja',
+      arrivedSet.has(member.id) ? 'Ja' : 'Nej',
+    ]);
+
+    window.__meetingHistoryExport = {
+      meetingId,
+      filename: `${slugifyFilename(groupName(meeting), 'fremmoede')}-${meeting.date}`,
+      rows: meetingExportRows,
+    };
+    currentMeetingHistoryState = { meeting, members, arrivedSet, prettyDate, arrivedCount, waitingCount };
+    currentMeetingHistoryFilter = 'all';
+    renderMeetingHistory();
+  } catch (e) {
+    console.error(e);
+    content.innerHTML = '<div class="state-msg">Fejl ved hentning af fremmøde.</div>';
+  }
+};
+
+function renderMeetingHistory() {
+  const content = document.getElementById('meetingHistoryContent');
+  const state = currentMeetingHistoryState;
+  if (!state) return;
+  const { meeting, members, arrivedSet, prettyDate, arrivedCount, waitingCount } = state;
+  const meetingIsVisible = filterMeetingsByPeriod([meeting], currentMeetingHistoryFilter).length > 0;
+
+  let html = `
+    <div class="section-head">
+      <div>
+        <div class="section-title">${esc(groupName(meeting))}${meeting.title ? ' — ' + esc(meeting.title) : ''}</div>
+        <div class="history-meta">${esc(prettyDate)}</div>
+      </div>
+      <button class="btn-action" onclick="exportMeetingHistoryCsv('${esc(meeting.id)}')"><i class="ti ti-download"></i>Eksportér CSV</button>
+    </div>
+    <div class="history-toolbar">
+      <button class="sub-btn ${currentMeetingHistoryFilter === 'all' ? 'active' : ''}" onclick="setMeetingHistoryFilter('all')">Alt</button>
+      <button class="sub-btn ${currentMeetingHistoryFilter === '12m' ? 'active' : ''}" onclick="setMeetingHistoryFilter('12m')">12 mdr</button>
+      <button class="sub-btn ${currentMeetingHistoryFilter === '6m' ? 'active' : ''}" onclick="setMeetingHistoryFilter('6m')">6 mdr</button>
+    </div>
+  `;
+
+  if (!meetingIsVisible) {
+    html += '<div class="state-msg"><i class="ti ti-calendar-off"></i>Mødet ligger uden for den valgte periode.</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  html += `
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Aktive medlemmer</div>
+        <div class="summary-value">${members.length}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Ankommet</div>
+        <div class="summary-value">${arrivedCount} <span style="font-size:14px;color:var(--muted)">(${waitingCount} mangler)</span></div>
+      </div>
+    </div>
+  `;
+
+  if (members.length === 0) {
+    html += '<div class="state-msg"><i class="ti ti-users-off"></i>Ingen aktive medlemmer i denne gren.</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  html += '<div class="history-list">';
+  members.forEach(member => {
+    const isPresent = arrivedSet.has(member.id);
+    html += `
+      <div class="history-row">
+        <div>
+          <div class="history-title">${esc(member.name)}</div>
+          <div class="history-meta">${member.fødselsdato ? `Født ${esc(fmtDate(member.fødselsdato))}` : esc(groupName(member))}</div>
+        </div>
+        <div class="history-badge ${isPresent ? 'present' : 'absent'}">${isPresent ? 'Ankommet' : 'Ikke ankommet'}</div>
+      </div>`;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+}
+
+window.setMeetingHistoryFilter = function(filter) {
+  currentMeetingHistoryFilter = filter;
+  renderMeetingHistory();
+};
+
+window.viewAttendanceTrends = async function() {
+  showView('viewAttendanceTrends');
+  const content = document.getElementById('attendanceTrendsContent');
+  content.innerHTML = '<div class="state-msg"><i class="ti ti-loader spinning"></i>Henter trends…</div>';
+  try {
+    const [meetingsSnap, membersSnap, attendanceSnap] = await Promise.all([
+      getDocs(collection(db, 'meetings')),
+      getDocs(collection(db, 'members')),
+      getDocs(collection(db, 'attendance')),
+    ]);
+    const meetings = meetingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const members = membersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const attendance = attendanceSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    currentAttendanceTrendsState = { meetings, members, attendance };
+    renderAttendanceTrends();
+  } catch (e) {
+    console.error(e);
+    content.innerHTML = '<div class="state-msg">Fejl ved hentning af trends.</div>';
+  }
+};
+
+function renderAttendanceTrends() {
+  const content = document.getElementById('attendanceTrendsContent');
+  const state = currentAttendanceTrendsState;
+  if (!state) return;
+  const meetings = filterMeetingsByPeriod(state.meetings, currentAttendanceTrendsFilter);
+  const attendanceByMeeting = new Map();
+  state.attendance.forEach(entry => {
+    if (!attendanceByMeeting.has(entry.meetingId)) attendanceByMeeting.set(entry.meetingId, new Set());
+    attendanceByMeeting.get(entry.meetingId).add(entry.memberId);
+  });
+
+  const trendMap = new Map();
+  meetings.forEach(meeting => {
+    const groupKey = groupName(meeting);
+    const activeMembers = state.members
+      .filter(member => member.active !== false)
+      .filter(member => matchesGroup(member, meeting));
+    const memberCount = activeMembers.length;
+    const arrivedCount = activeMembers.filter(member => attendanceByMeeting.get(meeting.id)?.has(member.id)).length;
+    if (!trendMap.has(groupKey)) {
+      trendMap.set(groupKey, {
+        groupName: groupKey,
+        meetings: 0,
+        memberSlots: 0,
+        arrivals: 0,
+        latestMeeting: '',
+      });
+    }
+    const trend = trendMap.get(groupKey);
+    trend.meetings += 1;
+    trend.memberSlots += memberCount;
+    trend.arrivals += arrivedCount;
+    if (!trend.latestMeeting || meeting.date > trend.latestMeeting) trend.latestMeeting = meeting.date || '';
+  });
+
+  const trends = [...trendMap.values()]
+    .map(trend => ({
+      ...trend,
+      coverage: trend.memberSlots ? Math.round(trend.arrivals / trend.memberSlots * 100) : 0,
+    }))
+    .sort((a, b) => b.coverage - a.coverage || b.meetings - a.meetings || a.groupName.localeCompare(b.groupName, 'da'));
+
+  const totalMeetings = meetings.length;
+  const totalArrivals = trends.reduce((sum, trend) => sum + trend.arrivals, 0);
+  const totalMemberSlots = trends.reduce((sum, trend) => sum + trend.memberSlots, 0);
+  const totalCoverage = totalMemberSlots ? Math.round(totalArrivals / totalMemberSlots * 100) : 0;
+
+  let html = `
+    <div class="section-head">
+      <div>
+        <div class="section-title">Fremmødetrends pr. gren</div>
+        <div class="history-meta">Dækning beregnes som registrerede ankomster delt med aktive medlemmer på mødedagen.</div>
+      </div>
+    </div>
+    <div class="history-toolbar">
+      <button class="sub-btn ${currentAttendanceTrendsFilter === 'all' ? 'active' : ''}" onclick="setAttendanceTrendsFilter('all')">Alt</button>
+      <button class="sub-btn ${currentAttendanceTrendsFilter === '12m' ? 'active' : ''}" onclick="setAttendanceTrendsFilter('12m')">12 mdr</button>
+      <button class="sub-btn ${currentAttendanceTrendsFilter === '6m' ? 'active' : ''}" onclick="setAttendanceTrendsFilter('6m')">6 mdr</button>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Møder i perioden</div>
+        <div class="summary-value">${totalMeetings}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Samlet dækning</div>
+        <div class="summary-value">${totalCoverage}%</div>
+      </div>
+    </div>
+  `;
+
+  if (trends.length === 0) {
+    html += '<div class="state-msg"><i class="ti ti-calendar-off"></i>Ingen møder i den valgte periode.</div>';
+    content.innerHTML = html;
+    return;
+  }
+
+  html += '<div class="trend-list">';
+  trends.forEach(trend => {
+    const latestMeeting = trend.latestMeeting
+      ? new Date(trend.latestMeeting + 'T12:00:00').toLocaleDateString('da-DK', { day:'numeric', month:'short', year:'numeric' })
+      : 'Ingen';
+    html += `
+      <div class="trend-card">
+        <div class="section-head" style="margin-bottom:0">
+          <div>
+            <div class="history-title">${esc(trend.groupName)}</div>
+            <div class="history-meta">${trend.meetings} møder · ${trend.arrivals}/${trend.memberSlots} registrerede ankomster</div>
+          </div>
+          <div class="history-badge ${trend.coverage >= 70 ? 'present' : 'absent'}">${trend.coverage}%</div>
+        </div>
+        <div class="trend-bar"><div class="trend-bar-fill" style="width:${Math.max(0, Math.min(100, trend.coverage))}%"></div></div>
+        <div class="trend-meta">
+          <span>Seneste møde: ${esc(latestMeeting)}</span>
+          <span>Aktive medlemmer summeret over perioden: ${trend.memberSlots}</span>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+}
+
+window.setAttendanceTrendsFilter = function(filter) {
+  currentAttendanceTrendsFilter = filter;
+  renderAttendanceTrends();
+};
+
+window.exportMeetingHistoryCsv = function(meetingId) {
+  const data = window.__meetingHistoryExport;
+  if (!data || data.meetingId !== meetingId || data.rows.length === 0) {
+    alert('Der er ingen fremmøde-data at eksportere.');
+    return;
+  }
+  downloadCsv(
+    `${data.filename}.csv`,
+    ['Gren', 'Mødetitel', 'Dato', 'Navn', 'Medlemsgren', 'Aktiv', 'Ankommet'],
+    data.rows
+  );
+};
+</script>
+</body>
+</html>
