@@ -71,3 +71,4 @@ node_modules/
 # Local tooling artifacts
 .DS_Store
 .playwright-mcp/
+functions/.npm-cache/
