@@ -7,6 +7,8 @@ jobs:
   deploy:
     name: Deploy Hosting and Functions
     runs-on: ubuntu-latest
+    environment:
+      name: production
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

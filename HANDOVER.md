@@ -315,6 +315,12 @@ sætter op uden kodeændringer. IKKE feature-specifikke hacks for enkelte arrang
 6. **Ledernotifikation går til én hardcodet NOTIFY_EMAIL.** Per-opgave routing til
    opgavens egen leder er en mulig udvidelse (gem leder-mail på event, send med i payload).
 
+## GitHub Deploy Gate
+
+- `Deploy` workflow kører kun manuelt via `workflow_dispatch`.
+- Jobbet er bundet til GitHub environment `production`.
+- Sæt required reviewers på `production` environment i GitHub repo settings, hvis deploy skal kræve menneskelig godkendelse før release.
+
 ---
 
 ## Roadmap / mulige næste skridt
