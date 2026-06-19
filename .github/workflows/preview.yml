@@ -1,0 +1,48 @@
+name: Preview Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref or branch to preview
+        required: true
+        default: main
+      channel:
+        description: Preview channel name
+        required: true
+        default: feature-preview
+
+jobs:
+  preview:
+    name: Deploy Hosting preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Write service account credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "Missing FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE secret"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$HOME/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-service-account.json" >> "$GITHUB_ENV"
+
+      - name: Deploy Hosting preview channel
+        run: |
+          CHANNEL="$(printf '%s' '${{ inputs.channel }}' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')"
+          if [ -z "$CHANNEL" ]; then
+            echo "Channel name is empty after sanitization"
+            exit 1
+          fi
+          npx -y firebase-tools@latest hosting:channel:deploy "$CHANNEL" --project havets-helte

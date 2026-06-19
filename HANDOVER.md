@@ -256,6 +256,13 @@ OG-tags i index.html: erstat placeholder-URL med rigtig hosting-URL (Facebook-pr
 - Sæt required reviewers på `production` environment i GitHub repo settings, hvis deploy skal kræve godkendelse før release.
 - Firebase service account læses fra GitHub secret `FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE`.
 
+## Preview Deploy
+
+- Preview deploy sker kun via GitHub Actions workflow `Preview Deploy`.
+- Workflowet er manuel-only via `workflow_dispatch`.
+- Du vælger selv `ref` og preview channel name ved kørsel.
+- Preview deploy påvirker kun Firebase Hosting preview channel, ikke production release.
+
 Auth-opsætning: Console → Authentication → Email/Password → Add user (ledere oprettes manuelt).
 Det er adgangsstyringen: kun folk med en konto kan oprette opgaver. Ingen selvbetjent signup for ledere.
 
