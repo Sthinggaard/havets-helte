@@ -250,11 +250,11 @@ OG-tags i index.html: erstat placeholder-URL med rigtig hosting-URL (Facebook-pr
 
 ## Deploy
 
-```bash
-firebase deploy            # fra mappen med firebase.json + filerne
-```
-VIGTIGT: firebase init lægger en placeholder index.html i public-mappen. Læg de rigtige
-filer i public-mappen EFTER init, og svar aldrig "yes" til at overskrive index.html.
+- Deploy er kun via GitHub Actions workflow `Deploy`.
+- Workflowet er manuel-only via `workflow_dispatch`.
+- Jobbet er bundet til GitHub environment `production`.
+- Sæt required reviewers på `production` environment i GitHub repo settings, hvis deploy skal kræve godkendelse før release.
+- Firebase service account læses fra GitHub secret `FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE`.
 
 Auth-opsætning: Console → Authentication → Email/Password → Add user (ledere oprettes manuelt).
 Det er adgangsstyringen: kun folk med en konto kan oprette opgaver. Ingen selvbetjent signup for ledere.
