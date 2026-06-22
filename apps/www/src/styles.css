@@ -696,6 +696,138 @@ a {
   background: #fff;
 }
 
+.members-workspace,
+.branches-workspace {
+  gap: 18px;
+}
+
+.members-toolbar {
+  display: grid;
+  gap: 14px;
+}
+
+.members-layout,
+.branches-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.members-list,
+.branch-detail-panel,
+.member-profile-panel,
+.branches-list {
+  display: grid;
+  gap: 12px;
+}
+
+.member-card,
+.branch-card {
+  padding: 16px;
+  border: 1px solid rgba(216, 225, 234, 0.95);
+  border-radius: 20px;
+  background: #fff;
+  text-align: left;
+}
+
+.member-card.active,
+.branch-card.active {
+  border-color: rgba(13, 58, 99, 0.35);
+  background: #edf4fb;
+}
+
+.member-row-shell,
+.branch-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.member-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-card-title,
+.branch-card-title {
+  color: var(--navy-dark);
+  font-weight: 800;
+}
+
+.member-card-meta,
+.branch-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.branch-card-sub {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.branch-card-copy {
+  margin-top: 10px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.member-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.member-detail-item {
+  padding: 12px 14px;
+  border: 1px solid rgba(216, 225, 234, 0.85);
+  border-radius: 16px;
+  background: #fbfdff;
+}
+
+.member-detail-label,
+.member-history-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.member-detail-value,
+.member-history-value {
+  margin-top: 6px;
+  color: var(--navy-dark);
+  font-weight: 800;
+}
+
+.member-history {
+  display: grid;
+  gap: 10px;
+}
+
+.member-history-row {
+  padding: 12px 14px;
+  border: 1px solid rgba(216, 225, 234, 0.85);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.member-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(216, 225, 234, 0.85);
+  border-radius: 16px;
+  background: #fff;
+}
+
 .member-av {
   display: inline-grid;
   place-items: center;
@@ -829,6 +961,11 @@ a {
 @media (max-width: 1024px) {
   .attendance-layout,
   .featured-event {
+    grid-template-columns: 1fr;
+  }
+
+  .members-layout,
+  .branches-layout {
     grid-template-columns: 1fr;
   }
 

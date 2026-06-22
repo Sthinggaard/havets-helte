@@ -6,6 +6,8 @@ import TasksPage from './pages/TasksPage.vue';
 import ShiftsPage from './pages/ShiftsPage.vue';
 import AttendancePage from './pages/AttendancePage.vue';
 import SignupsPage from './pages/SignupsPage.vue';
+import MembersPage from './pages/MembersPage.vue';
+import BranchesPage from './pages/BranchesPage.vue';
 import AdminShellPage from './pages/AdminShellPage.vue';
 
 const routes = [
@@ -35,6 +37,18 @@ const routes = [
     alias: ['/attendance.html'],
   },
   {
+    path: '/medlemmer',
+    name: 'members',
+    component: MembersPage,
+    alias: ['/medlemmer.html', '/admin-medlemmer.html', '/admin-medlemmer-form.html'],
+  },
+  {
+    path: '/grene',
+    name: 'branches',
+    component: BranchesPage,
+    alias: ['/grene.html', '/admin-grene.html'],
+  },
+  {
     path: '/mine-tilmeldinger',
     name: 'signups',
     component: SignupsPage,
@@ -52,8 +66,6 @@ const routes = [
       '/admin-opgaver-form.html',
       '/admin-vagter.html',
       '/admin-vagter-form.html',
-      '/admin-medlemmer.html',
-      '/admin-medlemmer-form.html',
       '/admin-fremmoede.html',
       '/admin-fremmoede-form.html',
       '/admin-billedbibliotek.html',

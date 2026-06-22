@@ -1,24 +1,9 @@
-import type { Branch, Meeting, Member } from './attendance.types';
+import { rosterBranches, rosterMembers } from '../roster/roster.data';
+import type { Meeting } from './attendance.types';
 
-export const attendanceBranches: Branch[] = [
-  { id: 'junior', label: 'Junior' },
-  { id: 'ulv', label: 'Ulv' },
-  { id: 'trop', label: 'Trop' },
-  { id: 'soespejder', label: 'Søspejder' },
-];
+export const attendanceBranches = rosterBranches;
 
-export const attendanceMembers: Member[] = [
-  { id: 'm1', name: 'Albert Boye Dohm Overgaard', initials: 'AB', branchId: 'junior', weekday: 'Tirsdag', active: true },
-  { id: 'm2', name: 'Aviaja Henriksson Lagoni', initials: 'AH', branchId: 'junior', weekday: 'Tirsdag', active: true },
-  { id: 'm3', name: 'Isabella Julie Bæk Jakobsen', initials: 'IJ', branchId: 'junior', weekday: 'Tirsdag', active: true },
-  { id: 'm4', name: 'León Haag Montiveros', initials: 'LH', branchId: 'junior', weekday: 'Tirsdag', active: true },
-  { id: 'm5', name: 'Noah Skovgaard', initials: 'NS', branchId: 'ulv', weekday: 'Mandag', active: true },
-  { id: 'm6', name: 'Maja Bennedsen', initials: 'MB', branchId: 'ulv', weekday: 'Mandag', active: true },
-  { id: 'm7', name: 'Freja Lund', initials: 'FL', branchId: 'trop', weekday: 'Onsdag', active: true },
-  { id: 'm8', name: 'Emil Østergaard', initials: 'EO', branchId: 'trop', weekday: 'Onsdag', active: true },
-  { id: 'm9', name: 'Sofie Hartvig', initials: 'SH', branchId: 'soespejder', weekday: 'Torsdag', active: true },
-  { id: 'm10', name: 'Mikael Jørgensen', initials: 'MJ', branchId: 'soespejder', weekday: 'Torsdag', active: true },
-];
+export const attendanceMembers = rosterMembers;
 
 export const attendanceMeetings: Meeting[] = [
   {
@@ -97,4 +82,3 @@ export const seedAttendance: Record<string, string[]> = {
   'meet-soespejder-2026-06-26': ['m9', 'm10'],
   'meet-soespejder-2026-07-04': ['m9'],
 };
-

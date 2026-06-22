@@ -1,20 +1,8 @@
 export type AttendanceViewMode = 'day' | 'week' | 'month' | 'year';
 
-export type BranchId = 'junior' | 'ulv' | 'trop' | 'soespejder';
+import type { BranchId } from '../roster/roster.types';
 
-export interface Branch {
-  id: BranchId;
-  label: string;
-}
-
-export interface Member {
-  id: string;
-  name: string;
-  initials: string;
-  branchId: BranchId;
-  weekday: string;
-  active: boolean;
-}
+export type { Branch, BranchId, Member } from '../roster/roster.types';
 
 export interface Meeting {
   id: string;
@@ -27,4 +15,3 @@ export interface Meeting {
   capacity: number;
   summary: string;
 }
-
