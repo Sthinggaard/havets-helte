@@ -1,8 +1,14 @@
-import { computed, onBeforeUnmount, reactive, ref } from 'vue';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 
 import type { EventFilterType } from '../events/events.types';
 
-import { librarySeedItems, libraryTypeLabels, libraryTypeOptions } from './library.data';
+import {
+  createFallbackLibraryItems,
+  libraryTypeLabels,
+  libraryTypeOptions,
+  toLibraryItemFromSourceRecord,
+} from './library.data';
 import type { LibraryDraft, LibraryItem, LibraryTypeId } from './library.types';
 
 function createDraft(item: LibraryItem): LibraryDraft {
@@ -19,11 +25,15 @@ function cloneItem(item: LibraryItem): LibraryItem {
 }
 
 export function useLibraryPage() {
-  const items = ref<LibraryItem[]>(librarySeedItems.map(cloneItem));
+  const fallbackItems = createFallbackLibraryItems();
+  const items = ref<LibraryItem[]>(fallbackItems.map(cloneItem));
+  const sourceItems = ref<LibraryItem[]>([]);
   const activeType = ref<EventFilterType>('all');
   const selectedItemId = ref(items.value[0]?.id ?? '');
   const editing = ref(false);
-  const draft = reactive<LibraryDraft>(createDraft(items.value[0] ?? librarySeedItems[0]));
+  const draft = reactive<LibraryDraft>(createDraft(items.value[0] ?? fallbackItems[0]));
+
+  let stopListening: (() => void) | null = null;
 
   const typeCounts = computed<Record<EventFilterType, number>>(() => {
     const counts: Record<EventFilterType, number> = {
@@ -61,6 +71,62 @@ export function useLibraryPage() {
     draft.summary = item.summary;
   }
 
+  function ensureSelectedVisible() {
+    if (activeType.value === 'all') return;
+    const stillVisible = visibleItems.value.some(item => item.id === selectedItemId.value);
+    if (stillVisible) return;
+    selectedItemId.value = visibleItems.value[0]?.id ?? '';
+  }
+
+  function setItems(nextItems: LibraryItem[]) {
+    items.value = nextItems.map(cloneItem);
+    if (!items.value.some(item => item.id === selectedItemId.value)) {
+      selectedItemId.value = items.value[0]?.id ?? '';
+    }
+    ensureSelectedVisible();
+    syncDraft(selectedItem.value);
+  }
+
+  function loadLibraryFromSource() {
+    void import('@/lib/firebase')
+      .then(({ getAppFirestore }) => getAppFirestore())
+      .then(db => {
+        const unsubscribe = onSnapshot(
+          collection(db, 'events'),
+          snap => {
+            const nextItems = snap.docs
+              .map(docSnap => toLibraryItemFromSourceRecord({ id: docSnap.id, ...docSnap.data() }))
+              .filter((item): item is LibraryItem => Boolean(item))
+              .sort((a, b) => a.title.localeCompare(b.title, 'da'));
+
+            sourceItems.value = nextItems.map(cloneItem);
+            if (nextItems.length > 0) {
+              setItems(nextItems);
+              return;
+            }
+
+            if (sourceItems.value.length === 0 && items.value.length === 0) {
+              setItems(fallbackItems);
+            }
+          },
+          error => {
+            console.error(error);
+            if (items.value.length === 0) {
+              setItems(fallbackItems);
+            }
+          },
+        );
+
+        stopListening = unsubscribe;
+      })
+      .catch(error => {
+        console.error(error);
+        if (items.value.length === 0) {
+          setItems(fallbackItems);
+        }
+      });
+  }
+
   function selectType(type: EventFilterType) {
     if (editing.value) cancelEditing();
     activeType.value = type;
@@ -89,13 +155,6 @@ export function useLibraryPage() {
     }
     syncDraft(selectedItem.value);
     editing.value = false;
-  }
-
-  function ensureSelectedVisible() {
-    if (activeType.value === 'all') return;
-    const stillVisible = visibleItems.value.some(item => item.id === selectedItemId.value);
-    if (stillVisible) return;
-    selectedItemId.value = visibleItems.value[0]?.id ?? '';
   }
 
   function saveDraft() {
@@ -136,9 +195,10 @@ export function useLibraryPage() {
     if (draft.imageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(draft.imageUrl);
     }
-    items.value = librarySeedItems.map(cloneItem);
+    const nextItems = sourceItems.value.length > 0 ? sourceItems.value : fallbackItems;
+    setItems(nextItems);
     activeType.value = 'all';
-    selectedItemId.value = librarySeedItems[0]?.id ?? '';
+    selectedItemId.value = nextItems[0]?.id ?? '';
     editing.value = false;
     syncDraft(items.value[0] ?? null);
   }
@@ -155,9 +215,12 @@ export function useLibraryPage() {
   function uploadItem(file: File, type: LibraryTypeId) {
     const currentType = type || 'event';
     const nextUrl = URL.createObjectURL(file);
+    const sourceId = `upload-${crypto.randomUUID()}`;
     const fileName = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || 'Nyt billede';
     const nextItem: LibraryItem = {
-      id: `upload-${crypto.randomUUID()}`,
+      id: sourceId,
+      sourceCollection: 'fallback',
+      sourceId,
       type: currentType,
       title: fileName,
       summary: 'Ny fil lagt i biblioteket.',
@@ -196,7 +259,10 @@ export function useLibraryPage() {
     return libraryTypeLabels[type as EventFilterType];
   }
 
+  onMounted(loadLibraryFromSource);
+
   onBeforeUnmount(() => {
+    stopListening?.();
     items.value.forEach(item => {
       if (item.isLocal && item.imageUrl.startsWith('blob:')) {
         URL.revokeObjectURL(item.imageUrl);

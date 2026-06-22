@@ -21,13 +21,13 @@
         <aside class="library-sidebar">
           <div class="library-sidebar-head">
             <div>
-              <div class="library-sidebar-title">Typer</div>
+              <div class="library-sidebar-title">Kilder</div>
               <div class="library-sidebar-sub">{{ typeCounts.all }} billeder</div>
             </div>
             <span class="pill pill--soft">{{ activeTypeLabel }}</span>
           </div>
 
-          <div class="library-type-list" role="tablist" aria-label="Billedtyper">
+          <div class="library-type-list" role="tablist" aria-label="Billedkilder">
             <button
               v-for="option in libraryTypeOptions"
               :key="option.id"
