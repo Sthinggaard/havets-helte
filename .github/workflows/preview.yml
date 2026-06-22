@@ -27,6 +27,21 @@ jobs:
         with:
           node-version: 20
 
+      - name: Set up Node for Vue app
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/www/package-lock.json
+
+      - name: Install Vue dependencies
+        working-directory: apps/www
+        run: npm ci
+
+      - name: Build Vue app
+        working-directory: apps/www
+        run: npm run build
+
       - name: Write service account credentials
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE }}
