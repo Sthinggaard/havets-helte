@@ -11,7 +11,13 @@ import BranchesPage from './pages/BranchesPage.vue';
 import AdminShellPage from './pages/AdminShellPage.vue';
 
 const routes = [
-  { path: '/', name: 'home', component: HomePage, alias: ['/index.html'] },
+  {
+    path: '/',
+    name: 'home',
+    component: HomePage,
+    alias: ['/index.html'],
+    meta: { shell: 'landing' },
+  },
   {
     path: '/events',
     name: 'events',
