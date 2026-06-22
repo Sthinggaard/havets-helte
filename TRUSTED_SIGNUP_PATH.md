@@ -10,7 +10,7 @@ The target is:
 - parent signup remains simple
 - leaders keep the current Firebase admin flow
 - capacity cannot be oversubscribed by concurrent clients
-- the solution stays as close to free as possible
+- the solution stays free-only, or it is not part of this product scope
 
 ## Recommendation
 
@@ -51,7 +51,8 @@ runtime.
 
 ## Cost impact
 
-This is the smallest safe step, but it likely means moving to a **billing-enabled Firebase project**.
+This is the smallest safe step, but it is **not compatible with the current free-only product
+constraint** if it requires a billing-enabled Firebase project.
 
 Reason:
 
@@ -59,6 +60,7 @@ Reason:
   the Spark-only side.
 - In practice that means the project will usually need Blaze enabled even if actual monthly cost
   remains near zero at low usage.
+- A billing-enabled project may still be low-cost, but it is no longer free-only.
 
 Source:
 
@@ -67,7 +69,7 @@ Source:
 Important distinction:
 
 - **Billing-enabled** is not the same as **expensive**
-- For a small scout group, this can still remain effectively free or very close to free if usage is low
+- It is still a product boundary violation if the requirement is strictly free-only
 
 ## Architecture
 

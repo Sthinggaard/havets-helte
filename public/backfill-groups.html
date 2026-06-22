@@ -55,7 +55,7 @@
   <div class="topbar">
     <div class="topbar-brand"><i class="ti ti-database-cog"></i>Backfill grupper</div>
     <div style="display:flex;align-items:center;gap:10px">
-      <a class="topbar-link" href="admin.html">Lederportal</a>
+      <a class="topbar-link" href="admin-medlemmer.html">Lederportal</a>
       <button class="btn-sm" onclick="doLogout()">Log ud</button>
     </div>
   </div>
@@ -112,7 +112,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, connectFirestoreEmulator, collection, doc, getDocs, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, connectAuthEmulator, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { resolveGroupId, resolveGroupName } from './groups.js';
+import { resolveGroupId, resolveGroupName } from './groups.js?v=20260621';
 
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const firebaseConfig = isLocal

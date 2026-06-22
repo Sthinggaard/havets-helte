@@ -8,6 +8,16 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // Image library: authenticated leaders manage image assets for forms and event pages
+    match /imageLibrary/{id} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Image library categories: authenticated leaders manage categories
+    match /imageLibraryCategories/{id} {
+      allow read, write: if request.auth != null;
+    }
+
     // Signups: public names visible (forældre kan se hvem der er tilmeldt)
     // Oprettelse går via trusted backend path, ikke direkte fra browser
     match /signups/{id} {
@@ -30,6 +40,16 @@ service cloud.firestore {
 
     // Members: kun ledere (attendance-feature)
     match /members/{id} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Group teams: hold pr. gren/dag til medlemsopsætning
+    match /groupTeams/{id} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Group branches: aldersgrupper og branch metadata
+    match /groupBranches/{id} {
       allow read, write: if request.auth != null;
     }
 

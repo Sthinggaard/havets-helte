@@ -16,22 +16,50 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="shared.css">
 <style>
-  .hero{background:linear-gradient(135deg,var(--navy-mid),var(--navy));padding:34px 24px 26px;text-align:center}
+  .hero{position:relative;z-index:0;overflow:hidden;background:linear-gradient(135deg,var(--navy-mid),var(--navy));height:60vh;min-height:300px;padding:48px 24px 64px;text-align:center;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .hero-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;margin-bottom:6px}
   .hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-light);margin-bottom:12px}
   .hero-badge i{font-size:15px}
-  .hero-title{font-family:Arial,"Helvetica Neue",sans-serif;font-size:25px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-.02em}
-  .hero-desc{font-size:14px;color:var(--teal-light);max-width:380px;margin:0 auto;line-height:1.6}
+  .hero-logo{display:block;width:min(192px,52vw);height:auto;margin:0 auto;filter:drop-shadow(0 2px 10px rgba(0,0,0,.18))}
+  .hero-content > svg.hero-logo{display:none}
+  .hero-title{font-family:Arial,"Helvetica Neue",sans-serif;font-size:30px;font-weight:700;color:#fff;margin:0;letter-spacing:-.02em}
+  .hero-desc{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:700;line-height:1.4;color:#fff;max-width:min(90vw,420px);margin:0 auto;padding:8px 14px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);border-radius:999px;text-shadow:0 1px 2px rgba(0,0,0,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .hero-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;opacity:.5;filter:saturate(1.08) contrast(1.02);transform:scale(1.06);pointer-events:none}
+  .hero-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,51,102,.02) 0%,rgba(0,51,102,.08) 42%,rgba(0,51,102,.82) 100%)}
+  .hero-waves{position:absolute;left:0;right:0;bottom:-1px;width:100%;height:60px;pointer-events:none;display:flex;justify-content:center}
+  .hero-waves svg{display:block;width:249px;height:60px}
+  .hero-waves .wave{fill:none;stroke:#7fa3cc;stroke-linecap:round;stroke-linejoin:round;stroke-width:9px}
+  .page-shell{position:sticky;top:0;z-index:2;max-width:580px;margin:calc(-60vh + 60px) auto 0;padding:92px 18px 48px;pointer-events:none}
+  .page-shell > *{pointer-events:auto}
+  .shell-top{position:absolute;top:18px;left:18px;right:18px;display:flex;justify-content:flex-end;align-items:center;z-index:4}
+  .hero-content{position:relative;z-index:3;padding:0 0 18px;text-align:center}
+  .type-bar{display:flex;gap:8px;justify-content:flex-start;align-items:center;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;margin-bottom:16px;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  .type-btn{flex:0 0 auto;border:1px solid var(--border);background:#fff;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;border-radius:999px;padding:9px 13px;cursor:pointer;transition:all .15s}
+  .type-btn.active{background:var(--navy);border-color:var(--navy);color:#fff}
+  .type-bar.secondary{margin-top:4px;margin-bottom:14px}
+  .panel{display:none}
+  .panel.active{display:block}
+  .mine-empty{background:#fff;border:1px solid var(--border);border-radius:18px;padding:20px;text-align:center;color:var(--muted);line-height:1.6}
+  .mine-empty .mine-empty-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px}
+  .mine-empty .btn-login-subtle{display:inline-block;margin-top:10px;font-size:13px}
+  @media (max-width: 640px){
+    .hero{height:38vh;min-height:240px;padding:34px 20px 48px}
+    .hero-logo{width:min(150px,54vw)}
+    .hero-title{font-size:27px}
+    .hero-desc{font-size:13px;padding:7px 12px}
+    .page-shell{margin:calc(-38vh + 40px) auto 0;padding:72px 16px 40px}
+  }
 
-  .content{background:#fff;min-height:calc(100vh - 170px);border-radius:20px 20px 0 0;margin-top:-2px;padding:26px 18px 48px;max-width:580px;margin-left:auto;margin-right:auto}
+  .content{position:relative;z-index:2;background:#fff;min-height:calc(100vh - 170px);border-radius:24px;margin-top:0;padding:24px 18px 48px;max-width:none;margin-left:0;margin-right:0;box-shadow:0 -12px 30px rgba(0,24,48,.08);overflow:hidden}
 
   /* Auth bar */
-  .auth-bar{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:16px;min-height:34px}
-  .btn-google{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;font-family:inherit}
-  .btn-google:hover{border-color:var(--navy)}
+  .auth-bar{display:flex;justify-content:flex-end;align-items:center;gap:10px;min-height:34px}
+  .btn-google{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.96);border:1px solid rgba(255,255,255,.75);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer;font-family:inherit;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+  .btn-google:hover{border-color:#fff;background:#fff}
   .btn-google img{width:16px;height:16px}
-  .user-chip{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text)}
-  .user-chip .uava{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
-  .user-chip .logout{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0}
+  .user-chip{display:flex;align-items:center;gap:8px;font-size:13px;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:7px 10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 6px 16px rgba(0,0,0,.12)}
+  .user-chip .uava{width:28px;height:28px;border-radius:50%;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+  .user-chip .logout{background:none;border:none;color:#fff;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0;opacity:.95}
 
   /* Mine tilmeldinger */
   .mine-card{background:#fff;border:1px solid var(--success-border);border-radius:14px;padding:16px;margin-bottom:18px}
@@ -48,6 +76,7 @@
   /* Hub event list */
   .hub-event{display:block;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:12px;text-decoration:none;color:inherit;transition:box-shadow .2s,border-color .2s}
   .hub-event:hover{border-color:#b0bfcf;box-shadow:0 0 3px 1px rgb(94,158,214)}
+  .hub-event-image{width:100%;height:170px;object-fit:cover;border-radius:14px;margin-bottom:14px;display:block;background:var(--white)}
   .he-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
   .he-title{font-size:17px;font-weight:600;line-height:1.25}
   .he-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
@@ -62,32 +91,42 @@
   .he-spots{display:flex;align-items:center;gap:6px;color:var(--muted)}
   .he-spots-pill{background:var(--success-bg);color:var(--text);border:1px solid var(--success-border);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500}
   .he-spots-pill.full{background:var(--white);color:var(--muted);border-color:var(--border)}
-  .he-cta{display:inline-flex;align-items:center;gap:5px;background:var(--danger);color:#fff;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;flex-shrink:0;transition:opacity .15s}
+  .he-cta{display:inline-flex;align-items:center;gap:5px;background:var(--danger);color:#fff;border-radius:999px;padding:5px 15px;font-size:12px;font-weight:700;flex-shrink:0;transition:opacity .15s}
   .hub-event:hover .he-cta{opacity:.88}
 
   /* Event detail */
-  .info-strip{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .info-strip{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}
   .info-chip{display:flex;align-items:center;gap:8px;background:var(--white);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text)}
   .info-chip i{font-size:16px;color:var(--navy-mid);flex-shrink:0}
+  .detail-top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .detail-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .detail-back{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;padding:8px 12px;cursor:pointer;text-decoration:none;transition:border-color .15s,color .15s,background .15s}
+  .detail-back:hover{border-color:var(--navy-mid);color:var(--navy);background:var(--white)}
+  .share-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--navy);font-family:inherit;font-size:12px;font-weight:700;padding:8px 12px;cursor:pointer}
+  .share-btn:hover{border-color:var(--navy-mid)}
+  .share-btn.facebook{background:#1877f2;border-color:#1877f2;color:#fff}
+  .share-btn.facebook:hover{border-color:#165fc0;background:#165fc0}
   .ev-desc{font-size:14px;color:var(--text);line-height:1.7;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:13px 16px;margin-bottom:22px}
 
   /* Slots */
-  .shift-section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px}
-  .shift-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
-  .shift-time{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--text);flex:1}
-  .shift-time i{font-size:16px;color:var(--navy-mid);flex-shrink:0}
-  .shift-sub{font-size:12px;color:var(--muted);font-weight:400;margin-left:2px}
-  .shift-cap{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+  .shift-section{background:#fff;border:1px solid var(--border);border-radius:18px;padding:18px 18px 20px;margin-bottom:14px}
+  .shift-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .shift-time{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:700;color:var(--text);flex:1;line-height:1.2}
+  .shift-dot{width:10px;height:10px;border:2px solid var(--navy);border-radius:50%;flex-shrink:0;display:inline-block;background:#fff;margin-left:2px}
+  .shift-sub{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-left:0;margin-top:3px}
+  .shift-cap{font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px;white-space:nowrap;flex-shrink:0;border:1px solid var(--success-border);background:var(--success-bg);color:var(--text)}
   .cap-open{background:var(--success-bg);color:var(--text);border:1px solid var(--success-border)}
   .cap-full{background:var(--white);color:var(--muted)}
-  .signups-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-  .signup-row{display:flex;align-items:center;gap:9px;padding:8px 12px;background:var(--success-bg);border:1px solid var(--success-border);border-radius:9px;font-size:13px;color:var(--text);font-weight:500}
-  .signup-av{width:26px;height:26px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0}
-  .signup-row-empty{width:100%;background:#fff;border:1.5px dashed var(--border);color:var(--muted);font-family:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+  .signups-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .signup-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--success-bg);border:1px solid var(--success-border);border-radius:16px;font-size:15px;color:var(--text);font-weight:600;min-height:64px}
+  .signup-av{width:40px;height:40px;border-radius:50%;background:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+  .signup-name{flex:1;line-height:1.2}
+  .signup-row-empty{width:100%;background:#fff;border:2px dashed #d0d0d0;color:var(--muted);font-family:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s,color .15s;padding:14px 16px;border-radius:16px;display:flex;align-items:center;gap:14px;min-height:84px}
   .signup-row-empty:hover{border-color:var(--navy-mid);background:var(--white);color:var(--navy)}
-  .signup-row-empty .signup-av{background:var(--border);color:var(--muted);font-size:14px;transition:background .15s,color .15s}
+  .signup-row-empty .signup-av{background:#d0d0d0;color:#7a7a7a;font-size:22px;width:44px;height:44px;transition:background .15s,color .15s}
   .signup-row-empty:hover .signup-av{background:var(--navy);color:#fff}
-  .join-btn{width:100%;padding:12px;background:var(--danger);border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:inherit;color:#fff;cursor:pointer;transition:opacity .15s}
+  .signup-row-empty .signup-row-text{font-size:18px;font-weight:600;line-height:1.2}
+  .join-btn{width:100%;padding:10px;background:var(--danger);border:none;border-radius:4px;font-size:14px;font-weight:700;font-family:inherit;color:#fff;cursor:pointer;transition:opacity .15s}
   .join-btn:hover{opacity:.88}
   .join-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;opacity:1}
   .req-adult-note{font-size:11px;color:var(--text);margin-top:8px;display:flex;align-items:center;gap:5px}
@@ -96,7 +135,7 @@
   .waitlist-count{background:var(--white);color:var(--muted);border-radius:20px;padding:2px 9px;font-weight:500;font-size:11px}
   .join-btn-waitlist{background:#fff;border:1.5px dashed var(--border);color:var(--navy-mid)}
   .join-btn-waitlist:hover{border-color:var(--navy-mid);background:var(--white);opacity:1}
-  .modal-waitlist-banner{background:var(--white);border-radius:9px;padding:9px 13px;font-size:13px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+  .modal-waitlist-banner{background:var(--success-bg);border:1px solid var(--success-border);border-radius:9px;padding:9px 13px;font-size:13px;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px}
   .modal-waitlist-banner i{font-size:15px;flex-shrink:0}
   .mine-waitlist{font-size:11px;font-weight:600;background:var(--white);color:var(--muted);border-radius:10px;padding:2px 7px;margin-left:4px}
 
@@ -114,16 +153,26 @@
   .group-adult-note i{font-size:14px;color:var(--text);flex-shrink:0;margin-top:1px}
 
   /* Modal */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,15,30,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,51,102,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
   .modal-overlay.show{display:flex}
-  .modal{background:#fff;border-radius:18px 18px 0 0;padding:24px 20px 32px;width:100%;max-width:580px}
-  .modal-title{font-size:16px;font-weight:700;margin-bottom:2px;color:var(--navy)}
-  .modal-sub{font-size:13px;color:var(--muted);margin-bottom:18px}
-  .modal-actions{display:flex;gap:10px;margin-top:4px}
-  .btn-cancel{flex:1;padding:12px;background:var(--white);border:none;border-radius:10px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;font-family:inherit}
-  .btn-confirm{flex:2;padding:12px;background:var(--danger);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .modal{background:#fff;border:1px solid var(--border);border-radius:18px;padding:32px 28px;width:100%;max-width:420px;max-height:calc(100vh - 40px);overflow:auto;box-shadow:0 2px 2px rgba(0,0,0,.08)}
+  .modal-title{font-size:22px;font-weight:700;margin-bottom:4px;color:var(--navy);letter-spacing:-.01em}
+  .modal-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);background:var(--white)}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(15,65,114,.18)}
+  .field textarea{resize:vertical;min-height:80px}
+  .check-row{display:flex;align-items:center;gap:9px;min-height:44px;padding:0;margin-bottom:6px;font-size:13px;cursor:pointer;color:var(--text)}
+  .check-row input{width:18px;height:18px;accent-color:var(--navy);flex-shrink:0}
+  .modal-actions{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .btn-cancel{width:100%;padding:10px;background:#fff;border:1px solid var(--border);border-radius:4px;font-size:14px;color:var(--muted);cursor:pointer;font-family:inherit}
+  .btn-confirm{width:100%;padding:10px;background:var(--danger);border:none;border-radius:4px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
   .btn-confirm:hover{opacity:.88}
   .btn-confirm:disabled{opacity:.6;cursor:not-allowed}
+  .signup-error{display:none;margin-top:14px;padding:12px 14px;border:1px solid rgba(15,65,114,.18);background:var(--white);border-radius:10px;font-size:13px;line-height:1.5;color:var(--text)}
+  .signup-error.show{display:block}
+  .signup-error strong{display:block;color:var(--navy);margin-bottom:2px}
 
   /* Toast */
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:24px;font-size:13px;font-weight:500;transition:transform .3s;z-index:60;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 48px)}
@@ -173,16 +222,57 @@
 <body>
 
 <div class="hero">
-  <div class="hero-badge"><i class="ti ti-anchor"></i>Havets Helte</div>
-  <div class="hero-title" id="heroTitle">Forældrehelte</div>
-  <div class="hero-desc" id="heroDesc">Vores forening lever af forældre der giver en hånd.</div>
+  <img id="heroImage" class="hero-image" alt="" hidden>
+  <div class="hero-scrim" aria-hidden="true"></div>
+  <div class="hero-waves" aria-hidden="true">
+    <svg viewBox="0 0 249 60" aria-hidden="true">
+      <defs>
+        <path id="waveLine" class="wave" d="M4.5,15.5c12,0,12-11,24-11s12,11,24,11,12-11,24-11,12,11,24,11,12-11,24-11,12,11,24,11,12-11,24-11,12,11,24,11,12-11,24-11,12,11,24,11,12-11,24-11"/>
+      </defs>
+      <use href="#waveLine" y="0"></use>
+      <use href="#waveLine" y="30"></use>
+      <use href="#waveLine" y="60"></use>
+    </svg>
+  </div>
 </div>
 
-<div class="content">
-  <div id="authBar" class="auth-bar"></div>
-  <div id="mineWrap"></div>
-  <div id="view"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter opgaver…</div></div>
-  <div class="contact-footer" id="footer" style="display:none">Havets Helte søspejdere</div>
+<div class="page-shell">
+  <div class="hero-content">
+    <div class="hero-brand">
+      <img class="hero-logo" src="./havets-helte-logo.svg" alt="Havets Helte logo">
+      <div class="hero-title" id="heroTitle">Forældrehelte</div>
+    </div>
+    <div class="hero-desc" id="heroDesc">Vores forening lever af forældre der giver en hånd.</div>
+  </div>
+
+  <div class="shell-top">
+    <div id="authBar" class="auth-bar"></div>
+  </div>
+
+  <div class="panel active" id="tasksPanel" role="tabpanel" aria-labelledby="typeAll">
+    <div class="type-bar" role="tablist" aria-label="Type">
+      <button class="type-btn active" id="typeAll" role="tab" aria-selected="true" onclick="goToLandingPage('all')">Alle</button>
+      <button class="type-btn" id="typeTask" role="tab" aria-selected="false" onclick="goToLandingPage('opgaver')">Opgaver</button>
+      <button class="type-btn" id="typeTimed" role="tab" aria-selected="false" onclick="goToLandingPage('vagter')">Vagter</button>
+      <button class="type-btn" id="typeEvent" role="tab" aria-selected="false" onclick="goToLandingPage('events')">Events</button>
+      <button class="type-btn" id="typeMine" role="tab" aria-selected="false" onclick="goToLandingPage('mine')">Min tilmeldinger</button>
+    </div>
+    <div class="content">
+      <div id="view"><div class="state-msg"><i class="ti ti-loader spinning"></i>Henter opgaver…</div></div>
+      <div class="contact-footer" id="footer" style="display:none">Havets Helte søspejdere</div>
+    </div>
+  </div>
+
+  <div class="panel" id="minePanel" role="tabpanel" aria-labelledby="typeMine">
+    <div class="type-bar" role="tablist" aria-label="Type på tilmeldinger">
+      <button class="type-btn active" id="mineTypeAll" role="tab" aria-selected="true" onclick="setEventTypeFilter('all')">Alle</button>
+      <button class="type-btn" id="mineTypeTask" role="tab" aria-selected="false" onclick="setEventTypeFilter('task')">Opgaver</button>
+      <button class="type-btn" id="mineTypeTimed" role="tab" aria-selected="false" onclick="setEventTypeFilter('timed')">Vagter</button>
+      <button class="type-btn" id="mineTypeEvent" role="tab" aria-selected="false" onclick="setEventTypeFilter('event')">Events</button>
+      <button class="type-btn" id="mineTypeMine" role="tab" aria-selected="false" onclick="goToLandingPage('mine')">Min tilmeldinger</button>
+    </div>
+    <div id="mineWrap"></div>
+  </div>
 </div>
 
 <!-- Signup modal -->
@@ -220,6 +310,7 @@
       <button class="btn-cancel" onclick="closeModal()">Annuller</button>
       <button class="btn-confirm" id="confirmBtn" onclick="confirmSignup()">Tilmeld mig</button>
     </div>
+    <div class="signup-error" id="signupError" role="alert" aria-live="polite"></div>
   </div>
 </div>
 
@@ -227,7 +318,7 @@
 
 <script type="module">
 import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, connectFirestoreEmulator,
+import { getFirestore, initializeFirestore, connectFirestoreEmulator,
          collection, doc, getDoc, deleteDoc,
          onSnapshot, getDocs, query, where }
                                 from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -242,18 +333,23 @@ const firebaseConfig = isLocal
   : await fetch('/__/firebase/init.json').then(r => r.json());
 
 const app  = initializeApp(firebaseConfig);
-const db   = getFirestore(app);
+const db   = isLocal
+  ? initializeFirestore(app, { experimentalForceLongPolling: true })
+  : getFirestore(app);
 const auth = getAuth(app);
 
 if (isLocal) {
-  connectFirestoreEmulator(db, 'localhost', 8081);
+  connectFirestoreEmulator(db, '127.0.0.1', 8081);
   connectAuthEmulator(auth, 'http://localhost:9097', { disableWarnings: true });
+  // Storage emulator is already working on localhost, keep its host aligned with Firestore.
 }
 
 // ── APPS SCRIPT notifikationer (udfyld efter deploy) ─────────────────────
 const APPS_SCRIPT_URL = '';   // indsæt web-app URL fra Code.gs deployment
 const SHARED_SECRET   = '';   // skal matche SHARED_SECRET i Code.gs
-const SIGNUP_API_URL  = '/api/submitSignup';
+const SIGNUP_API_URL  = isLocal && location.port !== '5003'
+  ? 'http://127.0.0.1:5003/api/submitSignup'
+  : '/api/submitSignup';
 
 function notifySignup(payload) {
   if (!APPS_SCRIPT_URL) return;
@@ -273,26 +369,205 @@ async function submitSignupRequest(payload) {
       console.error('Kunne ikke hente ID-token:', err);
     }
   }
-  const response = await fetch(SIGNUP_API_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json().catch(() => ({}));
+  let response;
+  try {
+    response = await fetch(SIGNUP_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    const error = new Error(
+      isLocal
+        ? 'Tilmeldingstjenesten kan ikke nås. Start Firebase hosting-emulatoren på port 5003.'
+        : 'Tilmeldingstjenesten kan ikke nås.'
+    );
+    error.code = 'network';
+    throw error;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json')
+    ? await response.json().catch(() => ({}))
+    : {};
   if (!response.ok) {
-    const error = new Error(data.message || 'Signup API fejl');
-    error.code = data.status || 'error';
+    const error = new Error(
+      data.message ||
+      (response.status === 404 && isLocal
+        ? 'Tilmeldingstjenesten blev ikke fundet på denne adresse. Kør Firebase hosting-emulatoren på port 5003.'
+        : 'Signup API fejl')
+    );
+    error.code = data.status || (response.status === 404 && isLocal ? 'api_missing' : (response.status === 404 ? 'not_found' : 'error'));
     throw error;
   }
   return data;
 }
 
 // ── Routing ───────────────────────────────────────────────────────────────
-const eventId = new URLSearchParams(location.search).get('event');
+function readRouteFromLocation(loc = window.location) {
+  const params = new URLSearchParams(loc.search);
+  const path = loc.pathname.replace(/\/+$/, '') || '/';
+  const route = {
+    page: 'tasks',
+    type: 'all',
+    eventId: params.get('event') || '',
+  };
+
+  if (path.endsWith('/mine-tilmeldinger.html') || params.get('page') === 'mine') {
+    route.page = 'mine';
+  } else if (path.endsWith('/opgaver.html') || params.get('type') === 'task') {
+    route.type = 'task';
+  } else if (path.endsWith('/vagter.html') || params.get('type') === 'timed') {
+    route.type = 'timed';
+  } else if (path.endsWith('/events.html') || params.get('type') === 'event') {
+    route.type = 'event';
+  }
+
+  if (params.get('type') === 'all') route.type = 'all';
+  return route;
+}
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 let currentUser = null;
+let currentPageTab = 'tasks';
+let currentEventTypeFilter = 'all';
+let currentEventId = '';
+let hubEvents = [];
+let hubEventsUnsub = null;
+let mineUnsub = null;
+let eventDetailUnsub = null;
+let hubCardUnsubs = [];
 const googleProvider = new GoogleAuthProvider();
+
+const LANDING_URLS = {
+  all: './',
+  opgaver: './opgaver.html',
+  vagter: './vagter.html',
+  events: './events.html',
+  mine: './mine-tilmeldinger.html',
+};
+
+function getLandingHref(page = currentPageTab, type = currentEventTypeFilter) {
+  if (page === 'mine') return LANDING_URLS.mine;
+  if (type === 'task') return LANDING_URLS.opgaver;
+  if (type === 'timed') return LANDING_URLS.vagter;
+  if (type === 'event') return LANDING_URLS.events;
+  return LANDING_URLS.all;
+}
+
+function goToLandingPage(page) {
+  const route = page === 'mine'
+    ? { page: 'mine', type: 'all', eventId: '' }
+    : page === 'opgaver'
+      ? { page: 'tasks', type: 'task', eventId: '' }
+      : page === 'vagter'
+        ? { page: 'tasks', type: 'timed', eventId: '' }
+        : page === 'events'
+          ? { page: 'tasks', type: 'event', eventId: '' }
+          : { page: 'tasks', type: 'all', eventId: '' };
+  navigateToRoute(route);
+}
+window.goToLandingPage = goToLandingPage;
+
+function routeToUrl(route) {
+  if (route.eventId) {
+    const url = new URL('/', window.location.origin);
+    url.searchParams.set('event', route.eventId);
+    if (route.version) url.searchParams.set('v', String(route.version));
+    if (route.page === 'mine') {
+      url.searchParams.set('page', 'mine');
+      url.searchParams.set('type', 'all');
+    } else if (route.type === 'task') {
+      url.searchParams.set('page', 'tasks');
+      url.searchParams.set('type', 'task');
+    } else if (route.type === 'timed') {
+      url.searchParams.set('page', 'tasks');
+      url.searchParams.set('type', 'timed');
+    } else if (route.type === 'event') {
+      url.searchParams.set('page', 'tasks');
+      url.searchParams.set('type', 'event');
+    } else {
+      url.searchParams.set('page', 'tasks');
+      url.searchParams.set('type', 'all');
+    }
+    return url.toString();
+  }
+  if (route.page === 'mine') return LANDING_URLS.mine;
+  if (route.type === 'task') return LANDING_URLS.opgaver;
+  if (route.type === 'timed') return LANDING_URLS.vagter;
+  if (route.type === 'event') return LANDING_URLS.events;
+  return LANDING_URLS.all;
+}
+
+function routeLabel(route = { page: currentPageTab, type: currentEventTypeFilter }) {
+  if (route.page === 'mine') return 'Mine tilmeldinger';
+  if (route.type === 'task') return 'Opgaver';
+  if (route.type === 'timed') return 'Vagter';
+  if (route.type === 'event') return 'Events';
+  return 'Alle opgaver';
+}
+
+function resetRouteListeners() {
+  hubEventsUnsub?.();
+  hubEventsUnsub = null;
+  mineUnsub?.();
+  mineUnsub = null;
+  eventDetailUnsub?.();
+  eventDetailUnsub = null;
+  hubCardUnsubs.forEach(unsub => unsub && unsub());
+  hubCardUnsubs = [];
+}
+
+function syncRouteState(route) {
+  currentPageTab = route.page === 'mine' ? 'mine' : 'tasks';
+  currentEventTypeFilter = route.type === 'task' || route.type === 'timed' || route.type === 'event' ? route.type : 'all';
+  currentEventId = route.eventId || '';
+  document.getElementById('tasksPanel')?.classList.toggle('active', currentPageTab === 'tasks');
+  document.getElementById('minePanel')?.classList.toggle('active', currentPageTab === 'mine');
+  renderEventTypeButtons();
+}
+
+function navigateToRoute(route, { replace = false } = {}) {
+  const normalizedRoute = {
+    page: route.page === 'mine' ? 'mine' : 'tasks',
+    type: route.type === 'task' || route.type === 'timed' || route.type === 'event' ? route.type : 'all',
+    eventId: route.eventId || '',
+    version: route.version || '',
+  };
+  const url = routeToUrl(normalizedRoute);
+  history[replace ? 'replaceState' : 'pushState']({}, '', url);
+  setPageTab(normalizedRoute.page);
+  setEventTypeFilter(normalizedRoute.type);
+  currentEventId = normalizedRoute.eventId;
+  renderPageForRoute(route);
+}
+
+function goBackToCurrentLanding() {
+  navigateToRoute({ page: currentPageTab, type: currentEventTypeFilter, eventId: '' }, { replace: true });
+}
+window.goBackToCurrentLanding = goBackToCurrentLanding;
+
+function renderPageForRoute(route) {
+  resetRouteListeners();
+  document.getElementById('view').innerHTML = '<div class="state-msg"><i class="ti ti-loader spinning"></i>Henter…</div>';
+  document.getElementById('mineWrap').innerHTML = '';
+  document.getElementById('heroTitle').textContent = 'Forældrehelte';
+  document.getElementById('heroDesc').textContent = 'Vores forening lever af forældre der giver en hånd.';
+  const heroImage = document.getElementById('heroImage');
+  heroImage.removeAttribute('src');
+  heroImage.hidden = true;
+  heroImage.alt = '';
+
+  if (route.eventId) {
+    loadEventDetail(route.eventId);
+    return;
+  }
+  if (route.page === 'mine') {
+    loadMine();
+    return;
+  }
+  loadHub();
+}
 
 function doGoogleLogin()  { signInWithPopup(auth, googleProvider).catch(() => alert('Login mislykkedes.')); }
 function doGoogleLogout() { signOut(auth); }
@@ -310,21 +585,73 @@ function renderAuthBar() {
       <button class="logout" onclick="doGoogleLogout()">Log ud</button>
     </div>`;
   } else {
-    bar.innerHTML = `<button class="btn-login-subtle" onclick="doGoogleLogin()">Log ind med Google</button>`;
+    bar.innerHTML = `<button class="btn-google" onclick="doGoogleLogin()"><i class="ti ti-login"></i>Log ind med Google</button>`;
   }
+}
+
+window.setPageTab = function(tab) {
+  currentPageTab = tab === 'mine' ? 'mine' : 'tasks';
+  document.getElementById('tasksPanel').classList.toggle('active', currentPageTab === 'tasks');
+  document.getElementById('minePanel').classList.toggle('active', currentPageTab === 'mine');
+  if (currentPageTab === 'mine' && currentUser) loadMine();
+  renderEventTypeButtons();
+};
+
+window.setEventTypeFilter = function(type) {
+  currentEventTypeFilter = type === 'task' || type === 'timed' || type === 'event' ? type : 'all';
+  renderEventTypeButtons();
+  if (currentPageTab === 'mine') {
+    loadMine();
+  } else {
+    renderHubList();
+  }
+};
+
+function renderEventTypeButtons() {
+  const isTasks = currentPageTab === 'tasks';
+  const setGroupState = (prefix, activeType, mineActive) => {
+    const options = [
+      ['All', 'all'],
+      ['Task', 'task'],
+      ['Timed', 'timed'],
+      ['Event', 'event'],
+    ];
+    options.forEach(([suffix, type]) => {
+      const el = document.getElementById(`${prefix}${suffix}`);
+      if (!el) return;
+      const active = activeType === type;
+      el.classList.toggle('active', active);
+      el.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    const mineEl = document.getElementById(`${prefix}Mine`);
+    if (mineEl) {
+      mineEl.classList.toggle('active', !!mineActive);
+      mineEl.setAttribute('aria-selected', mineActive ? 'true' : 'false');
+    }
+  };
+  setGroupState('type', isTasks ? currentEventTypeFilter : null, !isTasks);
+  setGroupState('mineType', currentPageTab === 'mine' ? currentEventTypeFilter : null, currentPageTab === 'mine');
 }
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
   renderAuthBar();
-  if (currentUser) loadMine();
-  else document.getElementById('mineWrap').innerHTML = '';
+  if (currentPageTab === 'mine') loadMine();
+  renderEventTypeButtons();
 });
 
 // ── Mine tilmeldinger ─────────────────────────────────────────────────────
 async function loadMine() {
   const wrap = document.getElementById('mineWrap');
-  if (!currentUser) { wrap.innerHTML = ''; return; }
+  if (!currentUser) {
+    wrap.innerHTML = `
+      <div class="mine-empty">
+        <div class="mine-empty-title">Min tilmeldinger</div>
+        <div>Log ind med Google for at se og afmelde dine tilmeldinger.</div>
+        <button class="btn-login-subtle" onclick="doGoogleLogin()">Log ind med Google</button>
+      </div>`;
+    return;
+  }
   try {
     const snap = await getDocs(query(collection(db, 'signups'), where('uid', '==', currentUser.uid)));
     const mine = [];
@@ -341,8 +668,21 @@ async function loadMine() {
       }
     }
 
+    const filteredMine = currentEventTypeFilter === 'all'
+      ? mine
+      : mine.filter(m => (titles[m.eventId]?.type || 'task') === currentEventTypeFilter);
+
+    if (filteredMine.length === 0) {
+      wrap.innerHTML = `
+        <div class="mine-empty">
+          <div class="mine-empty-title">Mine tilmeldinger</div>
+          <div>Der er ingen tilmeldinger i den valgte kategori.</div>
+        </div>`;
+      return;
+    }
+
     let html = '<div class="mine-card"><h3><i class="ti ti-circle-check"></i>Mine tilmeldinger</h3>';
-    mine.forEach(m => {
+    filteredMine.forEach(m => {
       const ev   = titles[m.eventId];
       const slot = ev ? (ev.slots || []).find(s => s.id === m.slotId) : null;
       const sub  = slot ? ([slot.role, slot.sublabel].filter(Boolean).join(' · ') || slot.label) : '';
@@ -371,20 +711,38 @@ window.cancelSignup = cancelSignup;
 
 // ── Hub ───────────────────────────────────────────────────────────────────
 function loadHub() {
-  onSnapshot(query(collection(db, 'events'), where('active', '==', true)), snap => {
-    const view = document.getElementById('view');
-    const events = [];
-    snap.forEach(d => events.push({ id: d.id, ...d.data() }));
-    events.sort((a, b) => (b.created?.seconds || 0) - (a.created?.seconds || 0));
-
-    if (events.length === 0) {
-      view.innerHTML = '<div class="state-msg"><i class="ti ti-calendar-off"></i>Der er ingen opgaver lige nu.<br>Kig forbi igen senere!</div>';
-      return;
-    }
-    view.innerHTML = '';
-    events.forEach(ev => renderHubCard(ev, view));
+  hubEventsUnsub?.();
+  hubEventsUnsub = onSnapshot(query(collection(db, 'events'), where('active', '==', true)), snap => {
+    hubEvents = [];
+    snap.forEach(d => hubEvents.push({ id: d.id, ...d.data() }));
+    hubEvents.sort((a, b) => (b.created?.seconds || 0) - (a.created?.seconds || 0));
+    renderHubList();
   });
   document.getElementById('footer').style.display = 'block';
+}
+
+function renderHubList() {
+  const view = document.getElementById('view');
+  if (!view) return;
+  hubCardUnsubs.forEach(unsub => unsub && unsub());
+  hubCardUnsubs = [];
+  const events = hubEvents.filter(ev => currentEventTypeFilter === 'all' ? true : (ev.type || 'task') === currentEventTypeFilter);
+  const footer = document.getElementById('footer');
+  if (footer) footer.style.display = 'block';
+
+  if (events.length === 0) {
+    const emptyLabel = currentEventTypeFilter === 'all'
+      ? 'Der er ingen opgaver lige nu.<br>Kig forbi igen senere!'
+      : currentEventTypeFilter === 'task'
+        ? 'Der er ingen opgaver lige nu.<br>Kig forbi igen senere!'
+        : currentEventTypeFilter === 'timed'
+          ? 'Der er ingen vagter lige nu.<br>Kig forbi igen senere!'
+          : 'Der er ingen events lige nu.<br>Kig forbi igen senere!';
+    view.innerHTML = `<div class="state-msg"><i class="ti ti-calendar-off"></i>${emptyLabel}</div>`;
+    return;
+  }
+  view.innerHTML = '';
+  events.forEach(ev => renderHubCard(ev, view));
 }
 
 function renderHubCard(ev, view) {
@@ -394,8 +752,13 @@ function renderHubCard(ev, view) {
   const typeLabel = ev.type === 'timed' ? 'Vagter' : ev.type === 'event' ? 'Event' : 'Opgaver';
   const ctaLabel  = ev.type === 'event' ? 'Se event' : ev.type === 'timed' ? 'Find en vagt' : 'Se opgaver';
   a.className = `hub-event type-${ev.type || 'task'}`;
-  a.href = './?event=' + ev.id;
+  a.href = browserUrlForEvent(ev.id);
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    navigateToRoute({ page: 'tasks', type: ev.type || 'all', eventId: ev.id });
+  });
   a.innerHTML = `
+    ${ev.imageUrl ? `<img class="hub-event-image" src="${esc(ev.imageUrl)}" alt="${esc(ev.title)}">` : ''}
     <div class="he-head">
       <div class="he-title">${esc(ev.title)}</div>
       <span class="he-type ${ev.type}">${typeLabel}</span>
@@ -411,9 +774,9 @@ function renderHubCard(ev, view) {
     </div>`;
   view.appendChild(a);
 
-  onSnapshot(query(collection(db, 'signups'), where('eventId', '==', ev.id)), s => {
-    const taken     = s.docs.reduce((sum, d) => sum + (!d.data().waitlist ? (d.data().groupSize || 1) : 0), 0);
-    const cnt       = document.getElementById('hc-' + ev.id);
+  const cardUnsub = onSnapshot(query(collection(db, 'signups'), where('eventId', '==', ev.id)), s => {
+    const taken = s.docs.reduce((sum, d) => sum + (!d.data().waitlist ? (d.data().groupSize || 1) : 0), 0);
+    const cnt = document.getElementById('hc-' + ev.id);
     if (!cnt) return;
     if (!totalCap) {
       cnt.innerHTML = `<span class="he-spots-pill">${taken} tilmeldte</span>`;
@@ -425,6 +788,7 @@ function renderHubCard(ev, view) {
         : `<span class="he-spots-pill">${left} ledig${left !== 1 ? 'e' : ''} plads${left !== 1 ? 'er' : ''}</span>`;
     }
   });
+  hubCardUnsubs.push(cardUnsub);
 }
 
 // ── Event detail ──────────────────────────────────────────────────────────
@@ -432,18 +796,33 @@ let currentEvent = null;
 let signups = [];
 
 async function loadEventDetail(id) {
+  eventDetailUnsub?.();
+  eventDetailUnsub = null;
   const snap = await getDoc(doc(db, 'events', id));
   if (!snap.exists() || snap.data().active === false) {
     document.getElementById('view').innerHTML =
-      '<a class="back-link" href="./"><i class="ti ti-arrow-left"></i>Alle opgaver</a>' +
+      `<button type="button" class="detail-back" onclick="goBackToCurrentLanding()"><i class="ti ti-arrow-left"></i>${routeLabel({ page: currentPageTab, type: currentEventTypeFilter })}</button>` +
       '<div class="state-msg"><i class="ti ti-calendar-off"></i>Opgaven findes ikke længere.</div>';
     return;
   }
   currentEvent = { id, ...snap.data() };
   document.getElementById('heroTitle').textContent = currentEvent.title;
   document.getElementById('heroDesc').textContent  = currentEvent.dateText || '';
+  document.title = `${currentEvent.title} · Havets Helte`;
+  const shareVersion = currentEvent.updated?.seconds || currentEvent.created?.seconds || '';
+  history.replaceState({}, '', location.origin === PUBLIC_SHARE_BASE_URL ? shareUrlForEvent(id, shareVersion) : browserUrlForEvent(id, shareVersion));
+  const heroImage = document.getElementById('heroImage');
+  if (currentEvent.imageUrl) {
+    heroImage.src = currentEvent.imageUrl;
+    heroImage.hidden = false;
+    heroImage.alt = currentEvent.title || '';
+  } else {
+    heroImage.removeAttribute('src');
+    heroImage.hidden = true;
+    heroImage.alt = '';
+  }
 
-  onSnapshot(query(collection(db, 'signups'), where('eventId', '==', id)), s => {
+  eventDetailUnsub = onSnapshot(query(collection(db, 'signups'), where('eventId', '==', id)), s => {
     signups = [];
     s.forEach(d => signups.push({ id: d.id, ...d.data() }));
     renderDetail();
@@ -452,13 +831,19 @@ async function loadEventDetail(id) {
 
 function renderDetail() {
   const ev = currentEvent;
+  const backLabel = routeLabel({ page: currentPageTab, type: currentEventTypeFilter });
 
   // Only confirmed (non-waitlist) signups count against capacity
   const slotTaken    = slot => signups.filter(s => s.slotId === slot.id && !s.waitlist).reduce((sum, s) => sum + (s.groupSize || 1), 0);
   const slotWaitlist = slot => signups.filter(s => s.slotId === slot.id &&  s.waitlist).length;
 
-  let html = '<a class="back-link" href="./"><i class="ti ti-arrow-left"></i>Alle opgaver</a>';
-  if (ev.imageUrl) html += `<img class="ev-image" src="${esc(ev.imageUrl)}" alt="${esc(ev.title)}">`;
+  let html = '<div class="detail-top-row">';
+  html += `<button type="button" class="detail-back" onclick="goBackToCurrentLanding()"><i class="ti ti-arrow-left"></i>${backLabel}</button>`;
+  html += '<div class="detail-actions">';
+  html += '<button class="share-btn facebook" onclick="shareCurrentEventOnFacebook()"><i class="ti ti-brand-facebook"></i>Del på Facebook</button>';
+  html += '<button class="share-btn" onclick="copyCurrentEventShareLink(this)"><i class="ti ti-link"></i>Kopiér link</button>';
+  html += '</div>';
+  html += '</div>';
   html += '<div class="info-strip">';
   if (ev.dateText) html += `<div class="info-chip"><i class="ti ti-calendar"></i>${esc(ev.dateText)}</div>`;
   if (ev.location) html += `<div class="info-chip"><i class="ti ti-map-pin"></i>${esc(ev.location)}</div>`;
@@ -540,7 +925,7 @@ function renderDetail() {
         const filledRows = confirmedInSlot.map(s => {
           const ini = s.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
           const gs  = s.groupSize || 1;
-          return `<div class="signup-row"><div class="signup-av">${esc(ini)}</div>${esc(s.name)}${gs > 1 ? `<span class="group-badge">× ${gs}</span>` : ''}${s.adult ? `<span style="margin-left:auto;font-size:11px;color:var(--success)">18+</span>` : ''}</div>`;
+          return `<div class="signup-row"><div class="signup-av">${esc(ini)}</div><div class="signup-name">${esc(s.name)}${gs > 1 ? `<span class="group-badge">× ${gs}</span>` : ''}</div>${s.adult ? `<span style="margin-left:auto;font-size:13px;color:var(--text);font-weight:500">18+</span>` : ''}</div>`;
         }).join('');
         let rows = filledRows;
 
@@ -555,7 +940,7 @@ function renderDetail() {
             : 'Ledig plads — klik for at melde dig på';
           rows += Array.from({ length: remaining }, () =>
             `<button type="button" class="signup-row signup-row-empty" onclick="openModal('${slot.id}')">
-              <div class="signup-av"><i class="ti ti-plus"></i></div>${esc(emptyLabel)}
+              <div class="signup-av"><i class="ti ti-plus"></i></div><div class="signup-row-text">${esc(emptyLabel)}</div>
             </button>`
           ).join('');
         }
@@ -590,8 +975,8 @@ function renderDetail() {
         html += `<div class="shift-section">
           <div class="shift-header">
             <div class="shift-time">
-              ${!useTabs ? `<i class="ti ti-${ev.type==='timed'?'clock':ev.type==='event'?'flag':'point'}"></i>` : ''}
-              ${slotLabel}
+              ${!useTabs ? `<span class="shift-dot" aria-hidden="true"></span>` : ''}
+              <span>${slotLabel}</span>
             </div>
             ${capText ? `<span class="shift-cap ${isFull?'cap-full':'cap-open'}">${capText}</span>` : ''}
           </div>
@@ -618,7 +1003,28 @@ function loadEventMap(location) {
   iframe.loading = 'lazy';
   iframe.allowFullscreen = true;
   iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(location)}&output=embed`;
-  iframe.onload = () => container.querySelector('.ev-map-loading')?.remove();
+  let fallbackTimer = setTimeout(() => {
+    if (!container.contains(iframe)) return;
+    container.innerHTML = `
+      <div style="padding:18px;display:flex;flex-direction:column;gap:10px;justify-content:center;align-items:flex-start;height:100%;background:var(--white)">
+        <div style="font-size:13px;font-weight:600;color:var(--navy)">Kortet kunne ikke indlæses</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Du kan stadig bruge den viste placering og åbne den i Google Maps.</div>
+        <a class="ev-map-open" href="https://maps.google.com/?q=${encodeURIComponent(location)}" target="_blank" rel="noopener"><i class="ti ti-map"></i>Åbn i Google Maps</a>
+      </div>`;
+  }, 6000);
+  iframe.onload = () => {
+    clearTimeout(fallbackTimer);
+    container.querySelector('.ev-map-loading')?.remove();
+  };
+  iframe.onerror = () => {
+    clearTimeout(fallbackTimer);
+    container.innerHTML = `
+      <div style="padding:18px;display:flex;flex-direction:column;gap:10px;justify-content:center;align-items:flex-start;height:100%;background:var(--white)">
+        <div style="font-size:13px;font-weight:600;color:var(--navy)">Kortet kunne ikke indlæses</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Du kan stadig bruge den viste placering og åbne den i Google Maps.</div>
+        <a class="ev-map-open" href="https://maps.google.com/?q=${encodeURIComponent(location)}" target="_blank" rel="noopener"><i class="ti ti-map"></i>Åbn i Google Maps</a>
+      </div>`;
+  };
   container.appendChild(iframe);
 }
 
@@ -626,10 +1032,38 @@ function loadEventMap(location) {
 let pendingSlot      = null;
 let pendingWaitlist  = false;
 
+function setSignupError(message, title = 'Noget gik galt') {
+  const box = document.getElementById('signupError');
+  if (!box) return;
+  box.innerHTML = `<strong>${title}</strong><span>${message}</span>`;
+  box.classList.add('show');
+}
+
+function clearSignupError() {
+  const box = document.getElementById('signupError');
+  if (box) {
+    box.textContent = '';
+    box.classList.remove('show');
+  }
+  document.getElementById('name-field')?.classList.remove('has-error');
+  document.getElementById('email-field')?.classList.remove('has-error');
+  document.getElementById('m-name')?.setAttribute('aria-invalid', 'false');
+  document.getElementById('m-email')?.setAttribute('aria-invalid', 'false');
+}
+
+function markSignupField(fieldId, invalid) {
+  const field = document.getElementById(fieldId);
+  const input = field?.querySelector('input');
+  if (!field || !input) return;
+  field.classList.toggle('has-error', invalid);
+  input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+}
+
 function openModal(slotId, isWaitlist = false) {
   const slot = currentEvent.slots.find(s => s.id === slotId);
   pendingSlot     = slot;
   pendingWaitlist = isWaitlist;
+  clearSignupError();
   const kind = slot.kind || 'volunteer';
 
   document.getElementById('modal-title').textContent = currentEvent.title;
@@ -697,6 +1131,7 @@ function openModal(slotId, isWaitlist = false) {
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('show');
   document.getElementById('waitlist-banner').style.display = 'none';
+  clearSignupError();
   pendingWaitlist = false;
   document.getElementById('m-child').checked            = false;
   document.getElementById('email-field').style.display  = 'block';
@@ -731,10 +1166,26 @@ async function confirmSignup() {
   const adult   = document.getElementById('m-adult').checked;
   const isChild = document.getElementById('m-child').checked;
 
-  if (!name) { alert('Udfyld dit navn.'); return; }
+  clearSignupError();
+  if (!name) {
+    markSignupField('name-field', true);
+    setSignupError('Udfyld dit navn for at fortsætte.', 'Navn mangler');
+    document.getElementById('m-name').focus();
+    return;
+  }
   if (!isChild) {
-    if (!email)                { alert('Udfyld din mail.'); return; }
-    if (!email.includes('@'))  { alert('Tjek mailadressen — den ser ikke rigtig ud.'); return; }
+    if (!email) {
+      markSignupField('email-field', true);
+      setSignupError('Udfyld din mail for at fortsætte.', 'Mail mangler');
+      document.getElementById('m-email').focus();
+      return;
+    }
+    if (!email.includes('@')) {
+      markSignupField('email-field', true);
+      setSignupError('Tjek mailadressen og prøv igen.', 'Mailen ser ikke rigtig ud');
+      document.getElementById('m-email').focus();
+      return;
+    }
   }
 
   const slot      = pendingSlot;
@@ -745,8 +1196,8 @@ async function confirmSignup() {
   const taken     = signups.filter(s => s.slotId === slot.id && !s.waitlist).reduce((sum, s) => sum + (s.groupSize || 1), 0);
 
   if (!isWl && slot.capacity !== 0 && taken + groupSize > slot.capacity) {
-    alert('Pladsen blev desværre netop fyldt. Prøv ventelisten.');
-    closeModal(); return;
+    setSignupError('Pladsen blev fyldt, mens du udfyldte formularen. Vælg ventelisten eller prøv igen.', 'Pladsen er fuld');
+    return;
   }
 
   const btn = document.getElementById('confirmBtn');
@@ -799,13 +1250,13 @@ async function confirmSignup() {
   } catch(e) {
     console.error(e);
     if (e?.code === 'full') {
-      alert('Pladsen blev desværre netop fyldt. Prøv ventelisten.');
-      closeModal();
+      setSignupError('Pladsen blev fyldt, mens du udfyldte formularen. Vælg ventelisten eller prøv igen.', 'Pladsen er fuld');
     } else if (e?.code === 'not_found') {
-      alert('Opgaven blev ændret eller findes ikke længere. Opdatér siden og prøv igen.');
-      closeModal();
+      setSignupError('Opgaven er ændret eller findes ikke længere. Opdatér siden og prøv igen.', 'Opgaven findes ikke');
+    } else if (e?.code === 'api_missing' || e?.code === 'network') {
+      setSignupError(e.message, 'Tilmeldingstjenesten mangler');
     } else {
-      alert('Noget gik galt — prøv igen.');
+      setSignupError(e?.message || 'Tilmeldingen kunne ikke sendes. Dine input er bevaret, så du kan prøve igen.', 'Forbindelsesfejl');
     }
   } finally {
     btn.disabled = false;
@@ -813,10 +1264,111 @@ async function confirmSignup() {
   }
 }
 
+document.getElementById('m-name')?.addEventListener('input', () => {
+  if (document.getElementById('name-field')?.classList.contains('has-error')) {
+    markSignupField('name-field', false);
+  }
+  if (document.getElementById('signupError')?.classList.contains('show')) clearSignupError();
+});
+document.getElementById('m-email')?.addEventListener('input', () => {
+  if (document.getElementById('email-field')?.classList.contains('has-error')) {
+    markSignupField('email-field', false);
+  }
+  if (document.getElementById('signupError')?.classList.contains('show')) clearSignupError();
+});
+
 function esc(s) {
   return String(s || '').replace(/[&<>"']/g, c =>
     ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
+
+const PUBLIC_SHARE_BASE_URL = 'https://havets-helte.web.app';
+
+function shareUrlForEvent(eventId, version) {
+  const url = new URL('/share', PUBLIC_SHARE_BASE_URL);
+  url.searchParams.set('event', eventId);
+  if (version) url.searchParams.set('v', String(version));
+  return url.toString();
+}
+
+function browserUrlForEvent(eventId, version) {
+  const url = new URL('/', window.location.origin);
+  url.searchParams.set('event', eventId);
+  if (version) url.searchParams.set('v', String(version));
+  const landingHref = getLandingHref();
+  if (landingHref === LANDING_URLS.mine) {
+    url.searchParams.set('page', 'mine');
+    url.searchParams.set('type', 'all');
+  } else if (landingHref === LANDING_URLS.opgaver) {
+    url.searchParams.set('page', 'tasks');
+    url.searchParams.set('type', 'task');
+  } else if (landingHref === LANDING_URLS.vagter) {
+    url.searchParams.set('page', 'tasks');
+    url.searchParams.set('type', 'timed');
+  } else if (landingHref === LANDING_URLS.events) {
+    url.searchParams.set('page', 'tasks');
+    url.searchParams.set('type', 'event');
+  } else {
+    url.searchParams.set('page', 'tasks');
+    url.searchParams.set('type', 'all');
+  }
+  return url.toString();
+}
+
+function facebookShareUrlForEvent(eventId, version) {
+  return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrlForEvent(eventId, version))}`;
+}
+
+function buildFacebookQuote(event) {
+  const parts = [event?.title || 'Forældrehelte'];
+  if (event?.dateText) parts.push(event.dateText);
+  if (event?.location) parts.push(event.location);
+  parts.push('Se og meld dig på her');
+  return parts.join(' · ').slice(0, 220);
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+}
+
+window.copyCurrentEventShareLink = async function(btn) {
+  if (!currentEvent?.id) return;
+  const text = shareUrlForEvent(currentEvent.id, currentEvent.updated?.seconds || currentEvent.created?.seconds || '');
+  const label = btn?.innerHTML || '';
+  try {
+    await copyTextToClipboard(text);
+    if (btn) {
+      btn.innerHTML = '<i class="ti ti-check"></i>Kopieret';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = label;
+        btn.disabled = false;
+      }, 1400);
+    }
+    document.getElementById('toast-msg').textContent = 'Delingslink kopieret';
+    document.getElementById('toast').classList.add('show');
+    setTimeout(() => document.getElementById('toast').classList.remove('show'), 2200);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+window.shareCurrentEventOnFacebook = function() {
+  if (!currentEvent?.id) return;
+  window.open(facebookShareUrlForEvent(currentEvent.id, currentEvent.updated?.seconds || currentEvent.created?.seconds || ''), '_blank', 'noopener,noreferrer');
+};
 
 function switchGroup(tgId, idx) {
   document.querySelectorAll(`.role-tab[data-tg="${tgId}"]`).forEach((t, i)  => t.classList.toggle('active', i === idx));
@@ -830,8 +1382,11 @@ window.confirmSignup = confirmSignup;
 window.toggleChildMode = toggleChildMode;
 
 // ── Start ─────────────────────────────────────────────────────────────────
-if (eventId) loadEventDetail(eventId);
-else         loadHub();
+syncRouteState(readRouteFromLocation());
+window.addEventListener('popstate', () => {
+  navigateToRoute(readRouteFromLocation(), { replace: true });
+});
+renderPageForRoute(readRouteFromLocation());
 </script>
 </body>
 </html>

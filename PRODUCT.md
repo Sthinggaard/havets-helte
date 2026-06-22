@@ -47,7 +47,7 @@ Success betyder:
 - En leder kan oprette et nyt arrangement eller en ny vagt fra telefonen hurtigt og uden tvivl
 - En forælder kan melde sig på uden at skulle lære systemet først
 - En leder kan på dagen se både hvem der hjælper, og hvilke spejdere der er mødt op
-- Løsningen forbliver gratis eller tæt på gratis i drift
+- Løsningen forbliver gratis i drift
 
 ## Brand Personality
 
@@ -77,6 +77,12 @@ Også undgå det kolde enterprise-værktøjs-look (Jira/SAP-agtig tæthed og dis
   i tech-erfaring og alder.
 - Genbrug det eksisterende navy/gold-designsystem frem for at opfinde nyt — konsistens over tid
   betyder mere end nyhedsværdi i et lille, frivilligt drevet værktøj.
+
+## Budget Constraint
+
+Dette produkt må ikke afhænge af betalte tiers, billing-enabled services eller infrastruktur,
+der kræver løbende driftsudgift for at fungere som tænkt. Hvis en løsning kræver betaling for at
+opretholde kernefunktionalitet, er den ikke i scope for denne version.
 
 ## Accessibility & Inclusion
 

@@ -263,6 +263,11 @@ OG-tags i index.html: erstat placeholder-URL med rigtig hosting-URL (Facebook-pr
 - Du vælger selv `ref` og preview channel name ved kørsel.
 - Preview deploy påvirker kun Firebase Hosting preview channel, ikke production release.
 
+## Automation Note
+
+- Vi kan udvide automatiseringen løbende, men nye workflows må ikke omgå den manuelle deploy-gate.
+- `Deploy` forbliver manual-only, og `production` environment forbliver den eneste release-indgang.
+
 Auth-opsætning: Console → Authentication → Email/Password → Add user (ledere oprettes manuelt).
 Det er adgangsstyringen: kun folk med en konto kan oprette opgaver. Ingen selvbetjent signup for ledere.
 
@@ -304,7 +309,8 @@ sætter op uden kodeændringer. IKKE feature-specifikke hacks for enkelte arrang
 1. **Trusted signup path kræver Firebase Functions i drift.** Lokalt og i produktion skal
    `functions/` dependencies installeres og funktionen deployes, ellers virker
    `/api/submitSignup` ikke. Det er nu den eneste gyldige oprettelsesvej for `signups`
-   og `signupContacts`.
+   og `signupContacts`. Denne vej er kun acceptabel, hvis den holdes inden for den
+   free-only produktgrænse; ellers skal den erstattes.
 2. **Ingen .ics kalenderinvitation** i nuværende version. Datoer er fri tekst, ikke
    maskinlæsbare start/slut-tidspunkter, så .ics kan ikke genereres pålideligt.
    Kræver strukturerede datetime-felter på slots hvis ønsket.
@@ -315,7 +321,8 @@ sætter op uden kodeændringer. IKKE feature-specifikke hacks for enkelte arrang
    målrettet angriber. Acceptabelt for en spejderforening.
 5b. **Firestore-regler** blokerer nu direkte client-create på både `signups` og
    `signupContacts`. Ledere (auth) kan stadig læse `signupContacts`, toggle `paid` /
-   `waitlist` på `signups` og slette records ved behov.
+   `waitlist` på `signups` og slette records ved behov. Det er en sikkerhedsforanstaltning,
+   ikke en licens til at flytte kerneflowet over i paid-only infrastruktur.
 5. **Apps Script POST bruger no-cors.** Kan ikke læse svaret; beskeden når frem alligevel
    (samme mønster som det tidligere Google Forms-trick). e.postData.contents JSON-parses
    i doPost selvom content-type bliver text/plain.

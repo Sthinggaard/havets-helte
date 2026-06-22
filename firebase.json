@@ -15,6 +15,11 @@
         "source": "/api/submitSignup",
         "function": "submitSignup",
         "region": "europe-west1"
+      },
+      {
+        "source": "/share",
+        "function": "shareEvent",
+        "region": "europe-west1"
       }
     ],
     "ignore": [
