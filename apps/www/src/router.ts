@@ -8,6 +8,7 @@ import AttendancePage from './pages/AttendancePage.vue';
 import SignupsPage from './pages/SignupsPage.vue';
 import MembersPage from './pages/MembersPage.vue';
 import BranchesPage from './pages/BranchesPage.vue';
+import AdminLibraryPage from './pages/AdminLibraryPage.vue';
 import AdminShellPage from './pages/AdminShellPage.vue';
 
 const routes = [
@@ -61,6 +62,12 @@ const routes = [
     alias: ['/mine-tilmeldinger.html'],
   },
   {
+    path: '/admin/billedbibliotek',
+    name: 'admin-library',
+    component: AdminLibraryPage,
+    alias: ['/admin-billedbibliotek.html'],
+  },
+  {
     path: '/admin',
     name: 'admin',
     component: AdminShellPage,
@@ -74,7 +81,6 @@ const routes = [
       '/admin-vagter-form.html',
       '/admin-fremmoede.html',
       '/admin-fremmoede-form.html',
-      '/admin-billedbibliotek.html',
       '/backfill-groups.html',
       '/seed.html',
     ],
