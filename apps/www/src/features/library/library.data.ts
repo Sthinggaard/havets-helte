@@ -1,39 +1,43 @@
-import { eventFilterOptions, eventItems } from '../events/events.data';
-import type { EventFilterType } from '../events/events.types';
-import { shiftSummaries } from '../shifts/shiftSummaries';
-import { taskSummaries } from '../tasks/taskSummaries';
+import { eventItems } from '../events/events.data';
+import { eventSummaries } from '../events/eventSummaries';
 
-import type { LibraryItem, LibrarySourceRecord, LibraryTypeId, LibraryTypeOption } from './library.types';
+import type { LibraryCategory, LibraryItem, LibrarySourceRecord } from './library.types';
 
-export const libraryTypeOptions: LibraryTypeOption[] = eventFilterOptions;
+export const IMAGE_LIBRARY_COLLECTION = 'imageLibrary';
+export const IMAGE_LIBRARY_CATEGORIES_COLLECTION = 'imageLibraryCategories';
+export const IMAGE_LIBRARY_UNCATEGORIZED_ID = 'uncategorized';
+export const IMAGE_LIBRARY_UNCATEGORIZED_NAME = 'Ukategoriseret';
+
+export const librarySeedCategories: LibraryCategory[] = [
+  {
+    id: IMAGE_LIBRARY_UNCATEGORIZED_ID,
+    name: IMAGE_LIBRARY_UNCATEGORIZED_NAME,
+    locked: true,
+  },
+];
 
 const baseImage = '/og-sankthans.png';
 const logoImage = '/havets-helte-logo.svg';
 
-function typeSourceLabel(type: LibraryTypeId) {
-  if (type === 'event') return 'Bruges i events';
-  if (type === 'task') return 'Bruges i opgaver';
-  return 'Bruges i vagter';
-}
-
-function toLibraryItem(
+function makeItem(
   id: string,
-  type: LibraryTypeId,
-  title: string,
+  name: string,
   summary: string,
   imageUrl = baseImage,
   sourceCollection: LibraryItem['sourceCollection'] = 'fallback',
   sourceId = id,
+  sourceName = name,
 ): LibraryItem {
   return {
     id,
+    name,
+    categoryId: IMAGE_LIBRARY_UNCATEGORIZED_ID,
+    imageUrl,
+    summary,
     sourceCollection,
     sourceId,
-    type,
-    title,
-    summary,
-    imageUrl,
-    sourceLabel: typeSourceLabel(type),
+    sourceName,
+    importedFromForm: sourceCollection !== 'fallback',
     isLocal: false,
   };
 }
@@ -41,60 +45,68 @@ function toLibraryItem(
 export function createFallbackLibraryItems(): LibraryItem[] {
   return [
     ...eventItems.map(item =>
-      toLibraryItem(
+      makeItem(
         `event-${item.id}`,
-        item.type as LibraryTypeId,
         `Billede til ${item.title}`,
         `Bruges på ${item.title}.`,
         item.image || baseImage,
+        'fallback',
+        item.id,
+        item.title,
       ),
     ),
-    ...taskSummaries.map((task, index) =>
-      toLibraryItem(
-        `task-${index + 1}`,
-        'task',
-        `Opgavebillede til ${task.title}`,
-        task.description,
+    ...eventSummaries.map((event, index) =>
+      makeItem(
+        `summary-${index + 1}`,
+        `Billede til ${event.title}`,
+        event.meta,
         logoImage,
-      ),
-    ),
-    ...shiftSummaries.map((shift, index) =>
-      toLibraryItem(
-        `shift-${index + 1}`,
-        'shift',
-        `Vagtbillede til ${shift.title}`,
-        shift.description,
-        baseImage,
+        'fallback',
+        `${index + 1}`,
+        event.title,
       ),
     ),
   ];
 }
 
-export function toLibraryItemFromSourceRecord(record: LibrarySourceRecord): LibraryItem | null {
-  const imageUrl = String(record.imageUrl || record.image || '').trim();
-  if (!imageUrl) return null;
+function sourceDisplayName(record: LibrarySourceRecord) {
+  return String(record.name || record.title || 'Billede').trim() || 'Billede';
+}
 
-  const type = record.type || 'event';
-  const title = String(record.title || 'Billede').trim();
-  const summaryParts = [record.description, record.dateText, record.location].filter(Boolean);
-  const summary = summaryParts.length > 0 ? summaryParts.join(' · ') : `Bruges på ${title}.`;
-
+export function createLibraryCategoryFromRecord(record: LibrarySourceRecord): LibraryCategory | null {
+  const id = String(record.id || '').trim();
+  const name = String(record.name || '').trim();
+  if (!id || !name) return null;
   return {
-    id: record.id,
-    sourceCollection: 'events',
-    sourceId: record.id,
-    type,
-    title: `Billede til ${title}`,
-    summary,
-    imageUrl,
-    sourceLabel: typeSourceLabel(type),
-    isLocal: false,
+    id,
+    name,
+    locked: !!record.locked,
   };
 }
 
-export const libraryTypeLabels: Record<EventFilterType, string> = {
-  all: 'Alle',
-  event: 'Events',
-  task: 'Opgaver',
-  shift: 'Vagter',
-};
+export function createLibraryItemFromRecord(record: LibrarySourceRecord): LibraryItem | null {
+  const imageUrl = String(record.imageUrl || record.url || record.image || '').trim();
+  if (!imageUrl) return null;
+
+  const sourceName = String(record.sourceName || sourceDisplayName(record)).trim();
+  const summaryParts = [record.description, record.dateText, record.location].filter(Boolean);
+  const summary = summaryParts.length > 0 ? summaryParts.join(' · ') : `Bruges på ${sourceName}.`;
+
+  return {
+    id: String(record.id),
+    name: String(record.name || `Billede til ${sourceName}`).trim(),
+    categoryId: String(record.categoryId || IMAGE_LIBRARY_UNCATEGORIZED_ID),
+    imageUrl,
+    summary,
+    sourceCollection: (record.sourceCollection || 'library') as LibraryItem['sourceCollection'],
+    sourceId: String(record.sourceId || record.id),
+    sourceName,
+    importedFromForm: record.importedFromForm ?? false,
+    storagePath: record.storagePath,
+    originalName: record.originalName,
+    contentType: record.contentType,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    isLocal: false,
+  };
+}

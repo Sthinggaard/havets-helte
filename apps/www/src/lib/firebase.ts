@@ -1,5 +1,11 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { connectFirestoreEmulator, getFirestore, initializeFirestore } from 'firebase/firestore';
+import {
+  connectFirestoreEmulator,
+  getFirestore,
+  initializeFirestore,
+} from 'firebase/firestore';
+import { connectStorageEmulator, getStorage } from 'firebase/storage';
+import { connectAuthEmulator, getAuth, onAuthStateChanged, type Auth, type User } from 'firebase/auth';
 
 type FirebaseConfig = {
   projectId: string;
@@ -8,23 +14,30 @@ type FirebaseConfig = {
   storageBucket?: string;
 };
 
-const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const emulatorOverride = import.meta.env.VITE_USE_FIREBASE_EMULATORS;
+const useEmulators = emulatorOverride !== undefined ? emulatorOverride === 'true' : import.meta.env.DEV;
+const liveFirebaseConfig: FirebaseConfig = {
+  apiKey: 'AIzaSyBK5bi8bQ4-gFFgmzkESqumeTlbqeIWFbM',
+  authDomain: 'havets-helte.firebaseapp.com',
+  projectId: 'havets-helte',
+  storageBucket: 'havets-helte.firebasestorage.app',
+};
 
 let firestorePromise: Promise<ReturnType<typeof getFirestore>> | null = null;
+let storagePromise: Promise<ReturnType<typeof getStorage>> | null = null;
+let authPromise: Promise<Auth> | null = null;
 
-function createLocalConfig(): FirebaseConfig {
+function createEmulatorConfig(): FirebaseConfig {
   return {
-    projectId: 'havets-helte',
+    projectId: liveFirebaseConfig.projectId,
     apiKey: 'demo',
-    authDomain: 'havets-helte.firebaseapp.com',
-    storageBucket: 'havets-helte.appspot.com',
+    authDomain: liveFirebaseConfig.authDomain,
+    storageBucket: liveFirebaseConfig.storageBucket,
   };
 }
 
 async function loadFirebaseConfig(): Promise<FirebaseConfig> {
-  if (isLocal) return createLocalConfig();
-  const response = await fetch('/__/firebase/init.json');
-  return response.json();
+  return useEmulators ? createEmulatorConfig() : liveFirebaseConfig;
 }
 
 async function initFirestore() {
@@ -34,11 +47,11 @@ async function initFirestore() {
   }
 
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  const db = isLocal
+  const db = useEmulators
     ? initializeFirestore(app, { experimentalForceLongPolling: true })
     : getFirestore(app);
 
-  if (isLocal) {
+  if (useEmulators) {
     connectFirestoreEmulator(db, '127.0.0.1', 8081);
   }
 
@@ -50,4 +63,56 @@ export function getAppFirestore() {
     firestorePromise = initFirestore();
   }
   return firestorePromise;
+}
+
+async function initStorage() {
+  const firebaseConfig = await loadFirebaseConfig();
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const storage = getStorage(app);
+
+  if (useEmulators) {
+    connectStorageEmulator(storage, '127.0.0.1', 9199);
+  }
+
+  return storage;
+}
+
+export function getAppStorage() {
+  if (!storagePromise) {
+    storagePromise = initStorage();
+  }
+  return storagePromise;
+}
+
+async function initAuth() {
+  const firebaseConfig = await loadFirebaseConfig();
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  if (useEmulators) {
+    connectAuthEmulator(auth, 'http://localhost:9097', { disableWarnings: true });
+  }
+
+  return auth;
+}
+
+export function getAppAuth() {
+  if (!authPromise) {
+    authPromise = initAuth();
+  }
+  return authPromise;
+}
+
+export async function waitForAppAuthReady(): Promise<User | null> {
+  const auth = await getAppAuth();
+  if (auth.currentUser !== null) {
+    return auth.currentUser;
+  }
+
+  return new Promise(resolve => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      unsubscribe();
+      resolve(user);
+    });
+  });
 }

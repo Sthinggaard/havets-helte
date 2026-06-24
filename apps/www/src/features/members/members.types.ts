@@ -6,6 +6,7 @@ export interface MemberProfile {
   id: string;
   name: string;
   initials: string;
+  imageUrl?: string;
   branchId: BranchId;
   branchLabel: string;
   weekday: string;

@@ -995,13 +995,15 @@ a {
   line-height: 1.55;
 }
 
-.member-detail-grid {
+.member-detail-grid,
+.member-card-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.member-detail-item {
+.member-detail-item,
+.member-card-detail-item {
   padding: 12px 14px;
   border: 1px solid rgba(216, 225, 234, 0.85);
   border-radius: 16px;
@@ -1009,6 +1011,7 @@ a {
 }
 
 .member-detail-label,
+.member-card-detail-label,
 .member-history-label {
   color: var(--muted);
   font-size: 0.78rem;
@@ -1018,6 +1021,7 @@ a {
 }
 
 .member-detail-value,
+.member-card-detail-value,
 .member-history-value {
   margin-top: 6px;
   color: var(--navy-dark);

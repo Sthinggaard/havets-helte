@@ -44,7 +44,10 @@
           </div>
 
           <div class="detail-actions">
-            <button type="button" class="btn-action btn-action--primary">Del på Facebook</button>
+            <button v-if="isAdmin" type="button" class="btn-action btn-action--primary" @click="editEvent(featuredEvent)">
+              <i class="ti ti-pencil" aria-hidden="true"></i>Rediger
+            </button>
+            <button type="button" class="btn-action">Del på Facebook</button>
             <button type="button" class="btn-action">Kopiér link</button>
             <button type="button" class="btn-action">Se event</button>
           </div>
@@ -71,6 +74,9 @@
               <span>{{ event.location }}</span>
               <span>{{ eventTypeLabel(event.type) }}</span>
             </div>
+            <button v-if="isAdmin" type="button" class="btn-action event-card-edit" @click.stop="editEvent(event)">
+              <i class="ti ti-pencil" aria-hidden="true"></i>Rediger
+            </button>
           </div>
         </article>
       </div>
@@ -79,13 +85,37 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
+
 import PageCard from '@/components/PageCard.vue';
+import { useAdminAuth } from '@/features/admin/useAdminAuth';
 import { useEventsPage } from '@/features/events/useEventsPage';
+import type { EventItem } from '@/features/events/events.types';
 
 const { activeFilter, counts, eventFilterOptions, featuredEvent, filteredEvents, selectEvent, selectedEventId, selectFilter } =
   useEventsPage();
+const { isAdmin } = useAdminAuth();
+const router = useRouter();
 
 function eventTypeLabel(type: 'event' | 'task' | 'shift') {
   return type === 'event' ? 'Event' : type === 'task' ? 'Opgave' : 'Vagt';
 }
+
+// Route an event into the matching admin form, opened in edit mode via ?edit.
+const ADMIN_ROUTE: Record<EventItem['type'], string> = {
+  shift: '/vagter',
+  task: '/opgaver',
+  event: '/admin/arrangementer',
+};
+
+function editEvent(event: EventItem | null) {
+  if (!event) return;
+  router.push({ path: ADMIN_ROUTE[event.type], query: { edit: event.id } });
+}
 </script>
+
+<style scoped>
+.event-card-edit {
+  margin-top: 12px;
+}
+</style>

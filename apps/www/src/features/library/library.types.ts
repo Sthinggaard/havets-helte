@@ -1,38 +1,56 @@
-import type { EventFilterType } from '../events/events.types';
+export type LibrarySourceCollection = 'fallback' | 'library' | 'events' | 'members' | 'meetings';
 
-export type LibraryTypeId = Exclude<EventFilterType, 'all'>;
+export interface LibraryCategory {
+  id: string;
+  name: string;
+  locked?: boolean;
+}
 
 export interface LibraryItem {
   id: string;
-  sourceCollection: 'events' | 'fallback';
-  sourceId: string;
-  type: LibraryTypeId;
-  title: string;
-  summary: string;
+  name: string;
+  categoryId: string;
   imageUrl: string;
-  sourceLabel: string;
+  url?: string;
+  summary: string;
+  sourceCollection: LibrarySourceCollection;
+  sourceId: string;
+  sourceName: string;
+  importedFromForm: boolean;
+  storagePath?: string;
+  originalName?: string;
+  contentType?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
   isLocal: boolean;
 }
 
 export interface LibraryDraft {
-  title: string;
-  type: LibraryTypeId;
+  name: string;
+  categoryId: string;
   imageUrl: string;
   summary: string;
 }
 
-export interface LibraryTypeOption {
-  id: EventFilterType;
-  label: string;
-}
-
 export interface LibrarySourceRecord {
   id: string;
+  name?: string;
   title?: string;
+  locked?: boolean;
   description?: string;
   dateText?: string;
   location?: string;
-  type?: LibraryTypeId;
-  imageUrl?: string;
   image?: string;
+  imageUrl?: string;
+  url?: string;
+  categoryId?: string;
+  sourceCollection?: LibrarySourceCollection;
+  sourceId?: string;
+  sourceName?: string;
+  importedFromForm?: boolean;
+  storagePath?: string;
+  originalName?: string;
+  contentType?: string;
+  createdAt?: unknown;
+  updatedAt?: unknown;
 }

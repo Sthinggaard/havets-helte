@@ -9,6 +9,7 @@ import SignupsPage from './pages/SignupsPage.vue';
 import MembersPage from './pages/MembersPage.vue';
 import BranchesPage from './pages/BranchesPage.vue';
 import AdminLibraryPage from './pages/AdminLibraryPage.vue';
+import AdminArrangementerPage from './pages/AdminArrangementerPage.vue';
 import AdminShellPage from './pages/AdminShellPage.vue';
 
 const routes = [
@@ -68,13 +69,17 @@ const routes = [
     alias: ['/admin-billedbibliotek.html'],
   },
   {
+    path: '/admin/arrangementer',
+    name: 'admin-arrangementer',
+    component: AdminArrangementerPage,
+    alias: ['/admin-arrangementer.html', '/admin-arrangementer-form.html'],
+  },
+  {
     path: '/admin',
     name: 'admin',
     component: AdminShellPage,
     alias: [
       '/admin.html',
-      '/admin-arrangementer.html',
-      '/admin-arrangementer-form.html',
       '/admin-opgaver.html',
       '/admin-opgaver-form.html',
       '/admin-vagter.html',

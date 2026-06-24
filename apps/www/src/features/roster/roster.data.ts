@@ -1,3 +1,5 @@
+import { reactive } from 'vue';
+
 import type { Branch, Member } from './roster.types';
 
 export const rosterBranches: Branch[] = [
@@ -31,7 +33,7 @@ export const rosterBranches: Branch[] = [
   },
 ];
 
-export const rosterMembers: Member[] = [
+export const rosterMembers: Member[] = reactive([
   { id: 'm1', name: 'Albert Boye Dohm Overgaard', initials: 'AB', branchId: 'junior', weekday: 'Tirsdag', active: true, birthYear: 2015, team: 'Tirsdagshold' },
   { id: 'm2', name: 'Aviaja Henriksson Lagoni', initials: 'AH', branchId: 'junior', weekday: 'Tirsdag', active: true, birthYear: 2015, team: 'Tirsdagshold' },
   { id: 'm3', name: 'Isabella Julie Bæk Jakobsen', initials: 'IJ', branchId: 'junior', weekday: 'Tirsdag', active: true, birthYear: 2014, team: 'Tirsdagshold' },
@@ -42,7 +44,7 @@ export const rosterMembers: Member[] = [
   { id: 'm8', name: 'Emil Østergaard', initials: 'EO', branchId: 'trop', weekday: 'Onsdag', active: true, birthYear: 2011, team: 'Onsdagshold' },
   { id: 'm9', name: 'Sofie Hartvig', initials: 'SH', branchId: 'soespejder', weekday: 'Torsdag', active: true, birthYear: 2008, team: 'Torsdagshold' },
   { id: 'm10', name: 'Mikael Jørgensen', initials: 'MJ', branchId: 'soespejder', weekday: 'Torsdag', active: true, birthYear: 2007, team: 'Torsdagshold' },
-];
+]);
 
 export function branchLabel(branchId: string) {
   return rosterBranches.find(branch => branch.id === branchId)?.label ?? branchId;

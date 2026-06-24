@@ -3,7 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/seedEmulator.mjs",
     "dev": "vite",
+    "seed": "node scripts/seedEmulator.mjs",
+    "seed:live": "node scripts/seedLive.mjs",
     "build": "vue-tsc -p tsconfig.app.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc -p tsconfig.app.json --noEmit"

@@ -18,7 +18,7 @@
           </router-link>
         </nav>
 
-        <div class="auth-chip">leder@test.dk</div>
+        <div class="auth-chip">leder@havetshelte.dk</div>
       </header>
 
       <main class="page-shell">

@@ -55,7 +55,10 @@ async function createSignupViaApi(payload) {
     body: JSON.stringify(payload),
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.message || 'Signup API fejl');
+  if (!response.ok) {
+    out('→ Signup API ikke tilgængelig, springer over testtilmelding.');
+    return null;
+  }
   return data;
 }
 
@@ -76,14 +79,14 @@ window.seed = async function() {
 
   try {
     // ── Leder-konto ─────────────────────────────────────────────────────
-    out('Opretter leder@test.dk …');
+    out('Opretter leder@havetshelte.dk …');
     try {
-      await createUserWithEmailAndPassword(auth, 'leder@test.dk', 'test1234');
-      out('✓ Leder oprettet (leder@test.dk / test1234)');
+      await createUserWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
+      out('✓ Leder oprettet (leder@havetshelte.dk / test1234)');
     } catch(e) {
       out('→ Leder eksisterer allerede (OK)');
     }
-    await signInWithEmailAndPassword(auth, 'leder@test.dk', 'test1234');
+    await signInWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
 
     // ── Sankt Hans event ─────────────────────────────────────────────────
     out('Opretter Sankt Hans event…');
@@ -274,7 +277,7 @@ window.seed = async function() {
     }
 
     out('\n✅ Færdig! Åbn http://localhost:5003 for at se resultatet.');
-    out('   Admin: http://localhost:5003/admin-vagter.html  →  leder@test.dk / test1234');
+    out('   Admin: http://localhost:5003/admin-vagter.html  →  leder@havetshelte.dk / test1234');
     out('   Fremmøde: http://localhost:5003/attendance.html');
   } catch(e) {
     out('\n❌ Fejl: ' + e.message);

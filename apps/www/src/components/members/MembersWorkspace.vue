@@ -33,7 +33,7 @@
           @input="onSearchInput"
         />
 
-        <div class="day-filter-list">
+        <div class="day-filter-list member-gren-filters">
           <button
             type="button"
             class="day-filter-btn"
@@ -57,105 +57,175 @@
         </div>
       </section>
 
-      <div class="members-layout">
-        <div class="members-list">
+      <div class="members-layout members-layout--legacy">
+        <div class="members-list legacy-member-list">
           <button
             v-for="member in filteredMembers"
             :key="member.id"
             type="button"
-            class="member-card"
+            class="member-card-shell"
             :class="{ active: selectedMember?.id === member.id }"
             @click="selectMember(member.id)"
           >
-            <div class="member-row-shell">
-              <span class="member-av">{{ member.initials }}</span>
-              <div class="member-card-main">
-                <div class="member-card-title">{{ member.name }}</div>
-                <div class="member-card-meta">
-                  <span>{{ member.branchLabel }}</span>
-                  <span>{{ member.team }}</span>
-                  <span>{{ member.weekday }}</span>
+            <div class="member-card-main">
+              <img v-if="member.imageUrl" class="member-card-image" :src="member.imageUrl" :alt="member.name" />
+              <div class="member-card-top">
+                <div class="member-card-head">
+                  <span class="member-av">{{ member.initials }}</span>
+                  <div class="member-card-copy-block">
+                    <div class="ec-title">{{ member.name }}</div>
+                    <div class="ec-meta member-card-chip-row">
+                      <span class="member-status-chip" :class="member.active ? 'active' : 'inactive'">
+                        {{ member.active ? 'Aktiv' : 'Inaktiv' }}
+                      </span>
+                      <span class="member-team-chip">{{ member.branchLabel }}</span>
+                      <span class="member-day-chip">{{ member.team }}</span>
+                      <span class="member-day-chip">{{ member.weekday }}</span>
+                    </div>
+                  </div>
                 </div>
+                <i class="ti ti-chevron-right member-card-chevron" aria-hidden="true"></i>
               </div>
-              <span class="pill">{{ member.active ? 'Aktiv' : 'Inaktiv' }}</span>
             </div>
           </button>
+
           <div v-if="!filteredMembers.length" class="calendar-empty">Ingen medlemmer matcher filteret.</div>
         </div>
 
-        <aside class="member-profile-panel">
-          <section class="calendar-date-panel">
-            <div class="calendar-date-panel-head">
+        <aside class="member-profile-panel legacy-member-panel">
+          <section class="member-profile-card">
+            <div class="member-profile-card-head">
               <div>
-                <div class="calendar-date-panel-title">
+                <div class="member-profile-title">
                   {{ selectedMember ? selectedMember.name : 'Vælg et medlem' }}
                 </div>
-                <div class="calendar-date-panel-sub" v-if="selectedMember">
-                  {{ selectedMember.branchLabel }} · {{ selectedMember.team }}
+                <div class="member-profile-sub" v-if="selectedMember">
+                  {{ selectedMember.branchLabel }} · {{ selectedMember.team }} · {{ selectedMember.weekday }}
                 </div>
               </div>
-              <span v-if="selectedMember" class="pill">{{ selectedMember.active ? 'Aktiv' : 'Inaktiv' }}</span>
+              <span v-if="selectedMember" class="member-status-chip" :class="selectedMember.active ? 'active' : 'inactive'">
+                {{ selectedMember.active ? 'Aktiv' : 'Inaktiv' }}
+              </span>
             </div>
 
-            <div v-if="selectedMember" class="member-detail-grid">
-              <div class="member-detail-item">
-                <div class="member-detail-label">Gren</div>
-                <div class="member-detail-value">{{ selectedMember.branchLabel }}</div>
+            <div v-if="selectedMember" class="member-card-detail-grid">
+              <div class="member-card-detail-item">
+                <div class="member-card-detail-label">Nuværende gren</div>
+                <div class="member-card-detail-value">{{ selectedMember.branchLabel }}</div>
               </div>
-              <div class="member-detail-item">
-                <div class="member-detail-label">Hold</div>
-                <div class="member-detail-value">{{ selectedMember.team }}</div>
+              <div class="member-card-detail-item">
+                <div class="member-card-detail-label">Nuværende hold</div>
+                <div class="member-card-detail-value">{{ selectedMember.team }}</div>
               </div>
-              <div class="member-detail-item">
-                <div class="member-detail-label">Mødedag</div>
-                <div class="member-detail-value">{{ selectedMember.weekday }}</div>
+              <div class="member-card-detail-item">
+                <div class="member-card-detail-label">Status</div>
+                <div class="member-card-detail-value">{{ selectedMember.active ? 'Aktiv' : 'Inaktiv' }}</div>
               </div>
-              <div class="member-detail-item">
-                <div class="member-detail-label">Fødselsår</div>
-                <div class="member-detail-value">{{ selectedMember.birthYear }}</div>
+              <div class="member-card-detail-item">
+                <div class="member-card-detail-label">Fødselsår</div>
+                <div class="member-card-detail-value">{{ selectedMember.birthYear }}</div>
               </div>
             </div>
           </section>
 
-          <section class="calendar-date-panel">
-            <div class="calendar-date-panel-head">
-              <div>
-                <div class="calendar-date-panel-title">Profilhistorik</div>
-                <div class="calendar-date-panel-sub">Seneste registrerede oplysninger</div>
+          <div class="member-profile-quick">
+            <section class="member-profile-card">
+              <div class="member-profile-card-head">
+                <div>
+                  <div class="member-profile-title">Billede</div>
+                  <div class="member-profile-sub">Tilknyt et billede fra biblioteket</div>
+                </div>
               </div>
-            </div>
+              <div class="member-profile-actions">
+                <button type="button" class="btn-action" :disabled="!selectedMember" @click="openImagePicker">
+                  {{ selectedMember?.imageUrl ? 'Skift billede' : 'Vælg billede' }}
+                </button>
+                <button
+                  v-if="selectedMember?.imageUrl"
+                  type="button"
+                  class="btn-action"
+                  @click="clearMemberImage(selectedMember.id)"
+                >
+                  Fjern billede
+                </button>
+              </div>
+            </section>
 
-            <div class="member-history">
-              <div v-for="item in timeline" :key="item.label" class="member-history-row">
-                <div class="member-history-label">{{ item.label }}</div>
-                <div class="member-history-value">{{ item.value }}</div>
+            <section class="member-profile-card">
+              <div class="member-profile-card-head">
+                <div>
+                  <div class="member-profile-title">Flyt medlem</div>
+                  <div class="member-profile-sub">Skift gren eller hold direkte herfra</div>
+                </div>
               </div>
-            </div>
-          </section>
+              <div class="member-profile-actions">
+                <button type="button" class="btn-action" @click="setBranchFilter(selectedMember?.branchId ?? 'all')">
+                  Til gren og hold
+                </button>
+              </div>
+            </section>
+
+            <section class="member-profile-card">
+              <div class="member-profile-card-head">
+                <div>
+                  <div class="member-profile-title">Profilhistorik</div>
+                  <div class="member-profile-sub">Seneste registrerede oplysninger</div>
+                </div>
+              </div>
+              <div class="member-profile-history">
+                <div v-for="item in timeline" :key="item.label" class="member-profile-history-row">
+                  <div class="member-profile-history-main">
+                    <div class="member-profile-history-title">{{ item.label }}</div>
+                    <div class="member-profile-history-meta">{{ item.value }}</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
         </aside>
       </div>
+
+      <LibraryPickerModal
+        :open="pickerOpen"
+        title="Billedbibliotek"
+        subtitle="Vælg et eksisterende billede eller upload et nyt."
+        :items="items"
+        :categories="categories"
+        @close="pickerOpen = false"
+        @pick="handleImagePick"
+        @upload="handleImageUpload"
+      />
     </PageCard>
   </div>
 </template>
 
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
+import { useLibraryPage } from '@/features/library/useLibraryPage';
 import { useMembersPage } from '@/features/members/useMembersPage';
+import type { LibraryItem } from '@/features/library/library.types';
 
 const {
   branchFilter,
   branchOptions,
+  clearMemberImage,
   counts,
   filteredMembers,
   searchTerm,
   selectedMember,
   selectMember,
   setBranchFilter,
+  setMemberImage,
   setStatusFilter,
   statusFilter,
   timeline,
 } = useMembersPage();
+
+const { items, categories, uploadItem } = useLibraryPage();
+
+const pickerOpen = ref(false);
 
 const statusOptions = computed(() => [
   { id: 'all' as const, label: 'Alle', count: counts.value.total },
@@ -166,5 +236,25 @@ const statusOptions = computed(() => [
 function onSearchInput(event: Event) {
   const target = event.target as HTMLInputElement | null;
   searchTerm.value = target?.value ?? '';
+}
+
+function openImagePicker() {
+  if (!selectedMember.value) return;
+  pickerOpen.value = true;
+}
+
+function handleImagePick(item: LibraryItem) {
+  if (!selectedMember.value) return;
+  setMemberImage(selectedMember.value.id, item.imageUrl);
+  pickerOpen.value = false;
+}
+
+async function handleImageUpload(file: File, categoryId: string) {
+  if (!selectedMember.value) return;
+  const uploaded = await uploadItem(file, categoryId);
+  if (uploaded) {
+    setMemberImage(selectedMember.value.id, uploaded.imageUrl);
+    pickerOpen.value = false;
+  }
 }
 </script>

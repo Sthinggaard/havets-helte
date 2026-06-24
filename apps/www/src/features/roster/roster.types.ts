@@ -12,6 +12,7 @@ export interface Member {
   id: string;
   name: string;
   initials: string;
+  imageUrl?: string;
   branchId: BranchId;
   weekday: string;
   active: boolean;

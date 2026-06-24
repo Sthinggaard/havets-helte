@@ -1,0 +1,77 @@
+import { computed, onBeforeUnmount, ref } from 'vue';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+
+import { getAppAuth } from '@/lib/firebase';
+
+// A leader/admin is anyone signed in with a havetshelte.dk email address.
+export const ADMIN_EMAIL_DOMAIN = '@havetshelte.dk';
+
+export function isAdminEmail(email: string | null | undefined): boolean {
+  return !!email && email.trim().toLowerCase().endsWith(ADMIN_EMAIL_DOMAIN);
+}
+
+const user = ref<User | null>(null);
+const ready = ref(false);
+const email = ref('');
+const password = ref('');
+const busy = ref(false);
+const error = ref('');
+
+let unsubscribe: (() => void) | null = null;
+let listenerStarted = false;
+
+async function ensureAuthListener() {
+  if (listenerStarted) return;
+  listenerStarted = true;
+  const auth = await getAppAuth();
+  unsubscribe = onAuthStateChanged(auth, nextUser => {
+    user.value = nextUser;
+    ready.value = true;
+    if (nextUser) {
+      error.value = '';
+    }
+  });
+}
+
+async function login() {
+  const auth = await getAppAuth();
+  busy.value = true;
+  error.value = '';
+  try {
+    await signInWithEmailAndPassword(auth, email.value.trim(), password.value);
+    password.value = '';
+  } catch (err) {
+    console.error('[admin-auth] login failed', err);
+    error.value = 'Forkert mail eller adgangskode.';
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function logout() {
+  const auth = await getAppAuth();
+  await signOut(auth);
+}
+
+const isAdmin = computed(() => isAdminEmail(user.value?.email));
+
+export function useAdminAuth() {
+  void ensureAuthListener();
+  onBeforeUnmount(() => {
+    unsubscribe?.();
+    unsubscribe = null;
+    listenerStarted = false;
+  });
+
+  return {
+    busy,
+    email,
+    error,
+    isAdmin,
+    login,
+    logout,
+    password,
+    ready,
+    user,
+  };
+}

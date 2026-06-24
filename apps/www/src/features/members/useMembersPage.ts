@@ -56,9 +56,20 @@ export function useMembersPage() {
     branchFilter.value = branchId;
   }
 
+  function setMemberImage(memberId: string, imageUrl: string) {
+    const member = rosterMembers.find(candidate => candidate.id === memberId);
+    if (member) member.imageUrl = imageUrl;
+  }
+
+  function clearMemberImage(memberId: string) {
+    const member = rosterMembers.find(candidate => candidate.id === memberId);
+    if (member) member.imageUrl = undefined;
+  }
+
   return {
     branchFilter,
     branchOptions,
+    clearMemberImage,
     counts,
     filteredMembers,
     searchTerm,
@@ -66,6 +77,7 @@ export function useMembersPage() {
     selectedMemberId,
     selectMember,
     setBranchFilter,
+    setMemberImage,
     setStatusFilter,
     statusFilter,
     timeline,

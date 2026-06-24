@@ -12,6 +12,9 @@
             <button type="button" class="btn-action btn-action--primary" @click="triggerUpload">
               Upload billede
             </button>
+            <button type="button" class="btn-action" @click="openPicker">
+              Vælg fra bibliotek
+            </button>
             <button type="button" class="btn-action" @click="resetLibrary">Nulstil</button>
           </div>
         </div>
@@ -21,24 +24,71 @@
         <aside class="library-sidebar">
           <div class="library-sidebar-head">
             <div>
-              <div class="library-sidebar-title">Kilder</div>
-              <div class="library-sidebar-sub">{{ typeCounts.all }} billeder</div>
+              <div class="library-sidebar-title">Kategorier</div>
+              <div class="library-sidebar-sub">{{ categoryCounts.all }} billeder</div>
             </div>
-            <span class="pill pill--soft">{{ activeTypeLabel }}</span>
+            <span class="pill pill--soft">{{ activeCategoryLabel }}</span>
           </div>
 
-          <div class="library-type-list" role="tablist" aria-label="Billedkilder">
+          <div class="library-cat-add">
+            <input
+              v-model="newCategoryName"
+              class="field-input"
+              type="text"
+              placeholder="Ny kategori"
+              @keydown.enter.prevent="createNewCategory"
+            />
+            <button type="button" class="btn-action" @click="createNewCategory">Tilføj</button>
+          </div>
+
+          <div class="library-toolbar-actions library-category-actions">
+            <button type="button" class="btn-action" @click="selectCategory('all')">Alle</button>
             <button
-              v-for="option in libraryTypeOptions"
-              :key="option.id"
               type="button"
-              class="library-type-btn"
-              :class="{ active: activeType === option.id }"
-              :aria-pressed="activeType === option.id"
-              @click="selectType(option.id)"
+              class="btn-action"
+              :disabled="!selectedCategory || selectedCategory.locked"
+              @click="saveCategoryName"
             >
-              <span>{{ option.label }}</span>
-              <span class="pill">{{ typeCounts[option.id] }}</span>
+              Gem navn
+            </button>
+            <button
+              type="button"
+              class="btn-action btn-action--danger"
+              :disabled="!selectedCategory || selectedCategory.locked"
+              @click="deleteCategory"
+            >
+              Slet kategori
+            </button>
+          </div>
+
+          <div class="library-selected-category">
+            <span>Valgt kategori</span>
+            <small>{{ selectedCategoryId === 'all' ? `Alle · ${categoryCounts.all}` : `${selectedCategoryLabel} · ${categoryCounts[selectedCategoryId] ?? 0}` }}</small>
+          </div>
+
+          <label class="field library-category-name-field">
+            <span class="field-label">Kategori-navn</span>
+            <input
+              v-model="selectedCategoryName"
+              class="field-input"
+              type="text"
+              :disabled="!selectedCategory || selectedCategory.locked"
+              placeholder="Rediger navn"
+            />
+          </label>
+
+          <div class="library-cat-list" role="tablist" aria-label="Bibliotekskategorier">
+            <button
+              v-for="category in categories"
+              :key="category.id"
+              type="button"
+              class="library-cat-btn"
+              :class="{ active: selectedCategoryId === category.id }"
+              :aria-pressed="selectedCategoryId === category.id"
+              @click="selectCategory(category.id)"
+            >
+              <span>{{ category.name }}</span>
+              <small>{{ categoryCounts[category.id] ?? 0 }}</small>
             </button>
           </div>
         </aside>
@@ -50,7 +100,7 @@
                 v-if="selectedItem"
                 class="library-preview-image"
                 :src="editing ? draft.imageUrl : selectedItem.imageUrl"
-                :alt="editing ? draft.title : selectedItem.title"
+                :alt="editing ? draft.name : selectedItem.name"
               />
               <div class="library-preview-empty" v-else>Ingen billeder i denne visning.</div>
             </div>
@@ -59,9 +109,9 @@
               <div class="library-detail-head">
                 <div>
                   <p class="card-kicker">Valgt billede</p>
-                  <h2 class="card-title">{{ editing ? draft.title : selectedItem.title }}</h2>
+                  <h2 class="card-title">{{ editing ? draft.name : selectedItem.name }}</h2>
                 </div>
-                <span class="pill">{{ selectedTypeLabel }}</span>
+                <span class="pill">{{ selectedCategoryLabel }}</span>
               </div>
 
               <p class="lead library-summary">{{ editing ? draft.summary : selectedItem.summary }}</p>
@@ -69,15 +119,19 @@
               <div v-if="editing" class="library-form-grid">
                 <label class="field">
                   <span class="field-label">Navn</span>
-                  <input v-model="draft.title" class="field-input" type="text" />
+                  <input v-model="draft.name" class="field-input" type="text" />
                 </label>
                 <label class="field">
-                  <span class="field-label">Type</span>
-                  <select v-model="draft.type" class="field-input">
-                    <option v-for="option in libraryTypeOptions.slice(1)" :key="option.id" :value="option.id">
-                      {{ option.label }}
+                  <span class="field-label">Kategori</span>
+                  <select v-model="draft.categoryId" class="field-input">
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                      {{ category.name }}
                     </option>
                   </select>
+                </label>
+                <label class="field field--wide">
+                  <span class="field-label">Beskrivelse</span>
+                  <input v-model="draft.summary" class="field-input" type="text" />
                 </label>
                 <label class="field field--wide">
                   <span class="field-label">Link</span>
@@ -86,8 +140,8 @@
               </div>
 
               <div v-else class="info-strip">
-                <span class="info-chip">{{ selectedItem.sourceLabel }}</span>
-                <span class="info-chip">{{ selectedItem.title }}</span>
+                <span class="info-chip">{{ selectedItem.sourceName }}</span>
+                <span class="info-chip">{{ categoryLabel(selectedItem.categoryId) }}</span>
                 <span class="info-chip">{{ selectedItem.imageUrl }}</span>
               </div>
 
@@ -123,11 +177,11 @@
               :class="{ active: selectedItem?.id === item.id }"
               @click="selectItem(item.id)"
             >
-              <img class="library-card-image" :src="item.imageUrl" :alt="item.title" />
+              <img class="library-card-image" :src="item.imageUrl" :alt="item.name" />
               <div class="library-card-body">
                 <div class="library-card-head">
-                  <h3 class="library-card-title">{{ item.title }}</h3>
-                  <span class="pill pill--soft">{{ typeLabel(item.type) }}</span>
+                  <h3 class="library-card-title">{{ item.name }}</h3>
+                  <span class="pill pill--soft">{{ categoryLabel(item.categoryId) }}</span>
                 </div>
                 <p class="library-card-copy">{{ item.summary }}</p>
               </div>
@@ -138,34 +192,53 @@
 
       <input ref="uploadInput" class="sr-only" type="file" accept="image/*" @change="handleUpload" />
       <input ref="replaceInput" class="sr-only" type="file" accept="image/*" @change="handleReplace" />
+      <LibraryPickerModal
+        :open="pickerOpen"
+        title="Billedbibliotek"
+        subtitle="Vælg et eksisterende billede eller upload et nyt."
+        :items="items"
+        :categories="categories"
+        :selected-item-id="selectedItem?.id"
+        :selected-category-id="selectedCategoryId"
+        @close="pickerOpen = false"
+        @pick="handlePickerPick"
+        @upload="handlePickerUpload"
+      />
     </PageCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 import PageCard from '@/components/PageCard.vue';
+import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
+import { IMAGE_LIBRARY_UNCATEGORIZED_ID } from '@/features/library/library.data';
 import { useLibraryPage } from '@/features/library/useLibraryPage';
 
 const {
-  activeType,
-  activeTypeLabel,
+  activeCategoryLabel,
+  categories,
+  categoryCounts,
+  categoryLabel,
   copySelectedLink,
+  createCategory,
+  deleteSelectedCategory,
   deleteSelectedItem,
   draft,
   editing,
-  libraryTypeOptions,
+  items,
   resetLibrary,
+  renameSelectedCategory,
   replaceSelectedImage,
   saveDraft,
+  selectCategory,
   selectItem,
-  selectType,
+  selectedCategory,
+  selectedCategoryId,
+  selectedCategoryLabel,
   selectedItem,
-  selectedTypeLabel,
   startEditing,
-  typeCounts,
-  typeLabel,
   uploadItem,
   visibleItems,
   cancelEditing,
@@ -173,6 +246,17 @@ const {
 
 const uploadInput = ref<HTMLInputElement | null>(null);
 const replaceInput = ref<HTMLInputElement | null>(null);
+const pickerOpen = ref(false);
+const newCategoryName = ref('');
+const selectedCategoryName = ref('');
+
+watch(
+  selectedCategory,
+  next => {
+    selectedCategoryName.value = next?.name ?? '';
+  },
+  { immediate: true },
+);
 
 function triggerUpload() {
   uploadInput.value?.click();
@@ -182,12 +266,36 @@ function triggerReplace() {
   replaceInput.value?.click();
 }
 
-function handleUpload(event: Event) {
+function openPicker() {
+  pickerOpen.value = true;
+}
+
+async function createNewCategory() {
+  if (await createCategory(newCategoryName.value)) {
+    newCategoryName.value = '';
+  }
+}
+
+async function saveCategoryName() {
+  if (!selectedCategory.value || selectedCategory.value.locked) return;
+  await renameSelectedCategory(selectedCategoryName.value);
+}
+
+async function deleteCategory() {
+  const category = selectedCategory.value;
+  if (!category || category.locked) return;
+  if (!window.confirm(`Slet kategorien "${category.name}"? Billederne flyttes til ${categoryLabel(IMAGE_LIBRARY_UNCATEGORIZED_ID)}.`)) {
+    return;
+  }
+  await deleteSelectedCategory();
+}
+
+async function handleUpload(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
-  const type = activeType.value === 'all' ? 'event' : activeType.value;
-  uploadItem(file, type);
+  const categoryId = selectedCategoryId.value === 'all' ? IMAGE_LIBRARY_UNCATEGORIZED_ID : selectedCategoryId.value;
+  await uploadItem(file, categoryId);
   input.value = '';
 }
 
@@ -205,6 +313,21 @@ async function copyLink() {
     await copySelectedLink();
   } catch {
     // Ignore clipboard failures in environments without user permissions.
+  }
+}
+
+function handlePickerPick(item: { id: string; categoryId: string }) {
+  selectCategory(item.categoryId);
+  selectItem(item.id);
+  pickerOpen.value = false;
+}
+
+async function handlePickerUpload(file: File, categoryId: string) {
+  const uploaded = await uploadItem(file, categoryId);
+  if (uploaded) {
+    selectCategory(uploaded.categoryId);
+    selectItem(uploaded.id);
+    pickerOpen.value = false;
   }
 }
 </script>
@@ -265,6 +388,72 @@ async function copyLink() {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.library-cat-add {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.library-category-actions {
+  margin: 0 0 12px 0;
+}
+
+.library-category-name-field {
+  margin-bottom: 12px;
+}
+
+.library-selected-category {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 0 0 12px 0;
+  border: 1px solid rgba(15, 65, 114, 0.2);
+  border-radius: 10px;
+  background: rgba(15, 65, 114, 0.05);
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.library-selected-category small {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.library-cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.library-cat-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+
+.library-cat-btn.active {
+  border-color: var(--navy);
+  background: rgba(15, 65, 114, 0.06);
+  color: var(--navy);
+}
+
+.library-cat-btn small {
+  color: var(--muted);
 }
 
 .library-type-list {
