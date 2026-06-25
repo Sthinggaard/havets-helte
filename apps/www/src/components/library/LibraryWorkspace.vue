@@ -20,6 +20,12 @@
         </div>
       </template>
 
+      <div v-if="uploadError" class="library-upload-error" role="alert">
+        <i class="ti ti-alert-triangle"></i>
+        <span class="library-upload-error-text">{{ uploadError }}</span>
+        <button type="button" class="library-upload-error-close" aria-label="Luk" @click="clearUploadError">×</button>
+      </div>
+
       <div class="library-layout">
         <aside class="library-sidebar">
           <div class="library-sidebar-head">
@@ -239,6 +245,8 @@ const {
   selectedCategoryLabel,
   selectedItem,
   startEditing,
+  uploadError,
+  clearUploadError,
   uploadItem,
   visibleItems,
   cancelEditing,
@@ -335,6 +343,44 @@ async function handlePickerUpload(file: File, categoryId: string) {
 <style scoped>
 .library-workspace {
   gap: 0;
+}
+
+.library-upload-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid #f1c0c0;
+  border-radius: 12px;
+  background: #fdf2f2;
+  color: #9b1c1c;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.library-upload-error i {
+  margin-top: 1px;
+  flex: none;
+}
+
+.library-upload-error-text {
+  flex: 1 1 auto;
+}
+
+.library-upload-error-close {
+  flex: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.library-upload-error-close:hover {
+  opacity: 0.7;
 }
 
 .library-header {

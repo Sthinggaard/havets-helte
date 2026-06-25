@@ -79,6 +79,28 @@ function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
+// Maps a raw Firebase error from an upload/save into a Danish, user-facing
+// message. The common case in this project is a missing Storage bucket (the
+// project is on the Spark plan, so no bucket is provisioned) — that surfaces as
+// a 404 preflight / storage/unknown rather than a permission error.
+function describeUploadError(error: unknown): string {
+  const code = (error as { code?: string } | undefined)?.code ?? '';
+  const message = (error as { message?: string } | undefined)?.message ?? '';
+  if (code === 'storage/unauthorized' || code === 'permission-denied') {
+    return 'Du har ikke adgang til at uploade billeder. Log ind som leder (@havetshelte.dk), og prøv igen.';
+  }
+  if (
+    code === 'storage/unknown' ||
+    code === 'storage/retry-limit-exceeded' ||
+    code === 'storage/object-not-found' ||
+    code === 'storage/bucket-not-found' ||
+    message.includes('404')
+  ) {
+    return 'Billedlageret er ikke sat op endnu. Firebase Storage skal aktiveres for projektet, før der kan uploades billeder.';
+  }
+  return 'Upload mislykkedes. Prøv igen, eller kontakt en administrator.';
+}
+
 function baseFileName(fileName: string) {
   return fileName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || 'Billede';
 }
@@ -98,6 +120,11 @@ export function useLibraryPage() {
   const editing = ref(false);
   const draft = reactive<LibraryDraft>(createDraft(items.value[0] ?? fallbackItems[0]));
   const pendingReplacementFile = ref<File | null>(null);
+  const uploadError = ref<string | null>(null);
+
+  function clearUploadError() {
+    uploadError.value = null;
+  }
 
   const orderedCategories = computed(() => sortCategories(categories.value));
 
@@ -366,6 +393,7 @@ export function useLibraryPage() {
     const current = selectedItem.value;
     if (!current || !draft.name.trim()) return false;
 
+    clearUploadError();
     try {
       let imageUrl = current.imageUrl;
       let storagePath = current.storagePath;
@@ -440,6 +468,9 @@ export function useLibraryPage() {
       return true;
     } catch (error) {
       console.error(error);
+      if (pendingReplacementFile.value) {
+        uploadError.value = describeUploadError(error);
+      }
       return false;
     }
   }
@@ -566,6 +597,7 @@ export function useLibraryPage() {
 
   async function uploadItem(file: File, categoryId: string) {
     const currentCategory = categoryId || IMAGE_LIBRARY_UNCATEGORIZED_ID;
+    clearUploadError();
     try {
       const uploaded = await uploadLibraryFile(file, currentCategory);
       const nextItem: LibraryItem = {
@@ -595,6 +627,7 @@ export function useLibraryPage() {
       return nextItem;
     } catch (error) {
       console.error(error);
+      uploadError.value = describeUploadError(error);
       return null;
     }
   }
@@ -672,6 +705,8 @@ export function useLibraryPage() {
     selectedCategoryLabel,
     selectedItem,
     startEditing,
+    uploadError,
+    clearUploadError,
     uploadItem,
     visibleItems,
     cancelEditing,
