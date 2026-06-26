@@ -35,10 +35,15 @@ async function ensureAuthListener() {
 
 async function login() {
   const auth = await getAppAuth();
+  const trimmedEmail = email.value.trim().toLowerCase();
+  if (!trimmedEmail || !trimmedEmail.includes('@')) {
+    error.value = 'Indtast en gyldig mailadresse.';
+    return;
+  }
   busy.value = true;
   error.value = '';
   try {
-    await signInWithEmailAndPassword(auth, email.value.trim(), password.value);
+    await signInWithEmailAndPassword(auth, trimmedEmail, password.value);
     password.value = '';
   } catch (err) {
     console.error('[admin-auth] login failed', err);
