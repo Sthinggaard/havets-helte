@@ -34,8 +34,8 @@ it still uses Vite's default `development` mode and the gitignored local `.env`
    - Done 2026-06-26: core APIs enabled for Firestore, Auth, Storage, and Hosting.
    - Done 2026-06-26: Firestore default databases created in `eur3` to match prod.
    - Done 2026-06-26: `firestore.rules` deployed to dev and stage.
-   - Still manual: enable Authentication's Email/Password provider in Firebase
-     Console for each project.
+   - Done 2026-06-26: Authentication Email/Password provider enabled in dev and
+     stage, verified with Identity Toolkit config (`passwordRequired: true`).
    - Still manual: attach billing/Blaze before deploying Storage + Functions. The
      billing-gated APIs are `artifactregistry.googleapis.com`,
      `cloudbuild.googleapis.com`, `run.googleapis.com`, and the related Functions
