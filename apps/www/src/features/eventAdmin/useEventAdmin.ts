@@ -51,6 +51,7 @@ export function useEventAdmin(section: EventSection) {
   const titleError = ref(false);
   const slotsError = ref(false);
   const invalidSlotIds = ref<Set<string>>(new Set());
+  const invalidSlotTimeIds = ref<Set<string>>(new Set());
 
   function applyDraft(source: AdminEvent) {
     draft.id = source.id;
@@ -72,6 +73,7 @@ export function useEventAdmin(section: EventSection) {
     titleError.value = false;
     slotsError.value = false;
     invalidSlotIds.value = new Set();
+    invalidSlotTimeIds.value = new Set();
     saveError.value = '';
   }
 
@@ -158,13 +160,22 @@ export function useEventAdmin(section: EventSection) {
     }
 
     const invalid = new Set<string>();
+    const invalidTimes = new Set<string>();
     for (const slot of draft.slots) {
       if (!slot.label.trim()) {
         invalid.add(slot.id);
         valid = false;
       }
+      if (config.timedSlots) {
+        const range = parseTimeRange(slot.sublabel);
+        if ((range.start || range.end) && (!range.start || !range.end)) {
+          invalidTimes.add(slot.id);
+          valid = false;
+        }
+      }
     }
     invalidSlotIds.value = invalid;
+    invalidSlotTimeIds.value = invalidTimes;
 
     return valid;
   }
@@ -230,6 +241,7 @@ export function useEventAdmin(section: EventSection) {
     titleError,
     slotsError,
     invalidSlotIds,
+    invalidSlotTimeIds,
     formTitle,
     load,
     startCreate,

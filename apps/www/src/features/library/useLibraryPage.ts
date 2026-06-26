@@ -109,7 +109,12 @@ function buildStoragePath(categoryId: string, fileName: string) {
   return `image-library/${categoryId}/${crypto.randomUUID()}_${sanitizeFileName(fileName)}`;
 }
 
-export function useLibraryPage() {
+type UseLibraryPageOptions = {
+  autoLoad?: boolean;
+};
+
+export function useLibraryPage(options: UseLibraryPageOptions = {}) {
+  const autoLoad = options.autoLoad ?? true;
   const fallbackCategories = librarySeedCategories.map(cloneCategory);
   const fallbackItems = createFallbackLibraryItems();
 
@@ -583,6 +588,10 @@ export function useLibraryPage() {
     syncDraft(items.value[0] ?? null);
   }
 
+  function load() {
+    return loadLibraryFromSource();
+  }
+
   function replaceSelectedImage(file: File) {
     const current = selectedItem.value;
     if (!current) return false;
@@ -666,7 +675,7 @@ export function useLibraryPage() {
   }
 
   onMounted(() => {
-    void loadLibraryFromSource();
+    if (autoLoad) void loadLibraryFromSource();
   });
 
   onBeforeUnmount(() => {
@@ -694,6 +703,7 @@ export function useLibraryPage() {
     draft,
     editing,
     items,
+    load,
     resetLibrary,
     renameSelectedCategory,
     replaceSelectedImage,

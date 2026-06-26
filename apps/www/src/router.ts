@@ -30,13 +30,13 @@ const routes = [
     path: '/opgaver',
     name: 'tasks',
     component: TasksPage,
-    alias: ['/opgaver.html'],
+    alias: ['/opgaver.html', '/admin-opgaver.html', '/admin-opgaver-form.html'],
   },
   {
     path: '/vagter',
     name: 'shifts',
     component: ShiftsPage,
-    alias: ['/vagter.html'],
+    alias: ['/vagter.html', '/admin-vagter.html', '/admin-vagter-form.html'],
   },
   {
     path: '/attendance',
@@ -80,10 +80,6 @@ const routes = [
     component: AdminShellPage,
     alias: [
       '/admin.html',
-      '/admin-opgaver.html',
-      '/admin-opgaver-form.html',
-      '/admin-vagter.html',
-      '/admin-vagter-form.html',
       '/admin-fremmoede.html',
       '/admin-fremmoede-form.html',
       '/backfill-groups.html',

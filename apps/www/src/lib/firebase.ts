@@ -16,11 +16,18 @@ type FirebaseConfig = {
 
 const emulatorOverride = import.meta.env.VITE_USE_FIREBASE_EMULATORS;
 const useEmulators = emulatorOverride !== undefined ? emulatorOverride === 'true' : import.meta.env.DEV;
+
+// Per-environment Firebase web config. CI builds with `vite build --mode
+// dev|stage|prod`, which loads the matching apps/www/.env.<mode> file and
+// supplies these VITE_FIREBASE_* values. The hardcoded fallbacks keep the
+// production project working when the env file is absent (e.g. a bare
+// `npm run dev`/`npm run build`). Firebase web config is not secret — it ships
+// in the client bundle regardless.
 const liveFirebaseConfig: FirebaseConfig = {
-  apiKey: 'AIzaSyBK5bi8bQ4-gFFgmzkESqumeTlbqeIWFbM',
-  authDomain: 'havets-helte.firebaseapp.com',
-  projectId: 'havets-helte',
-  storageBucket: 'havets-helte.firebasestorage.app',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? 'AIzaSyBK5bi8bQ4-gFFgmzkESqumeTlbqeIWFbM',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? 'havets-helte.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? 'havets-helte',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? 'havets-helte.firebasestorage.app',
 };
 
 let firestorePromise: Promise<ReturnType<typeof getFirestore>> | null = null;

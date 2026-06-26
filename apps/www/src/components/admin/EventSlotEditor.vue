@@ -1,5 +1,5 @@
 <template>
-  <div class="slot-row" :class="{ 'has-error': invalid }">
+  <div class="slot-row" :class="{ 'has-error': invalid || invalidTime }">
     <div class="slot-header">
       <span class="slot-index">Plads {{ index + 1 }}</span>
       <button type="button" class="btn-rm-slot" :aria-label="`Fjern plads ${index + 1}`" title="Slet plads" @click="$emit('remove')">×</button>
@@ -14,8 +14,9 @@
           class="sl-input"
           :placeholder="config.timedSlots ? 'fx Drinksboden' : 'fx Opsætning'"
           :aria-invalid="invalid"
+          :aria-describedby="invalid ? `${slot.id}-label-error` : undefined"
         />
-        <div v-if="invalid" class="field-error" role="alert">Udfyld navn{{ config.timedSlots ? '/tidsrum' : '' }}.</div>
+        <div v-if="invalid" :id="`${slot.id}-label-error`" class="field-error" role="alert">Udfyld navn{{ config.timedSlots ? '/tidsrum' : '' }}.</div>
       </div>
       <div class="si-cap">
         <label class="si-field-label" :for="`${slot.id}-cap`">Pladser</label>
@@ -53,6 +54,8 @@
             type="time"
             :value="timeRange.start"
             aria-label="Starttid"
+            :aria-invalid="invalidTime"
+            :aria-describedby="invalidTime ? `${slot.id}-time-error` : undefined"
             @input="emitTime('start', $event)"
           />
           <span class="time-range-sep">–</span>
@@ -61,9 +64,12 @@
             type="time"
             :value="timeRange.end"
             aria-label="Sluttid"
+            :aria-invalid="invalidTime"
+            :aria-describedby="invalidTime ? `${slot.id}-time-error` : undefined"
             @input="emitTime('end', $event)"
           />
         </div>
+        <div v-if="invalidTime" :id="`${slot.id}-time-error`" class="field-error" role="alert">Vælg både start- og sluttid.</div>
         <input
           v-else
           :id="`${slot.id}-sub`"
@@ -117,6 +123,7 @@ const props = defineProps<{
   index: number;
   config: EventTypeConfig;
   invalid: boolean;
+  invalidTime: boolean;
   timeRange: { start: string; end: string };
 }>();
 

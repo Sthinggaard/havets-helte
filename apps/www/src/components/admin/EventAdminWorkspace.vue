@@ -94,6 +94,7 @@
             :index="index"
             :config="config"
             :invalid="invalidSlotIds.has(slot.id)"
+            :invalid-time="invalidSlotTimeIds.has(slot.id)"
             :time-range="slotTimeRange(slot)"
             @remove="removeSlot(slot.id)"
             @set-time="(part, value) => setSlotTime(slot, part, value)"
@@ -146,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import PageCard from '@/components/PageCard.vue';
@@ -172,6 +173,7 @@ const {
   titleError,
   slotsError,
   invalidSlotIds,
+  invalidSlotTimeIds,
   formTitle,
   load,
   startCreate,
@@ -185,9 +187,15 @@ const {
   remove,
 } = useEventAdmin(props.section);
 
-const { items: libraryItems, categories: libraryCategories, uploadItem } = useLibraryPage();
+const {
+  items: libraryItems,
+  categories: libraryCategories,
+  load: loadLibrary,
+  uploadItem,
+} = useLibraryPage({ autoLoad: false });
 
 const pickerOpen = ref(false);
+const libraryLoaded = ref(false);
 const route = useRoute();
 
 onMounted(async () => {
@@ -221,7 +229,25 @@ function staticTemplate(id: string) {
 }
 
 async function onSave() {
-  await save();
+  const saved = await save();
+  if (!saved) {
+    await nextTick();
+    focusFirstInvalidField();
+  }
+}
+
+watch(pickerOpen, open => {
+  if (!open || libraryLoaded.value) return;
+  libraryLoaded.value = true;
+  void loadLibrary();
+});
+
+function focusFirstInvalidField() {
+  const target = document.querySelector<HTMLElement>(
+    '.admin-form [aria-invalid="true"], .admin-form .field-error',
+  );
+  target?.focus?.();
+  target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function onPickImage(item: LibraryItem) {

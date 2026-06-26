@@ -79,11 +79,16 @@ export function parseTimeRange(sublabel: string | undefined): { start: string; e
   if (!sublabel) return { start: '', end: '' };
   const match = sublabel.match(/^(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})$/);
   if (!match) return { start: '', end: '' };
-  return { start: match[1], end: match[2] };
+  return { start: normalizeTimeInputValue(match[1]), end: normalizeTimeInputValue(match[2]) };
 }
 
 export function formatTimeRange(start: string, end: string): string {
   return start && end ? `${start}–${end}` : '';
+}
+
+function normalizeTimeInputValue(value: string): string {
+  const [hour = '', minute = ''] = value.split(':');
+  return `${hour.padStart(2, '0')}:${minute}`;
 }
 
 export function createSlot(partial?: Partial<EventSlot>): EventSlot {
