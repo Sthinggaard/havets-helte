@@ -64,12 +64,58 @@
         <div class="form-row">
           <div class="field">
             <label for="evDate">Dato-tekst</label>
-            <input id="evDate" v-model="draft.dateText" type="text" class="form-input" placeholder="Tirsdag 23. juni · 16:00–22:00" />
+            <div class="input-action-row">
+              <input id="evDate" v-model="draft.dateText" type="text" class="form-input" placeholder="Tirsdag 23. juni · 16:00–22:00" />
+              <button type="button" class="field-icon-button" aria-label="Vælg dato" title="Vælg dato" @click="openDatePicker">
+                <i class="ti ti-calendar" aria-hidden="true"></i>
+              </button>
+              <input ref="datePicker" class="native-date-picker" type="date" tabindex="-1" aria-hidden="true" @change="applyPickedDate" />
+            </div>
           </div>
-          <div class="field">
+          <div class="field location-field">
             <label for="evLoc">Sted</label>
-            <input id="evLoc" v-model="draft.location" type="text" class="form-input" placeholder="Sluseholmen" />
+            <input
+              id="evLoc"
+              v-model="draft.location"
+              type="text"
+              class="form-input"
+              placeholder="Sluseholmen"
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls="evLocListbox"
+              :aria-expanded="locationSuggestionsOpen"
+              :aria-activedescendant="activeLocationOptionId"
+              @input="onLocationInput"
+              @keydown="onLocationKeydown"
+              @blur="onLocationBlur"
+            />
+            <div
+              v-if="locationSuggestionsOpen"
+              id="evLocListbox"
+              class="addr-listbox"
+              role="listbox"
+              aria-label="Adresseforslag"
+            >
+              <button
+                v-for="(suggestion, index) in locationSuggestions"
+                :id="locationOptionId(index)"
+                :key="suggestion.place_id"
+                type="button"
+                class="addr-option"
+                :class="{ active: index === locationActiveIndex }"
+                role="option"
+                :aria-selected="index === locationActiveIndex"
+                @mousedown.prevent="selectLocationSuggestion(index)"
+              >
+                {{ suggestion.display_name }}
+              </button>
+            </div>
           </div>
+        </div>
+
+        <div v-if="locationMapUrl" class="location-map-wrap">
+          <iframe class="location-map" :src="locationMapUrl" loading="lazy" title="Kort over valgt sted"></iframe>
         </div>
 
         <div class="field">
@@ -147,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import PageCard from '@/components/PageCard.vue';
@@ -197,6 +243,46 @@ const {
 const pickerOpen = ref(false);
 const libraryLoaded = ref(false);
 const route = useRoute();
+const datePicker = ref<HTMLInputElement | null>(null);
+const locationSuggestions = ref<LocationSuggestion[]>([]);
+const locationActiveIndex = ref(-1);
+const locationMapQuery = ref('');
+let locationSearchTimer: ReturnType<typeof setTimeout> | null = null;
+let locationMapTimer: ReturnType<typeof setTimeout> | null = null;
+let locationRequestCounter = 0;
+
+type LocationSuggestion = {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
+const DA_WEEKDAYS = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
+const DA_MONTHS = [
+  'januar',
+  'februar',
+  'marts',
+  'april',
+  'maj',
+  'juni',
+  'juli',
+  'august',
+  'september',
+  'oktober',
+  'november',
+  'december',
+];
+
+const locationSuggestionsOpen = computed(() => locationSuggestions.value.length > 0);
+const activeLocationOptionId = computed(() =>
+  locationActiveIndex.value >= 0 ? locationOptionId(locationActiveIndex.value) : undefined,
+);
+const locationMapUrl = computed(() => {
+  const query = locationMapQuery.value.trim();
+  if (!query) return '';
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+});
 
 onMounted(async () => {
   await load();
@@ -242,12 +328,138 @@ watch(pickerOpen, open => {
   void loadLibrary();
 });
 
+watch(mode, currentMode => {
+  locationMapQuery.value = currentMode === 'form' ? draft.location.trim() : '';
+  closeLocationSuggestions();
+});
+
+onBeforeUnmount(() => {
+  if (locationSearchTimer) clearTimeout(locationSearchTimer);
+  if (locationMapTimer) clearTimeout(locationMapTimer);
+});
+
 function focusFirstInvalidField() {
   const target = document.querySelector<HTMLElement>(
     '.admin-form [aria-invalid="true"], .admin-form .field-error',
   );
   target?.focus?.();
   target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function openDatePicker() {
+  const picker = datePicker.value;
+  if (!picker) return;
+  if (typeof picker.showPicker === 'function') {
+    try {
+      picker.showPicker();
+      return;
+    } catch {
+      // Fall back to focus below when the browser blocks programmatic picker UI.
+    }
+  }
+  picker.focus();
+}
+
+function applyPickedDate(event: Event) {
+  const value = (event.target as HTMLInputElement).value;
+  if (!value) return;
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return;
+  const weekday = DA_WEEKDAYS[date.getDay()];
+  draft.dateText = `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${date.getDate()}. ${DA_MONTHS[date.getMonth()]}`;
+}
+
+function onLocationInput() {
+  draft.locationLat = null;
+  draft.locationLng = null;
+  scheduleLocationSearch(draft.location);
+  scheduleLocationMap(draft.location);
+}
+
+function scheduleLocationSearch(query: string) {
+  if (locationSearchTimer) clearTimeout(locationSearchTimer);
+  const trimmed = query.trim();
+  if (trimmed.length < 3) {
+    closeLocationSuggestions();
+    return;
+  }
+  locationSearchTimer = setTimeout(() => {
+    void searchLocation(trimmed);
+  }, 350);
+}
+
+function scheduleLocationMap(query: string) {
+  if (locationMapTimer) clearTimeout(locationMapTimer);
+  const trimmed = query.trim();
+  if (!trimmed) {
+    locationMapQuery.value = '';
+    return;
+  }
+  locationMapTimer = setTimeout(() => {
+    locationMapQuery.value = trimmed;
+  }, 600);
+}
+
+async function searchLocation(query: string) {
+  const requestId = ++locationRequestCounter;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=dk&q=${encodeURIComponent(query)}`;
+    const response = await fetch(url, { headers: { 'Accept-Language': 'da' } });
+    if (!response.ok) throw new Error(`Nominatim ${response.status}`);
+    const results = (await response.json()) as LocationSuggestion[];
+    if (requestId !== locationRequestCounter) return;
+    locationSuggestions.value = Array.isArray(results) ? results : [];
+    locationActiveIndex.value = -1;
+  } catch (error) {
+    console.error('[event-admin] location search failed', error);
+    closeLocationSuggestions();
+  }
+}
+
+function selectLocationSuggestion(index: number) {
+  const suggestion = locationSuggestions.value[index];
+  if (!suggestion) return;
+  if (locationMapTimer) clearTimeout(locationMapTimer);
+  draft.location = suggestion.display_name;
+  draft.locationLat = parseFloat(suggestion.lat);
+  draft.locationLng = parseFloat(suggestion.lon);
+  locationMapQuery.value = suggestion.display_name;
+  closeLocationSuggestions();
+}
+
+function onLocationKeydown(event: KeyboardEvent) {
+  if (!locationSuggestionsOpen.value) return;
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    moveLocationActive(1);
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    moveLocationActive(-1);
+  } else if (event.key === 'Enter' && locationActiveIndex.value >= 0) {
+    event.preventDefault();
+    selectLocationSuggestion(locationActiveIndex.value);
+  } else if (event.key === 'Escape') {
+    closeLocationSuggestions();
+  }
+}
+
+function moveLocationActive(delta: number) {
+  if (!locationSuggestions.value.length) return;
+  locationActiveIndex.value =
+    (locationActiveIndex.value + delta + locationSuggestions.value.length) % locationSuggestions.value.length;
+}
+
+function onLocationBlur() {
+  window.setTimeout(closeLocationSuggestions, 120);
+}
+
+function closeLocationSuggestions() {
+  locationSuggestions.value = [];
+  locationActiveIndex.value = -1;
+}
+
+function locationOptionId(index: number) {
+  return `evLocOption${index}`;
 }
 
 function onPickImage(item: LibraryItem) {
@@ -427,6 +639,102 @@ textarea.form-input {
   display: grid;
   gap: 14px;
   grid-template-columns: 1fr 1fr;
+}
+
+.input-action-row {
+  position: relative;
+  display: grid;
+}
+
+.input-action-row .form-input {
+  padding-right: 46px;
+}
+
+.field-icon-button {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 34px;
+  height: 34px;
+  transform: translateY(-50%);
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+  font: inherit;
+}
+
+.field-icon-button:hover,
+.field-icon-button:focus-visible {
+  border-color: var(--border);
+  background: #f5f8fb;
+  outline: none;
+}
+
+.native-date-picker {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.location-field {
+  position: relative;
+}
+
+.addr-listbox {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  max-height: 230px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(8, 36, 65, 0.14);
+}
+
+.addr-option {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid #eef2f6;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.addr-option:last-child {
+  border-bottom: 0;
+}
+
+.addr-option:hover,
+.addr-option.active {
+  background: #f5f8fb;
+  color: var(--navy-dark);
+}
+
+.location-map-wrap {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f5f8fb;
+}
+
+.location-map {
+  display: block;
+  width: 100%;
+  height: 210px;
+  border: 0;
 }
 
 .img-block {
