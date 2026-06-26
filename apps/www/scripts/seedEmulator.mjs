@@ -64,6 +64,15 @@ async function main() {
     return;
   }
 
+  log('Opretter sthinggaard@havetshelte.dk …');
+  try {
+    await createUserWithEmailAndPassword(auth, 'sthinggaard@havetshelte.dk', 'test1234');
+    log('✓ Leder oprettet (sthinggaard@havetshelte.dk / test1234)');
+  } catch {
+    log('→ Leder eksisterer allerede (OK)');
+  }
+  await signInWithEmailAndPassword(auth, 'sthinggaard@havetshelte.dk', 'test1234');
+
   const existing = await getDocs(query(collection(db, 'events'), limit(1))).catch(error => {
     log(`Emulatoren svarer ikke (er den startet?): ${error.message}`);
     return null;
@@ -73,15 +82,6 @@ async function main() {
     log('Emulator-data findes allerede, springer seed over.');
     return;
   }
-
-  log('Opretter leder@havetshelte.dk …');
-  try {
-    await createUserWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
-    log('✓ Leder oprettet (leder@havetshelte.dk / test1234)');
-  } catch {
-    log('→ Leder eksisterer allerede (OK)');
-  }
-  await signInWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
 
   log('Opretter Sankt Hans event…');
   const now = serverTimestamp();

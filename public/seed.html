@@ -79,14 +79,24 @@ window.seed = async function() {
 
   try {
     // ── Leder-konto ─────────────────────────────────────────────────────
-    out('Opretter leder@havetshelte.dk …');
+    out('Opretter sthinggaard@havetshelte.dk …');
     try {
-      await createUserWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
-      out('✓ Leder oprettet (leder@havetshelte.dk / test1234)');
+      await createUserWithEmailAndPassword(auth, 'sthinggaard@havetshelte.dk', 'test1234');
+      out('✓ Leder oprettet (sthinggaard@havetshelte.dk / test1234)');
     } catch(e) {
       out('→ Leder eksisterer allerede (OK)');
     }
-    await signInWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
+    await signInWithEmailAndPassword(auth, 'sthinggaard@havetshelte.dk', 'test1234');
+
+    const existing = await getDocs(query(collection(db, 'events'), limit(1))).catch(err => {
+      out('Emulatoren svarer ikke (er den startet?): ' + err.message);
+      return null;
+    });
+    if (!existing) return;
+    if (!existing.empty) {
+      out('Emulator-data findes allerede, springer seed over.');
+      return;
+    }
 
     // ── Sankt Hans event ─────────────────────────────────────────────────
     out('Opretter Sankt Hans event…');

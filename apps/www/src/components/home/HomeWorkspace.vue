@@ -35,7 +35,7 @@
         <div class="auth-bar" aria-label="Bruger">
           <div class="user-chip">
             <div class="uava">L</div>
-            <span>leder@havetshelte.dk</span>
+            <span>sthinggaard@havetshelte.dk</span>
             <button class="logout" type="button">Log ud</button>
           </div>
         </div>

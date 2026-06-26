@@ -21,7 +21,7 @@
       <form class="admin-login" @submit.prevent="handleLogin">
         <label class="field">
           <span class="field-label">Mail</span>
-          <input v-model="email" class="field-input" type="email" autocomplete="email" placeholder="leder@havetshelte.dk" />
+          <input v-model="email" class="field-input" type="email" autocomplete="email" placeholder="sthinggaard@havetshelte.dk" />
         </label>
         <label class="field">
           <span class="field-label">Adgangskode</span>
