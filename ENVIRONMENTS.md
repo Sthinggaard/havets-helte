@@ -40,9 +40,9 @@ it still uses Vite's default `development` mode and the gitignored local `.env`
    secret named per the table above (Settings → Secrets and variables → Actions).
    Prod's secret (`FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE`) already exists.
 
-5. **Create the long-lived branches** `develop` and `staging` (off `main`), and push
-   them so the deploy workflow has something to track. `develop` exists locally as
-   of 2026-06-26; `staging` still needs to be created and pushed.
+5. **Create the long-lived branches** `develop` and `staging`, and push them so
+   the deploy workflow has something to track. Both branches exist locally as of
+   2026-06-26; both still need to be pushed.
 
 6. *(Optional)* Add GitHub **Environments** named `dev`, `stage`, `production`
    (Settings → Environments) to attach protection rules — e.g. a required reviewer
