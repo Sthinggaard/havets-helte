@@ -30,10 +30,18 @@ it still uses Vite's default `development` mode and the gitignored local `.env`
 2. **Fill in the web config** for dev + stage in `apps/www/.env.dev` and
    `apps/www/.env.stage`. Done 2026-06-26 via Firebase CLI web app registration.
 
-3. **Enable required Firebase products in dev + stage.** Still manual. Enable the
-   same products as prod on each project: Authentication (Email/Password), Firestore
-   database in `eur3` (to match prod), and **Storage**. Storage + Functions deploy
-   require the **Blaze** plan on each project — see note below.
+3. **Enable required Firebase products in dev + stage.**
+   - Done 2026-06-26: core APIs enabled for Firestore, Auth, Storage, and Hosting.
+   - Done 2026-06-26: Firestore default databases created in `eur3` to match prod.
+   - Done 2026-06-26: `firestore.rules` deployed to dev and stage.
+   - Still manual: enable Authentication's Email/Password provider in Firebase
+     Console for each project.
+   - Still manual: attach billing/Blaze before deploying Storage + Functions. The
+     billing-gated APIs are `artifactregistry.googleapis.com`,
+     `cloudbuild.googleapis.com`, `run.googleapis.com`, and the related Functions
+     runtime services.
+   - Still manual after Blaze: initialize/enable Firebase Storage in each project,
+     then deploy `storage.rules`.
 
 4. **Create service accounts + GitHub secrets.** For each project: Console → Project
    settings → Service accounts → Generate new private key. Add the JSON as a repo
