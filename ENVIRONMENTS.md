@@ -22,28 +22,29 @@ the prod values when no env file is present. A local `npm run dev` is unaffected
 it still uses Vite's default `development` mode and the gitignored local `.env`
 (emulators).
 
-## One-time setup (manual — these need the console / repo admin)
+## One-time setup
 
-1. **Create the two new Firebase projects** in the console: `havets-helte-dev` and
-   `havets-helte-stage`. If you use different project IDs, update both `.firebaserc`
-   and the `VITE_FIREBASE_PROJECT_ID` in the matching `.env.<mode>` file.
-   - Enable the same products as prod on each: Authentication (Email/Password),
-     Firestore, and **Storage** (Storage + Functions deploy require the **Blaze** plan
-     on each project — see note below).
+1. **Create the two new Firebase projects.** Done 2026-06-26 via Firebase CLI:
+   `havets-helte-dev` and `havets-helte-stage`.
 
 2. **Fill in the web config** for dev + stage in `apps/www/.env.dev` and
-   `apps/www/.env.stage` (replace the `REPLACE_WITH_*` placeholders). Get the values
-   from Console → Project settings → Your apps → SDK setup and configuration.
+   `apps/www/.env.stage`. Done 2026-06-26 via Firebase CLI web app registration.
 
-3. **Create service accounts + GitHub secrets.** For each project: Console → Project
+3. **Enable required Firebase products in dev + stage.** Still manual. Enable the
+   same products as prod on each project: Authentication (Email/Password), Firestore
+   database in `eur3` (to match prod), and **Storage**. Storage + Functions deploy
+   require the **Blaze** plan on each project — see note below.
+
+4. **Create service accounts + GitHub secrets.** For each project: Console → Project
    settings → Service accounts → Generate new private key. Add the JSON as a repo
    secret named per the table above (Settings → Secrets and variables → Actions).
    Prod's secret (`FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE`) already exists.
 
-4. **Create the long-lived branches** `develop` and `staging` (off `main`), and push
-   them so the deploy workflow has something to track.
+5. **Create the long-lived branches** `develop` and `staging` (off `main`), and push
+   them so the deploy workflow has something to track. `develop` exists locally as
+   of 2026-06-26; `staging` still needs to be created and pushed.
 
-5. *(Optional)* Add GitHub **Environments** named `dev`, `stage`, `production`
+6. *(Optional)* Add GitHub **Environments** named `dev`, `stage`, `production`
    (Settings → Environments) to attach protection rules — e.g. a required reviewer
    before `production` deploys.
 
