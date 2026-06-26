@@ -1,14 +1,19 @@
 :root {
   color-scheme: light;
-  --navy: #0f467b;
-  --navy-dark: #0a3157;
-  --navy-soft: #edf4fb;
-  --teal: #5ea2c8;
-  --text: #233142;
-  --muted: #667685;
-  --border: #d8e1ea;
+  --navy: #0b1f3a;
+  --navy-dark: #07172b;
+  --navy-mid: #152d50;
+  --navy-light: #1e3d6e;
+  --navy-soft: #eef3f8;
+  --gold: #e8a020;
+  --gold-light: #faebd0;
+  --teal: #e8a020;
+  --text: #1a2535;
+  --muted: #6b7a8d;
+  --border: #d6dce6;
   --surface: #ffffff;
-  --shadow: 0 18px 50px rgba(9, 38, 68, 0.08);
+  --white: #f8f9fb;
+  --shadow: 0 14px 34px rgba(11, 31, 58, 0.1);
 }
 
 *,
@@ -28,9 +33,7 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(circle at top, rgba(94, 162, 200, 0.16), transparent 34%),
-    linear-gradient(180deg, #f6f9fc 0%, #edf3f8 100%);
+  background: var(--navy);
 }
 
 a {
@@ -43,33 +46,38 @@ a {
 }
 
 .topbar {
-  position: sticky;
+  position: relative;
   top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 16px 24px;
-  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%);
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--navy-light);
+  background: var(--navy);
   color: #fff;
-  box-shadow: 0 10px 24px rgba(8, 36, 65, 0.18);
+  box-shadow: none;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-weight: 700;
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .brand-mark {
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(232, 160, 32, 0.12);
 }
 
 .brand-text {
@@ -85,29 +93,34 @@ a {
 }
 
 .nav-link {
-  padding: 8px 12px;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.82);
+  padding: 8px 11px;
+  border-radius: 12px;
+  color: #9db8d4;
+  font-size: 0.88rem;
   font-weight: 600;
 }
 
 .nav-link.router-link-active {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
 .auth-chip {
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  color: #fff;
-  font-size: 0.92rem;
+  padding: 7px 11px;
+  border: 1px solid rgba(232, 160, 32, 0.32);
+  border-radius: 12px;
+  color: var(--gold);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .page-shell {
   max-width: 1180px;
+  min-height: calc(100vh - 78px);
   margin: 0 auto;
-  padding: 24px;
+  padding: 28px 20px 52px;
+  border-radius: 20px 20px 0 0;
+  background: var(--white);
 }
 
 .page-stack {
@@ -117,8 +130,8 @@ a {
 
 .page-card {
   border: 1px solid var(--border);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  background: #fff;
   box-shadow: var(--shadow);
   overflow: clip;
 }
@@ -134,8 +147,8 @@ a {
 
 .eyebrow {
   margin: 0 0 6px;
-  color: var(--teal);
-  font-size: 0.82rem;
+  color: var(--gold);
+  font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -143,8 +156,8 @@ a {
 
 .page-title {
   margin: 0;
-  color: var(--navy-dark);
-  font-size: clamp(1.6rem, 2.4vw, 2.4rem);
+  color: var(--navy);
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
   line-height: 1.1;
 }
 
@@ -226,18 +239,18 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 9px 13px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 10px;
   background: #fff;
-  color: var(--navy-dark);
+  color: var(--navy);
   font-weight: 700;
-  box-shadow: 0 6px 16px rgba(8, 36, 65, 0.06);
+  box-shadow: none;
 }
 
 .btn-action--primary {
-  border-color: rgba(94, 162, 200, 0.18);
-  background: linear-gradient(180deg, #5ea2c8 0%, #3d8ab5 100%);
+  border-color: var(--navy);
+  background: var(--navy);
   color: #fff;
 }
 

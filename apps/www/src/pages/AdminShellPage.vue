@@ -48,16 +48,16 @@ const adminItems = [
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #fff;
   color: var(--text);
   text-decoration: none;
-  box-shadow: 0 8px 18px rgba(8, 36, 65, 0.05);
+  box-shadow: none;
 }
 
 .admin-hub-card:hover,
 .admin-hub-card:focus-visible {
-  border-color: var(--navy);
+  border-color: var(--navy-light);
   outline: none;
 }
 
@@ -66,8 +66,8 @@ const adminItems = [
   width: 42px;
   height: 42px;
   place-items: center;
-  border-radius: 10px;
-  background: #ecf4fb;
+  border-radius: 9px;
+  background: var(--gold-light);
   color: var(--navy);
   font-size: 1.3rem;
   flex-shrink: 0;
@@ -79,7 +79,7 @@ const adminItems = [
 }
 
 .admin-hub-title {
-  color: var(--navy-dark);
+  color: var(--navy);
   font-weight: 800;
 }
 

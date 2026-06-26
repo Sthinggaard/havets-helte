@@ -498,9 +498,9 @@ function confirmRemove(event: AdminEvent) {
 .admin-empty {
   padding: 18px;
   border: 1px dashed var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--muted);
-  background: #fbfcfe;
+  background: #f3f5f8;
 }
 
 .admin-cards {
@@ -517,7 +517,7 @@ function confirmRemove(event: AdminEvent) {
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fff;
 }
 
@@ -536,7 +536,7 @@ function confirmRemove(event: AdminEvent) {
 .admin-card-thumb {
   width: 64px;
   height: 64px;
-  border-radius: 10px;
+  border-radius: 9px;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -548,7 +548,7 @@ function confirmRemove(event: AdminEvent) {
 }
 
 .admin-card-title {
-  color: var(--navy-dark);
+  color: var(--navy);
   font-size: 1rem;
   font-weight: 700;
 }
@@ -564,13 +564,13 @@ function confirmRemove(event: AdminEvent) {
 
 .admin-status-chip {
   padding: 2px 9px;
-  border-radius: 999px;
+  border-radius: 12px;
   font-size: 11px;
   font-weight: 700;
 }
 
 .admin-status-chip.active {
-  background: rgba(94, 162, 200, 0.16);
+  background: var(--gold-light);
   color: var(--navy);
 }
 
@@ -619,8 +619,8 @@ function confirmRemove(event: AdminEvent) {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: 9px;
+  background: #f8f9fb;
   color: var(--text);
   font: inherit;
   font-size: 14px;
@@ -628,7 +628,8 @@ function confirmRemove(event: AdminEvent) {
 
 .form-input:focus {
   outline: none;
-  border-color: var(--navy);
+  border-color: var(--navy-light);
+  background: #fff;
 }
 
 textarea.form-input {
@@ -658,7 +659,7 @@ textarea.form-input {
   height: 34px;
   transform: translateY(-50%);
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: 8px;
   background: transparent;
   color: var(--navy);
   cursor: pointer;
@@ -668,7 +669,7 @@ textarea.form-input {
 .field-icon-button:hover,
 .field-icon-button:focus-visible {
   border-color: var(--border);
-  background: #f5f8fb;
+  background: #f3f5f8;
   outline: none;
 }
 
@@ -695,7 +696,7 @@ textarea.form-input {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #fff;
-  box-shadow: 0 12px 28px rgba(8, 36, 65, 0.14);
+  box-shadow: 0 12px 28px rgba(11, 31, 58, 0.14);
 }
 
 .addr-option {
@@ -719,15 +720,15 @@ textarea.form-input {
 
 .addr-option:hover,
 .addr-option.active {
-  background: #f5f8fb;
-  color: var(--navy-dark);
+  background: #f3f5f8;
+  color: var(--navy);
 }
 
 .location-map-wrap {
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #f5f8fb;
+  border-radius: 10px;
+  background: #f3f5f8;
 }
 
 .location-map {
@@ -745,7 +746,7 @@ textarea.form-input {
 .img-preview {
   width: 100%;
   max-width: 260px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border);
 }
 
@@ -759,7 +760,7 @@ textarea.form-input {
   margin-top: 6px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
-  color: var(--navy-dark);
+  color: var(--navy);
   font-size: 0.95rem;
   font-weight: 700;
 }

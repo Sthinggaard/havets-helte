@@ -3,8 +3,8 @@
     <template v-if="!isLanding">
       <header class="topbar">
         <router-link class="brand" to="/">
-          <span class="brand-mark">⚓</span>
-          <span class="brand-text">Forældrehelte</span>
+          <span class="brand-mark"><i class="ti ti-anchor" aria-hidden="true"></i></span>
+          <span class="brand-text">Havets Helte</span>
         </router-link>
 
         <nav class="nav" aria-label="Sektioner">
@@ -18,7 +18,7 @@
           </router-link>
         </nav>
 
-        <div class="auth-chip">leder@havetshelte.dk</div>
+        <div class="auth-chip">Lederportal</div>
       </header>
 
       <main class="page-shell">
