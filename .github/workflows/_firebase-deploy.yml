@@ -55,10 +55,6 @@ jobs:
         working-directory: apps/www
         run: npm ci
 
-      - name: Build Vue app
-        working-directory: apps/www
-        run: npm run ${{ inputs.build_script }}
-
       - name: Write service account credentials
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.service_account }}
@@ -71,4 +67,6 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Deploy to Firebase
+        env:
+          FIREBASE_HOSTING_BUILD_SCRIPT: ${{ inputs.build_script }}
         run: npx -y firebase-tools@latest deploy --project ${{ inputs.firebase_alias }} --only hosting,functions,firestore:rules,storage

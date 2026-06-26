@@ -13,10 +13,12 @@ reusable `_firebase-deploy.yml`), deploying `hosting,functions,firestore:rules,s
 You can also deploy on demand from the Actions tab (**Deploy** → Run workflow → pick env).
 
 How the app picks a project: each env has an `apps/www/.env.<mode>` file with the
-project's public web config. CI builds with `npm run build:dev|build:stage|build:prod`
-(`vite build --mode …`); `firebase.ts` reads `VITE_FIREBASE_*` and falls back to the
-prod values when no env file is present. A local `npm run dev` is unaffected — it still
-uses Vite's default `development` mode and the gitignored local `.env` (emulators).
+project's public web config. CI deploys set `FIREBASE_HOSTING_BUILD_SCRIPT` to
+`build:dev|build:stage|build:prod`; Firebase's hosting predeploy then runs that
+matching script (`vite build --mode …`). `firebase.ts` reads `VITE_FIREBASE_*` and
+falls back to the prod values when no env file is present. A local `npm run dev` is
+unaffected — it still uses Vite's default `development` mode and the gitignored
+local `.env` (emulators).
 
 ## One-time setup (manual — these need the console / repo admin)
 

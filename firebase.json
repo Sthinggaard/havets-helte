@@ -11,7 +11,7 @@
   "hosting": {
     "public": "apps/www/dist",
     "predeploy": [
-      "npm --prefix apps/www run build"
+      "node scripts/build-firebase-hosting.cjs"
     ],
     "rewrites": [
       {
