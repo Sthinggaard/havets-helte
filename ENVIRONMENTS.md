@@ -15,10 +15,12 @@ You can also deploy on demand from the Actions tab (**Deploy** → Run workflow 
 How the app picks a project: each env has an `apps/www/.env.<mode>` file with the
 project's public web config. CI deploys set `FIREBASE_HOSTING_BUILD_SCRIPT` to
 `build:dev|build:stage|build:prod`; Firebase's hosting predeploy then runs that
-matching script (`vite build --mode …`). `firebase.ts` reads `VITE_FIREBASE_*` and
-falls back to the prod values when no env file is present. A local `npm run dev` is
-unaffected — it still uses Vite's default `development` mode and the gitignored
-local `.env` (emulators).
+matching script (`vite build --mode …`). The predeploy wrapper rejects env files
+that still contain `REPLACE_WITH_*` placeholders so a branch cannot deploy a broken
+client config by accident. `firebase.ts` reads `VITE_FIREBASE_*` and falls back to
+the prod values when no env file is present. A local `npm run dev` is unaffected —
+it still uses Vite's default `development` mode and the gitignored local `.env`
+(emulators).
 
 ## One-time setup (manual — these need the console / repo admin)
 
