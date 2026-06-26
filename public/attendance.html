@@ -8,6 +8,7 @@
 <style>
   :root{
     --navy:#003366;--navy-mid:#0f4172;--teal:#2c98b7;--teal-deep:#146e88;--teal-light:#6ebccd;
+    --coral:#ea636f;
     --white:#f6f6f6;--text:#232323;--muted:#7c7c7c;--border:#cbcbcb;
     --success:#c9e1bd;--success-bg:rgba(201,225,189,.45);--success-border:rgba(201,225,189,.9);
     --danger:#ea636f;--danger-bg:rgba(234,99,111,.1);
@@ -36,27 +37,184 @@
   .field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:5px}
   .field input{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);background:var(--white)}
   .field input:focus{outline:none;border-color:var(--navy-mid)}
-  .btn-login{width:100%;padding:12px;background:var(--navy);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
-  .btn-login:hover{opacity:.88}
-  .btn-login:disabled{opacity:.6;cursor:not-allowed}
+  .btn-primary{width:100%;padding:12px;background:var(--navy);border:none;border-radius:10px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn-primary:hover{opacity:.88}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed}
   .error-msg{font-size:13px;color:var(--danger);margin-top:10px;display:none}
   .error-msg.show{display:block}
 
   /* ── Main content ── */
-  .main{max-width:600px;margin:0 auto;padding:20px 16px 60px}
+  .main{max-width:1240px;margin:0 auto;padding:20px 16px 60px}
+  .workspace{display:flex;flex-direction:column;gap:16px}
+  .overview-card{background:#fff;border:1px solid rgba(15,65,114,.12);border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 1px rgba(0,0,0,.03)}
+  .overview-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:4px}
+  .overview-sub{font-size:13px;color:var(--muted);line-height:1.45}
+  .list-controls{background:#fff;border:1px solid rgba(15,65,114,.12);border-radius:16px;padding:16px 18px;box-shadow:0 1px 1px rgba(0,0,0,.03);display:flex;flex-direction:column;gap:12px}
+  .selector-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+  .branch-select{flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);font:inherit}
+  .day-pills{display:flex;gap:6px;flex-wrap:wrap}
+  .day-pill{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
+  .day-pill.active{background:var(--navy);border-color:var(--navy);color:#fff}
+  .calendar-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:4px}
+  .calendar-nav-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .calendar-nav-main .calendar-day-btn,
+  .calendar-nav-buttons{display:none}
+  .calendar-nav-label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .calendar-nav-date{font-size:16px;font-weight:700;color:var(--navy);line-height:1.25}
+  .calendar-nav-sub{font-size:13px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .calendar-nav-buttons{display:flex;gap:8px;flex-wrap:wrap}
+  .calendar-day-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--navy);cursor:pointer;font:inherit}
+  .calendar-day-btn:hover:not(:disabled){border-color:var(--navy-mid);background:#f7faff}
+  .calendar-day-btn:disabled{opacity:.45;cursor:not-allowed}
+  .calendar-empty{padding:20px;border:1px dashed var(--border);border-radius:14px;color:var(--muted);background:#fbfcfe;font-size:13px;line-height:1.5}
+  .year-calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:4px}
+  .month-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .calendar-view-switch{display:flex;gap:6px;flex-wrap:wrap}
+  .calendar-view-btn{padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .calendar-view-btn.active{background:var(--navy);border-color:var(--navy);color:#fff}
+  .month-nav-title{font-size:14px;font-weight:700;color:var(--navy);text-transform:capitalize}
+  .month-nav-sub{font-size:12px;color:var(--muted)}
+  .year-calendar{display:block}
+  .year-calendar.all{display:block}
+  .year-calendar.month{display:block}
+  .year-calendar.week{display:block}
+  .year-calendar.day{display:block}
+  .calendar-layout{display:flex;flex-direction:column;gap:12px}
+  .month-card{background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 1px 1px rgba(0,0,0,.03);width:100%;overflow:hidden}
+  .month-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(15,65,114,.10)}
+  .month-title{font-size:20px;font-weight:700;color:var(--navy);text-transform:capitalize}
+  .month-meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(122px,1fr);background:#fff}
+  .month-day-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;border-bottom:1px solid rgba(15,65,114,.10);border-right:1px solid rgba(15,65,114,.10);background:#fbfcfe}
+  .month-day-label:nth-child(7n){border-right:none}
+  .month-day,.month-day-empty{min-height:122px;border-radius:0}
+  .month-day-empty{border-bottom:1px solid rgba(15,65,114,.10);border-right:1px solid rgba(15,65,114,.10);background:#fbfcfe}
+  .month-day-empty:nth-child(7n){border-right:none}
+  .month-day{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:6px;padding:10px 10px 12px;border:0;border-right:1px solid rgba(15,65,114,.10);border-bottom:1px solid rgba(15,65,114,.10);background:#fff;color:var(--text);cursor:pointer;font:inherit;transition:background .12s}
+  .month-day:hover:not(:disabled){background:#f7faff}
+  .month-day:nth-child(7n){border-right:none}
+  .month-day:disabled{opacity:.35;cursor:default}
+  .month-day-num{font-size:13px;font-weight:700;line-height:1;color:var(--navy)}
+  .month-day.other-month .month-day-num{color:#b0b7c3}
+  .month-day.today{box-shadow:inset 0 0 0 2px var(--navy)}
+  .month-day.past-day{background:#f3f4f6;color:#8b8b8b}
+  .month-day.past-day.has-meetings{background:#eceef1}
+  .month-day.past-day .month-day-num{color:#8b8b8b}
+  .month-day.past-day .month-event{background:rgba(0,0,0,.06);color:#666}
+  .month-day.past-day .month-more{color:#8b8b8b}
+  .month-day-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:700;background:var(--success-bg);color:var(--text);white-space:nowrap}
+  .month-day.has-meetings{background:#fff}
+  .month-day.multi .month-day-badge{background:rgba(15,65,114,.10);color:var(--navy)}
+  .month-day.selected{background:#eef4fb;box-shadow:inset 0 0 0 2px rgba(15,65,114,.24)}
+  .month-events{display:flex;flex-direction:column;gap:4px;width:100%;margin-top:auto}
+  .month-event{display:block;width:100%;border:none;background:rgba(15,65,114,.08);color:var(--navy);font-size:10px;font-weight:700;text-align:left;padding:4px 6px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .month-event:hover{background:rgba(15,65,114,.14)}
+  .month-more{font-size:10px;font-weight:700;color:var(--muted);padding-left:2px}
+  .week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:#fff}
+  .week-day-header{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:10px 12px;border-bottom:1px solid rgba(15,65,114,.10);border-right:1px solid rgba(15,65,114,.10);background:#fbfcfe}
+  .week-day-header:nth-child(7n){border-right:none}
+  .week-day{min-height:180px;padding:10px 10px 12px;border-bottom:1px solid rgba(15,65,114,.10);border-right:1px solid rgba(15,65,114,.10);background:#fff;display:flex;flex-direction:column;gap:6px}
+  .week-day:nth-child(7n){border-right:none}
+  .week-day.today{box-shadow:inset 0 0 0 2px var(--navy)}
+  .week-day.past-day{background:#f3f4f6}
+  .week-day-num{font-size:13px;font-weight:700;color:var(--navy)}
+  .week-day.past-day .week-day-num{color:#8b8b8b}
+  .week-day-events{display:flex;flex-direction:column;gap:4px;margin-top:auto}
+  .week-day-event{display:block;width:100%;border:none;background:rgba(15,65,114,.08);color:var(--navy);font-size:10px;font-weight:700;text-align:left;padding:4px 6px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .week-day-event:hover{background:rgba(15,65,114,.14)}
+  .week-day-more{font-size:10px;font-weight:700;color:var(--muted)}
+  .year-calendar-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px 36px;align-items:start}
+  .year-calendar-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:4px 0 14px}
+  .year-calendar-title{font-family:Arial,Helvetica,sans-serif;font-size:44px;line-height:1;font-weight:400;color:var(--text);letter-spacing:-.02em}
+  .year-calendar-note{font-size:12px;color:var(--muted);font-weight:500}
+  .year-month{min-width:0}
+  .year-month-title{font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:1.15;font-weight:400;color:var(--coral);margin-bottom:14px;text-align:center}
+  .year-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0;margin-bottom:6px;padding:0 2px}
+  .year-weekday{font-size:11px;font-weight:700;color:#7d7d7d;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+  .year-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px 0}
+  .year-day{position:relative;display:flex;align-items:center;justify-content:center;min-height:30px;padding:4px 0;border:none;background:none;color:var(--text);font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-size:18px;font-weight:400;cursor:pointer;border-radius:999px;transition:background .15s,color .15s,transform .15s}
+  .year-day:hover:not(:disabled){background:rgba(234,99,111,.08)}
+  .year-day.other-month{color:#c1c1c1}
+  .year-day.today{box-shadow:inset 0 0 0 1px var(--coral);color:var(--coral);font-weight:700}
+  .year-day.selected{background:var(--coral);color:#fff;font-weight:700}
+  .year-day.has-meetings::after{content:'';position:absolute;bottom:3px;left:50%;width:4px;height:4px;border-radius:50%;transform:translateX(-50%);background:var(--coral)}
+  .year-day.selected::after{background:#fff}
+  .year-day.past-day{color:#bcbcbc}
+  .year-day.past-day.has-meetings::after{background:#bcbcbc}
+  .year-day:disabled{cursor:default}
+  .member-row.readonly{cursor:default;opacity:.82}
+  .member-row.readonly:active{opacity:.82}
+  .calendar-date-panel{background:#fff;border:1px solid rgba(15,65,114,.12);border-radius:16px;padding:16px 18px;box-shadow:0 1px 1px rgba(0,0,0,.03);display:flex;flex-direction:column;gap:12px}
+  .calendar-date-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .calendar-date-panel-title{font-size:17px;font-weight:700;color:var(--navy)}
+  .calendar-date-panel-sub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.35}
+  .calendar-date-meetings{display:flex;flex-direction:column;gap:8px}
+  .calendar-date-meeting{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:12px;background:var(--white);cursor:pointer;transition:background .12s,transform .12s,border-color .12s;border:1px solid transparent}
+  .calendar-date-meeting:hover{background:#eef4fb;transform:translateY(-1px)}
+  .calendar-date-meeting.active{border-color:var(--navy);background:#eef4fb}
+  .calendar-date-meeting-main{min-width:0}
+  .calendar-date-meeting-title{font-size:13px;font-weight:700;color:var(--navy);line-height:1.35}
+  .calendar-date-meeting-sub{font-size:12px;color:var(--muted);line-height:1.35;margin-top:2px}
+  .calendar-date-meeting-badge{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:var(--success-bg);color:var(--text);white-space:nowrap;flex-shrink:0}
+  .day-view-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:8px 0 18px}
+  .day-view-title{font-family:Arial,Helvetica,sans-serif;font-size:36px;line-height:1.05;font-weight:400;color:var(--text);letter-spacing:-.03em}
+  .day-view-sub{font-size:14px;color:var(--muted);margin-top:6px}
+  .day-view-schedule{display:flex;flex-direction:column;gap:12px}
+  .day-timeline-shell{position:relative;min-height:820px;padding:18px 16px 20px 84px;background:
+    linear-gradient(to bottom, rgba(15,65,114,.10) 1px, transparent 1px) 0 0 / 100% 80px,
+    #fff;
+    border:1px solid rgba(15,65,114,.12);border-radius:16px;box-shadow:0 1px 1px rgba(0,0,0,.03);overflow:hidden}
+  .day-timeline-all-day{position:relative;height:28px;border-bottom:1px solid rgba(15,65,114,.12);margin-bottom:8px}
+  .day-timeline-all-day span{position:absolute;left:0;top:0;font-size:12px;color:var(--muted);transform:translateY(-2px)}
+  .day-time-label{position:absolute;left:16px;width:52px;text-align:right;font-size:12px;color:var(--muted);transform:translateY(-50%)}
+  .day-timeline-event{position:absolute;left:0;right:16px;padding:12px 14px;border-radius:14px;border:1px solid rgba(15,65,114,.14);background:#fff;box-shadow:0 1px 1px rgba(0,0,0,.03);display:flex;flex-direction:column;gap:8px}
+  .day-timeline-event.active{border-color:rgba(234,99,111,.6);box-shadow:0 0 0 2px rgba(234,99,111,.12)}
+  .day-timeline-event.hidden{opacity:.55}
+  .day-timeline-event-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .day-timeline-event-title{font-size:16px;font-weight:700;color:var(--navy);line-height:1.25}
+  .day-timeline-event-meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.35}
+  .day-timeline-event-time{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:var(--success-bg);color:var(--text);white-space:nowrap}
+  .day-timeline-event-duration{font-size:12px;color:var(--muted)}
+  .day-event-status{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:var(--success-bg);color:var(--text);white-space:nowrap}
+  .day-event-summary{font-size:12px;color:var(--muted)}
+  .day-event-members{display:flex;flex-direction:column;gap:8px}
+  .day-filter-list{display:flex;flex-direction:column;gap:8px}
+  .day-filter-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text);font:inherit;cursor:pointer;transition:background .12s,border-color .12s}
+  .day-filter-btn.active{border-color:var(--navy);background:#eef4fb}
+  .day-filter-btn .label{min-width:0;font-size:13px;font-weight:700;color:var(--navy);text-align:left}
+  .day-filter-btn .count{font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0}
+  .day-search-panel{background:#fff;border:1px solid rgba(15,65,114,.12);border-radius:16px;padding:12px 14px;box-shadow:0 1px 1px rgba(0,0,0,.03)}
+  .day-search-input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;font:inherit;font-size:14px;color:var(--text);background:#fff}
+  .day-search-input:focus{outline:none;border-color:var(--navy-mid);box-shadow:0 0 0 2px rgba(15,65,114,.08)}
 
   /* ── Meeting list ── */
-  .section-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;margin-top:20px}
-  .section-label:first-child{margin-top:0}
-  .meeting-card{background:#fff;border-radius:14px;padding:18px;margin-bottom:10px;cursor:pointer;transition:transform .12s,box-shadow .12s;display:flex;align-items:center;gap:14px}
-  .meeting-card:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.15)}
-  .meeting-card:active{transform:translateY(0)}
-  .meeting-gren-av{width:44px;height:44px;border-radius:12px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
-  .meeting-info{flex:1}
-  .meeting-gren{font-size:15px;font-weight:600;color:var(--navy)}
-  .meeting-meta{font-size:13px;color:var(--muted);margin-top:2px}
-  .meeting-count{font-size:12px;color:var(--muted);margin-top:4px}
-  .badge-today{font-size:11px;font-weight:600;padding:3px 8px;border-radius:8px;background:var(--success-bg);color:var(--text);flex-shrink:0}
+  .branch-section{margin-top:18px}
+  .branch-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .branch-title{font-size:14px;font-weight:700;color:var(--navy-mid)}
+  .branch-meta{font-size:12px;color:var(--muted)}
+  .branch-calendar{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}
+  .calendar-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:190px;scroll-snap-align:start;transition:transform .12s,box-shadow .12s,border-color .12s}
+  .calendar-card:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.10);border-color:rgba(15,65,114,.35)}
+  .calendar-card.today{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,65,114,.08)}
+  .calendar-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .calendar-week{font-size:11px;font-weight:700;color:var(--navy-mid);text-transform:uppercase;letter-spacing:.06em}
+  .calendar-date{font-size:15px;font-weight:700;color:var(--navy);line-height:1.3}
+  .calendar-sub{font-size:12px;color:var(--muted);line-height:1.4}
+  .calendar-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+  .calendar-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--white);color:var(--text)}
+  .calendar-chip.primary{background:var(--success-bg)}
+  .calendar-chip.navy{background:rgba(15,65,114,.08);color:var(--navy-mid)}
+  .calendar-week-list{display:flex;flex-direction:column;gap:8px}
+  .calendar-meeting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:var(--white);cursor:pointer;transition:background .12s,transform .12s}
+  .calendar-meeting-row:hover{background:#eef4fb;transform:translateY(-1px)}
+  .calendar-meeting-row.active{border:1px solid var(--navy);background:#eef4fb}
+  .calendar-meeting-main{min-width:0}
+  .calendar-meeting-title{font-size:13px;font-weight:700;color:var(--navy);line-height:1.3}
+  .calendar-meeting-sub{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .calendar-meeting-badge{font-size:11px;font-weight:600;padding:4px 8px;border-radius:999px;background:var(--success-bg);color:var(--text);flex-shrink:0;white-space:nowrap}
+  .calendar-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .calendar-actions .btn-action{padding:7px 10px;font-size:11px}
+  .calendar-empty{padding:20px;border:1px dashed var(--border);border-radius:14px;color:var(--muted);background:#fbfcfe;font-size:13px;line-height:1.5}
   .state-msg{text-align:center;padding:50px 20px;color:var(--muted)}
   .state-msg i{font-size:36px;color:var(--border);margin-bottom:10px;display:block}
 
@@ -89,6 +247,146 @@
 
   /* ── Empty states ── */
   .empty-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:32px 20px;text-align:center;color:var(--muted);font-size:14px}
+
+  body[data-calendar-view="all"] .calendar-nav-buttons{display:flex}
+  body[data-calendar-view="all"] .calendar-nav-main .calendar-day-btn{display:inline-flex}
+  body[data-calendar-view="all"] .year-calendar-toolbar .overview-sub{display:none}
+  body[data-calendar-view="all"] .month-nav-sub{display:none}
+  body[data-calendar-view="all"] .month-nav-title{font-size:17px;font-weight:400;letter-spacing:-.01em;color:var(--text)}
+  body[data-calendar-view="all"] .year-calendar{padding-top:6px}
+  body[data-calendar-view="all"] .calendar-layout{gap:0}
+  body[data-calendar-view="all"] .month-card{border:none;box-shadow:none;background:transparent;border-radius:0;overflow:visible}
+  body[data-calendar-view="all"] .month-head{display:none}
+  body[data-calendar-view="all"] .month-grid{display:none}
+  body[data-calendar-view="all"] .calendar-date-panel{margin-top:8px}
+  body[data-calendar-view="day"] .list-controls{
+    display:grid;
+    grid-template-columns:minmax(0,.82fr) minmax(420px,1.18fr);
+    grid-template-areas:
+      "toolbar toolbar"
+      "timeline side";
+    grid-template-rows:auto minmax(0,1fr);
+    gap:16px 18px;
+    align-items:stretch;
+    height:calc(100dvh - 118px);
+    max-height:calc(100dvh - 118px);
+    overflow:hidden;
+    padding:18px;
+  }
+  body[data-calendar-view="day"] .calendar-layout{display:contents}
+  body[data-calendar-view="day"] .year-calendar-toolbar{grid-area:toolbar}
+  body[data-calendar-view="day"] #yearCalendar{
+    grid-area:timeline;
+    min-width:0;
+    min-height:0;
+    height:100%;
+    display:block;
+  }
+  body[data-calendar-view="day"] .day-side-panel{
+    grid-area:side;
+    min-width:0;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    overflow:hidden;
+    height:100%;
+  }
+  body[data-calendar-view="day"] .calendar-nav{display:none}
+  body[data-calendar-view="day"] .filter-tabs{display:none}
+  body[data-calendar-view="day"] .calendar-date-panel{
+    margin-top:0;
+    padding:12px 12px;
+    border-radius:14px;
+    gap:8px;
+  }
+  body[data-calendar-view="day"] .calendar-date-panel-title{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+  }
+  body[data-calendar-view="day"] .calendar-date-panel-sub{display:none}
+  body[data-calendar-view="day"] .calendar-date-meetings{display:none}
+  body[data-calendar-view="day"] .day-filter-list{
+    display:flex;
+    flex-direction:row;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+  }
+  body[data-calendar-view="day"] .day-filter-btn{
+    width:auto;
+    min-width:0;
+    padding:10px 18px;
+    border-radius:999px;
+    justify-content:center;
+    gap:0;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+  }
+  body[data-calendar-view="day"] .day-filter-btn .label{font-size:12px}
+  body[data-calendar-view="day"] .day-filter-btn .count{display:none}
+  body[data-calendar-view="day"] .day-search-panel{
+    padding:10px 12px;
+    border-radius:14px;
+  }
+  body[data-calendar-view="day"] .day-search-input{
+    padding:9px 10px;
+    font-size:13px;
+  }
+  body[data-calendar-view="day"] .att-header{display:none}
+  body[data-calendar-view="day"] .filter-tabs{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:8px !important;
+  }
+  body[data-calendar-view="day"] .filter-tab{
+    padding:5px 10px;
+    font-size:12px;
+  }
+  body[data-calendar-view="day"] .month-nav-sub{display:none}
+  body[data-calendar-view="day"] .month-nav-title{font-size:17px;font-weight:400;letter-spacing:-.01em;color:var(--text)}
+  body[data-calendar-view="day"] #memberListContent{
+    min-height:0;
+    flex:1;
+    overflow:hidden;
+    display:flex;
+    width:100%;
+    height:100%;
+  }
+  body[data-calendar-view="day"] .day-view-schedule{
+    min-height:0;
+    flex:1;
+    overflow:auto;
+    padding-right:4px;
+    width:100%;
+    height:100%;
+  }
+  @media (max-width: 1100px){
+    .year-calendar-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    body[data-calendar-view="day"] .list-controls{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "toolbar"
+        "side"
+        "timeline";
+      grid-template-rows:auto auto auto;
+      height:auto;
+      max-height:none;
+    }
+    body[data-calendar-view="day"] #memberListContent{flex:none;display:block;overflow:visible}
+    body[data-calendar-view="day"] .day-view-schedule{overflow:visible;display:flex}
+  }
+  @media (max-width: 820px){
+    .year-calendar-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 24px}
+    .year-calendar-title{font-size:34px}
+  }
+  @media (max-width: 540px){
+    .year-calendar-grid{grid-template-columns:1fr}
+    .year-month-title{text-align:left}
+    body[data-calendar-view="day"] .day-view-title{font-size:28px}
+  }
 </style>
 </head>
 <body>
@@ -117,35 +415,47 @@
     <div class="topbar">
       <div class="topbar-brand"><i class="ti ti-checkbox"></i>Fremmøde</div>
       <div class="topbar-right">
+        <a href="admin-fremmoede.html" style="font-size:12px;color:#6ebccd;text-decoration:none">Admin</a>
         <span style="font-size:12px;color:#6ebccd" id="topbarEmail"></span>
         <button class="btn-sm" onclick="doLogout()">Log ud</button>
       </div>
     </div>
-    <div class="main" id="meetingListContent">
-      <div class="state-msg"><i class="ti ti-loader spinning"></i>Henter møder…</div>
-    </div>
-  </div>
-
-  <!-- Attendance view -->
-  <div id="viewAttendance" style="display:none">
-    <div class="topbar">
-      <button class="btn-back" onclick="backToMeetings()"><i class="ti ti-arrow-left"></i>Alle møder</button>
-      <div class="topbar-right">
-        <a href="admin.html" style="font-size:12px;color:#6ebccd;text-decoration:none">Admin</a>
-        <button class="btn-sm" onclick="doLogout()">Log ud</button>
+    <div class="main workspace">
+      <div class="list-controls">
+        <div class="year-calendar-toolbar">
+          <div class="month-nav">
+            <div class="calendar-view-switch">
+              <button type="button" class="calendar-view-btn" id="viewDayBtn" onclick="setCalendarView('day')">Dag</button>
+              <button type="button" class="calendar-view-btn" id="viewWeekBtn" onclick="setCalendarView('week')">Uge</button>
+              <button type="button" class="calendar-view-btn" id="viewMonthBtn" onclick="setCalendarView('month')">Måned</button>
+              <button type="button" class="calendar-view-btn active" id="viewAllBtn" onclick="setCalendarView('all')">År</button>
+            </div>
+            <button type="button" class="calendar-day-btn" id="prevMonthBtn" onclick="shiftCalendar(-1)" aria-label="Forrige"><i class="ti ti-chevron-left"></i></button>
+            <div>
+              <div class="month-nav-title" id="calendarMonthLabel">Måned</div>
+              <div class="month-nav-sub" id="calendarMonthSub">—</div>
+            </div>
+            <button type="button" class="calendar-day-btn" id="nextMonthBtn" onclick="shiftCalendar(1)" aria-label="Næste"><i class="ti ti-chevron-right"></i></button>
+          </div>
+          <div class="overview-sub" id="calendarYearLabel"></div>
+        </div>
+        <div class="calendar-layout">
+          <div class="year-calendar" id="yearCalendar"></div>
+        </div>
+        <div class="day-side-panel" id="daySidePanel">
+          <div class="calendar-date-panel" id="dateMeetingsPanel"></div>
+          <div class="day-search-panel" id="daySearchPanel"></div>
+          <div class="att-header" id="attHeader"></div>
+          <div class="filter-tabs" id="filterTabs" style="display:none;margin-bottom:12px">
+            <button class="filter-tab active" onclick="setFilter('all')">Alle</button>
+            <button class="filter-tab" onclick="setFilter('waiting')">Ikke ankommet</button>
+            <button class="filter-tab" onclick="setFilter('arrived')">Ankommet</button>
+          </div>
+          <div id="memberListContent"></div>
+        </div>
       </div>
     </div>
-    <div class="main">
-      <div class="att-header" id="attHeader"></div>
-      <div class="filter-tabs" id="filterTabs" style="display:none;margin-bottom:12px">
-        <button class="filter-tab active" onclick="setFilter('all')">Alle</button>
-        <button class="filter-tab" onclick="setFilter('waiting')">Ikke ankommet</button>
-        <button class="filter-tab" onclick="setFilter('arrived')">Ankommet</button>
-      </div>
-      <div id="memberListContent"></div>
-    </div>
   </div>
-
 </div>
 
 <style>
@@ -162,7 +472,7 @@ import { getFirestore, connectFirestoreEmulator,
 import { getAuth, connectAuthEmulator,
          signInWithEmailAndPassword, onAuthStateChanged, signOut }
                                   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { groupInitials, resolveGroupId, resolveGroupName } from './groups.js';
+import { groupInitials, resolveGroupId, resolveGroupName, getDayNameById, GROUP_OPTIONS } from './groups.js?v=20260621';
 
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const firebaseConfig = isLocal
@@ -182,11 +492,67 @@ function groupName(record) {
   return resolveGroupName(record) || 'Ukendt gren';
 }
 
+const GROUP_ORDER = new Map(GROUP_OPTIONS.map((group, index) => [group.label, index]));
+
+function sortGroupsByKnownOrder(names) {
+  return [...names].sort((a, b) => {
+    const orderA = GROUP_ORDER.has(a) ? GROUP_ORDER.get(a) : Number.MAX_SAFE_INTEGER;
+    const orderB = GROUP_ORDER.has(b) ? GROUP_ORDER.get(b) : Number.MAX_SAFE_INTEGER;
+    return orderA - orderB || a.localeCompare(b, 'da');
+  });
+}
+
+function weekKeyForIsoDate(isoDate) {
+  const date = new Date(`${isoDate}T12:00:00`);
+  const day = (date.getDay() + 6) % 7;
+  date.setDate(date.getDate() - day);
+  return date.toISOString().slice(0, 10);
+}
+
+function isoWeekNumber(isoDate) {
+  const date = new Date(`${isoDate}T12:00:00`);
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
+  const week1 = new Date(date.getFullYear(), 0, 4);
+  week1.setHours(0, 0, 0, 0);
+  return 1 + Math.round((((date - week1) / 86400000) - 3 + ((week1.getDay() + 6) % 7)) / 7);
+}
+
+function formatCalendarDate(isoDate) {
+  return new Date(`${isoDate}T12:00:00`).toLocaleDateString('da-DK', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+function formatWeekRange(weekKey) {
+  const start = new Date(`${weekKey}T12:00:00`);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return `${start.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })}`;
+}
+
+function setOverviewCard(title, sub) {
+  const overviewTitle = document.getElementById('overviewTitle');
+  const overviewSub = document.getElementById('overviewSub');
+  if (overviewTitle) overviewTitle.textContent = title;
+  if (overviewSub) overviewSub.textContent = sub;
+}
+
+// A gren can run more than one weekday cohort (Junior, Ulv); when a meeting
+// names a specific day, only members on that same day belong to it. Missing
+// day data on either side never excludes a member — it's a narrowing filter,
+// not a requirement, so nobody silently disappears from attendance.
 function memberMatchesMeetingGroup(member, meeting) {
   const meetingGroupId = resolveGroupId(meeting);
   const memberGroupId = resolveGroupId(member);
-  if (meetingGroupId) return memberGroupId === meetingGroupId;
-  return groupName(member) === groupName(meeting);
+  const grenMatches = meetingGroupId
+    ? memberGroupId === meetingGroupId
+    : groupName(member) === groupName(meeting);
+  if (!grenMatches) return false;
+  const memberDay = member?.day || '';
+  const meetingDay = meeting?.day || '';
+  return !memberDay || !meetingDay || memberDay === meetingDay;
 }
 
 function esc(s) {
@@ -229,59 +595,33 @@ onAuthStateChanged(auth, user => {
 
 // ── Meeting list ──────────────────────────────────────────────────────────
 async function loadMeetings() {
-  showMeetingList();
-  const content = document.getElementById('meetingListContent');
   try {
-    const snap = await getDocs(collection(db, 'meetings'));
-    const meetings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    meetings.sort((a, b) => a.date.localeCompare(b.date));
-
-    const today = new Date().toISOString().slice(0, 10);
-    const todayMeetings    = meetings.filter(m => m.date === today);
-    const upcomingMeetings = meetings.filter(m => m.date > today);
-    const pastMeetings     = meetings.filter(m => m.date < today).reverse();
-
-    if (meetings.length === 0) {
-      content.innerHTML = '<div class="state-msg"><i class="ti ti-calendar-off"></i>Ingen møder oprettet endnu.<br>Opret møder i <a href="admin.html" style="color:#0f4172">Lederportalen</a>.</div>';
-      return;
-    }
-
-    content.innerHTML = '';
-
-    if (todayMeetings.length > 0) {
-      content.insertAdjacentHTML('beforeend', '<div class="section-label">I dag</div>');
-      todayMeetings.forEach(m => content.appendChild(buildMeetingCard(m, true)));
-    }
-    if (upcomingMeetings.length > 0) {
-      content.insertAdjacentHTML('beforeend', '<div class="section-label">Kommende</div>');
-      upcomingMeetings.forEach(m => content.appendChild(buildMeetingCard(m, false)));
-    }
-    if (pastMeetings.length > 0) {
-      content.insertAdjacentHTML('beforeend', '<div class="section-label">Tidligere</div>');
-      pastMeetings.forEach(m => content.appendChild(buildMeetingCard(m, false)));
-    }
+    const [meetingSnap, memberSnap] = await Promise.all([
+      getDocs(collection(db, 'meetings')),
+      getDocs(collection(db, 'members')),
+    ]);
+    allMeetings = meetingSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allMembers = memberSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allMeetings.sort((a, b) => a.date.localeCompare(b.date));
+    meetingsByDate = new Map();
+    allMeetings.forEach(meeting => {
+      const key = meeting.date || '';
+      if (!key) return;
+      if (!meetingsByDate.has(key)) meetingsByDate.set(key, []);
+      meetingsByDate.get(key).push(meeting);
+    });
+    availableDates = [...meetingsByDate.keys()].sort((a, b) => a.localeCompare(b));
+    currentSelectedDate = pickInitialSelectedDate();
+    currentCalendarYear = currentSelectedDate ? isoDateToDate(currentSelectedDate).getFullYear() : new Date().getFullYear();
+    currentCalendarMonth = currentSelectedDate ? isoDateToDate(currentSelectedDate).getMonth() : new Date().getMonth();
+    currentSelectedMeetingId = getMeetingsForDate(currentSelectedDate)[0]?.id || '';
+    renderMeetingWorkspace();
   } catch(e) {
     console.error(e);
-    content.innerHTML = '<div class="state-msg">Fejl ved hentning af møder.</div>';
+    document.getElementById('dateMeetingsPanel').innerHTML = '<div class="calendar-empty">Fejl ved hentning af møder.</div>';
+    document.getElementById('attHeader').innerHTML = '<div class="att-title">Fejl</div><div class="att-date">Fejl ved hentning af møder.</div>';
+    document.getElementById('memberListContent').innerHTML = '<div class="state-msg">Fejl ved hentning af møder.</div>';
   }
-}
-
-function buildMeetingCard(m, isToday) {
-  const d = new Date(m.date + 'T12:00:00');
-  const dStr = d.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long' });
-  const initials = groupInitials(m);
-  const meetingGroup = groupName(m);
-  const card = document.createElement('div');
-  card.className = 'meeting-card';
-  card.onclick = () => openMeeting(m);
-  card.innerHTML = `
-    <div class="meeting-gren-av">${esc(initials)}</div>
-    <div class="meeting-info">
-      <div class="meeting-gren">${esc(meetingGroup)}${m.title ? ' — ' + esc(m.title) : ''}</div>
-      <div class="meeting-meta">${dStr}</div>
-    </div>
-    ${isToday ? '<div class="badge-today">I dag</div>' : '<i class="ti ti-chevron-right" style="color:var(--muted)"></i>'}`;
-  return card;
 }
 
 // ── Attendance view ───────────────────────────────────────────────────────
@@ -290,11 +630,735 @@ let allMembers      = [];
 let currentArrived  = new Set();
 let currentFilter   = 'all';
 let unsubAttendance = null;
+let meetingsByDate = new Map();
+let allMeetings = [];
+let availableDates = [];
+let currentCalendarYear = new Date().getFullYear();
+let currentCalendarMonth = new Date().getMonth();
+let currentCalendarView = 'all';
+let currentSelectedDate = '';
+let currentSelectedMeetingId = '';
+let currentOpenMeetingToken = 0;
+let currentDayVisibleMeetingIds = new Set();
+let currentDayRenderToken = 0;
+let currentDayFilterDate = '';
+let currentDayMemberSearch = '';
 
-async function openMeeting(meeting) {
-  currentMeeting = meeting;
+function isoDateToDate(isoDate) {
+  return new Date(`${isoDate}T12:00:00`);
+}
+
+function monthName(monthIndex) {
+  return new Date(2024, monthIndex, 1).toLocaleDateString('da-DK', { month: 'long' }).replace(/^./, char => char.toUpperCase());
+}
+
+function isoDateFromParts(year, monthIndex, day) {
+  const mm = String(monthIndex + 1).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  return `${year}-${mm}-${dd}`;
+}
+
+function getTodayIsoDate() {
+  const today = new Date();
+  return isoDateFromParts(today.getFullYear(), today.getMonth(), today.getDate());
+}
+
+function isPastIsoDate(isoDate) {
+  return isoDate < getTodayIsoDate();
+}
+
+function isTodayIsoDate(isoDate) {
+  return isoDate === getTodayIsoDate();
+}
+
+function getMeetingsForDate(isoDate) {
+  return [...(meetingsByDate.get(isoDate) || [])].sort((a, b) => {
+    const timeA = a.time || a.startTime || '';
+    const timeB = b.time || b.startTime || '';
+    return timeA.localeCompare(timeB, 'da') || (a.title || '').localeCompare(b.title || '', 'da');
+  });
+}
+
+function parseClockValue(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  const match = text.match(/^(\d{1,2})(?:[:.](\d{2}))?$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2] || 0);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+}
+
+function parseMeetingTimeRange(meeting) {
+  const raw = String(meeting?.time || meeting?.startTime || '').trim();
+  const fallbackStart = 9 * 60;
+  const fallbackEnd = fallbackStart + 90;
+  if (!raw) {
+    return { start: fallbackStart, end: fallbackEnd, label: 'Tid ikke angivet' };
+  }
+
+  const normalized = raw
+    .replace(/\s+/g, ' ')
+    .replace(/[–—]/g, '-')
+    .replace(/\./g, ':');
+  const parts = normalized.split('-').map(part => part.trim()).filter(Boolean);
+  const start = parseClockValue(parts[0]?.replace(/[^0-9:.]/g, ''));
+  const end = parseClockValue(parts[1]?.replace(/[^0-9:.]/g, ''));
+
+  if (start != null && end != null) {
+    return { start, end: Math.max(end, start + 30), label: raw };
+  }
+  if (start != null) {
+    return { start, end: start + 90, label: raw };
+  }
+
+  const matches = [...normalized.matchAll(/(\d{1,2})(?:[:.](\d{2}))?/g)];
+  if (matches.length) {
+    const first = matches[0];
+    const firstMinutes = Number(first[1]) * 60 + Number(first[2] || 0);
+    if (matches[1]) {
+      const second = matches[1];
+      const secondMinutes = Number(second[1]) * 60 + Number(second[2] || 0);
+      return {
+        start: firstMinutes,
+        end: Math.max(secondMinutes, firstMinutes + 30),
+        label: raw,
+      };
+    }
+    return { start: firstMinutes, end: firstMinutes + 90, label: raw };
+  }
+
+  return { start: fallbackStart, end: fallbackEnd, label: raw };
+}
+
+function formatMinutesAsClock(minutes) {
+  const normalized = ((minutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(normalized / 60);
+  const mins = normalized % 60;
+  return `${String(hours).padStart(2, '0')}.${String(mins).padStart(2, '0')}`;
+}
+
+function getDayTimelineWindow(meetings) {
+  if (!meetings.length) {
+    return { startHour: 8, endHour: 19 };
+  }
+  const starts = meetings.map(meeting => parseMeetingTimeRange(meeting).start);
+  const ends = meetings.map(meeting => parseMeetingTimeRange(meeting).end);
+  const minStart = Math.max(6 * 60, Math.floor(Math.min(...starts) / 60) * 60 - 60);
+  const maxEnd = Math.min(22 * 60, Math.ceil(Math.max(...ends) / 60) * 60 + 60);
+  return {
+    startHour: Math.floor(minStart / 60),
+    endHour: Math.max(Math.ceil(maxEnd / 60), Math.floor(minStart / 60) + 1),
+  };
+}
+
+function pickInitialSelectedDate() {
+  if (!availableDates.length) return '';
+  const today = new Date().toISOString().slice(0, 10);
+  if (meetingsByDate.has(today)) return today;
+  const upcoming = availableDates.find(date => date >= today);
+  if (upcoming) return upcoming;
+  return availableDates[availableDates.length - 1];
+}
+
+function formatDayHeader(date) {
+  return date.toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function getWeekStart(date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const offset = (start.getDay() + 6) % 7;
+  start.setDate(start.getDate() - offset);
+  return start;
+}
+
+function renderAllMonthsView() {
+  const yearCalendar = document.getElementById('yearCalendar');
+  const yearLabel = document.getElementById('calendarYearLabel');
+  const monthLabel = document.getElementById('calendarMonthLabel');
+  const monthSub = document.getElementById('calendarMonthSub');
+  if (!yearCalendar || !yearLabel || !monthLabel || !monthSub) return;
+
+  setOverviewCard(
+    'Fremmødekalender',
+    'Alle hold ligger på deres dato i året. Flere hold på samme dag vises samlet, og du kan åbne hvert hold direkte fra datoen for at tjekke medlemmer ind.'
+  );
+  yearLabel.textContent = '';
+  monthLabel.textContent = 'År';
+  monthSub.textContent = '';
+  yearCalendar.innerHTML = `
+    <div class="year-calendar-head">
+      <div class="year-calendar-title">${currentCalendarYear}</div>
+      <div class="year-calendar-note">12 måneder i én oversigt</div>
+    </div>
+    <div class="year-calendar-grid">
+      ${Array.from({ length: 12 }, (_, monthIndex) => renderYearMonthBlock(currentCalendarYear, monthIndex)).join('')}
+    </div>
+  `;
+}
+
+function renderDayView() {
+  const yearCalendar = document.getElementById('yearCalendar');
+  const yearLabel = document.getElementById('calendarYearLabel');
+  const monthLabel = document.getElementById('calendarMonthLabel');
+  const monthSub = document.getElementById('calendarMonthSub');
+  const datePanel = document.getElementById('dateMeetingsPanel');
+  const searchPanel = document.getElementById('daySearchPanel');
+  const memberList = document.getElementById('memberListContent');
+  const attHeader = document.getElementById('attHeader');
+  if (!yearCalendar || !yearLabel || !monthLabel || !monthSub || !datePanel || !searchPanel || !memberList || !attHeader) return;
+
+  const meetings = getMeetingsForDate(currentSelectedDate);
+  if (currentDayFilterDate !== currentSelectedDate || [...currentDayVisibleMeetingIds].some(id => !meetings.some(meeting => meeting.id === id))) {
+    currentDayVisibleMeetingIds = new Set(meetings.map(meeting => meeting.id));
+    currentDayFilterDate = currentSelectedDate;
+  }
+  const visibleMeetings = meetings.filter(meeting => currentDayVisibleMeetingIds.has(meeting.id));
+  const orderedMeetings = [...meetings].sort((a, b) => {
+    const rangeA = parseMeetingTimeRange(a);
+    const rangeB = parseMeetingTimeRange(b);
+    return rangeA.start - rangeB.start || rangeA.end - rangeB.end || (a.title || '').localeCompare(b.title || '', 'da');
+  });
+
+  const dateLabel = currentSelectedDate
+    ? isoDateToDate(currentSelectedDate).toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+    : 'Ingen dato';
+
+  setOverviewCard(
+    'Dagvisning',
+    `${dateLabel} · ${visibleMeetings.length} synlige hold ud af ${meetings.length}`
+  );
+
+  yearLabel.textContent = `Dag ${currentSelectedDate ? isoDateToDate(currentSelectedDate).getDate() : ''}`;
+  monthLabel.textContent = 'Dag';
+  monthSub.textContent = '';
+  const timelineWindow = getDayTimelineWindow(visibleMeetings.length ? visibleMeetings : orderedMeetings);
+  const hourHeight = 76;
+  const timelineTop = 62;
+  const shellHeight = Math.max(640, (timelineWindow.endHour - timelineWindow.startHour + 1) * hourHeight + timelineTop + 24);
+  const hourLabels = [];
+  for (let hour = timelineWindow.startHour; hour <= timelineWindow.endHour; hour += 1) {
+    const top = timelineTop + ((hour - timelineWindow.startHour) * hourHeight);
+    hourLabels.push(`<div class="day-time-label" style="top:${top}px">${String(hour).padStart(2, '0')}.00</div>`);
+  }
+  const timelineCards = orderedMeetings.map(meeting => {
+    const visible = currentDayVisibleMeetingIds.has(meeting.id);
+    const range = parseMeetingTimeRange(meeting);
+    const top = timelineTop + ((range.start - (timelineWindow.startHour * 60)) / 60) * hourHeight;
+    const height = Math.max(54, ((range.end - range.start) / 60) * hourHeight - 6);
+    const title = meeting.title || 'Uden titel';
+    const branch = groupName(meeting);
+    const dayLabel = meeting.day ? (getDayNameById(meeting.day) || meeting.day) : '';
+    const meta = [branch, dayLabel].filter(Boolean).join(' · ');
+    const timeLabel = meeting.time || `${formatMinutesAsClock(range.start)}–${formatMinutesAsClock(range.end)}`;
+    return `
+      <section class="day-timeline-event ${visible ? '' : 'hidden'}" style="top:${top}px;height:${height}px">
+        <div class="day-timeline-event-head">
+          <div>
+            <div class="day-timeline-event-title">${esc(title)}</div>
+            <div class="day-timeline-event-meta">${esc(meta)}</div>
+          </div>
+          <div class="day-timeline-event-time">${esc(timeLabel)}</div>
+        </div>
+        <div class="day-timeline-event-duration">${esc(visible ? 'Synligt i fremmøde' : 'Skjult i fremmøde')}</div>
+      </section>
+    `;
+  }).join('');
+
+  yearCalendar.innerHTML = `
+    <div class="day-view-header">
+      <div>
+        <div class="day-view-title">${dateLabel}</div>
+        <div class="day-view-sub">${visibleMeetings.length} af ${meetings.length} hold på dagen</div>
+      </div>
+    </div>
+    <div class="day-timeline-shell" style="height:${shellHeight}px">
+      <div class="day-timeline-all-day">
+        <span>Hele dagen</span>
+      </div>
+      ${hourLabels.join('')}
+      ${timelineCards}
+    </div>
+  `;
+
+  datePanel.innerHTML = `
+    <div class="calendar-date-panel-head">
+      <div>
+        <div class="calendar-date-panel-title">Hold</div>
+      </div>
+    </div>
+    <div class="day-filter-list">
+      ${meetings.length ? meetings.map(meeting => {
+        const active = currentDayVisibleMeetingIds.has(meeting.id);
+        const title = meeting.title || 'Uden titel';
+        const branch = groupName(meeting);
+        const dayLabel = meeting.day ? (getDayNameById(meeting.day) || meeting.day) : '';
+        const meta = [meeting.time || 'Tid ikke angivet', branch, dayLabel].filter(Boolean).join(' · ');
+        return `
+          <button type="button" class="day-filter-btn ${active ? 'active' : ''}" onclick="toggleDayMeetingVisibility('${meeting.id}')">
+            <span class="label">${esc(title)}</span>
+            <span class="count">${esc(meta)}</span>
+          </button>
+        `;
+      }).join('') : '<div class="calendar-empty">Ingen hold på dagen.</div>'}
+    </div>
+  `;
+
+  searchPanel.innerHTML = `
+    <div class="calendar-date-panel-head" style="margin-bottom:10px">
+      <div>
+        <div class="calendar-date-panel-title">Medlemmer</div>
+      </div>
+    </div>
+    <input
+      class="day-search-input"
+      type="search"
+      placeholder="Søg medlem"
+      value="${esc(currentDayMemberSearch)}"
+      oninput="setDayMemberSearch(this.value)"
+      autocomplete="off"
+    >
+  `;
+
+  currentDayRenderToken += 1;
+  const token = currentDayRenderToken;
+  memberList.innerHTML = '<div class="calendar-empty">Henter check-in…</div>';
+  document.getElementById('filterTabs').style.display = 'none';
+  renderDayAttendance(token);
+}
+
+async function renderDayAttendance(token) {
+  const meetings = getMeetingsForDate(currentSelectedDate)
+    .filter(meeting => currentDayVisibleMeetingIds.has(meeting.id))
+    .sort((a, b) => {
+      const rangeA = parseMeetingTimeRange(a);
+      const rangeB = parseMeetingTimeRange(b);
+      return rangeA.start - rangeB.start || rangeA.end - rangeB.end || (a.title || '').localeCompare(b.title || '', 'da');
+    });
+  const memberList = document.getElementById('memberListContent');
+  if (!meetings.length) {
+    memberList.innerHTML = '<div class="calendar-empty">Der er ingen hold på denne dato.</div>';
+    return;
+  }
 
   const memberSnap = await getDocs(collection(db, 'members'));
+  if (token !== currentDayRenderToken) return;
+  const members = memberSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(member => member.active !== false);
+  members.sort((a, b) => a.name.localeCompare(b.name, 'da'));
+
+  const attendanceEntries = await Promise.all(meetings.map(async meeting => {
+    const snap = await getDocs(query(collection(db, 'attendance'), where('meetingId', '==', meeting.id)));
+    return [meeting.id, new Set(snap.docs.map(docSnap => docSnap.data().memberId))];
+  }));
+  if (token !== currentDayRenderToken) return;
+  const arrivedByMeeting = new Map(attendanceEntries);
+  const searchTerm = currentDayMemberSearch.trim().toLowerCase();
+
+  memberList.innerHTML = `
+    <div class="day-view-schedule">
+      ${meetings.map(meeting => {
+        const meetingMembers = members
+          .filter(member => memberMatchesMeetingGroup(member, meeting))
+          .filter(member => !searchTerm || member.name.toLowerCase().includes(searchTerm))
+          .sort((a, b) => a.name.localeCompare(b.name, 'da'));
+        const arrived = arrivedByMeeting.get(meeting.id) || new Set();
+        const arrivedCount = meetingMembers.filter(member => arrived.has(member.id)).length;
+        const waitingCount = Math.max(meetingMembers.length - arrivedCount, 0);
+        const locked = isPastIsoDate(meeting.date);
+        return `
+          <section class="day-event-card" data-day-meeting="${meeting.id}">
+            <div class="day-event-head">
+              <div>
+                <div class="day-event-title">${esc(meeting.title || groupName(meeting))}</div>
+                <div class="day-event-meta">${esc(meeting.time || 'Tid ikke angivet')} · ${esc(groupName(meeting))}${meeting.day ? ' · ' + esc(getDayNameById(meeting.day)) : ''}</div>
+              </div>
+              <div class="day-event-status">${arrivedCount}/${meetingMembers.length}</div>
+            </div>
+            <div class="att-summary" style="margin:0">
+              <div class="att-chip present">${arrivedCount} ankommet</div>
+              <div class="att-chip absent">${waitingCount} afventer</div>
+            </div>
+            <div class="day-event-members">
+              ${meetingMembers.length ? meetingMembers.map(member => {
+                const isArrived = arrived.has(member.id);
+                const ini = member.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                return `
+                  <div class="member-row ${isArrived ? 'arrived' : 'waiting'} ${locked ? 'readonly' : ''}"
+                       data-day-member-id="${meeting.id}_${member.id}"
+                       onclick="${locked ? '' : `toggleDayArrived('${meeting.id}','${member.id}')`}">
+                    <div class="member-av">${esc(ini)}</div>
+                    <div class="member-name">${esc(member.name)}</div>
+                    ${isArrived ? '<div class="member-check"><i class="ti ti-check"></i></div>' : ''}
+                  </div>
+                `;
+              }).join('') : `<div class="calendar-empty">${searchTerm ? 'Ingen medlemmer matcher søgningen.' : 'Ingen aktive medlemmer på holdet.'}</div>`}
+            </div>
+          </section>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+window.setDayMemberSearch = function(value) {
+  currentDayMemberSearch = value || '';
+  renderDayAttendance(currentDayRenderToken);
+};
+
+function renderYearMonthBlock(year, monthIndex) {
+  const dayLabels = ['M','T','O','T','F','L','S'];
+  const firstDay = new Date(year, monthIndex, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const cells = [];
+  for (let index = 0; index < 42; index += 1) {
+    const cellDate = new Date(year, monthIndex, index - startOffset + 1);
+    const isoDate = isoDateFromParts(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+    const inMonth = cellDate.getMonth() === monthIndex;
+    const meetings = getMeetingsForDate(isoDate);
+    const label = cellDate.getDate();
+    const isPast = isPastIsoDate(isoDate);
+    const isToday = isTodayIsoDate(isoDate);
+    const isSelected = isoDate === currentSelectedDate;
+    cells.push(`
+      <button type="button"
+              class="year-day ${inMonth ? '' : 'other-month'} ${meetings.length ? 'has-meetings' : ''} ${isPast ? 'past-day' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}"
+              onclick="selectCalendarDate('${isoDate}')"
+              aria-label="${cellDate.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}">
+        ${label}
+      </button>
+    `);
+  }
+  return `
+    <section class="year-month">
+      <div class="year-month-title">${monthName(monthIndex)}</div>
+      <div class="year-weekdays">
+        ${dayLabels.map(day => `<div class="year-weekday">${day}</div>`).join('')}
+      </div>
+      <div class="year-days">${cells.join('')}</div>
+    </section>
+  `;
+}
+
+function renderMonthCard(year, monthIndex, viewMode = 'month') {
+  const dayLabels = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+  const firstDay = new Date(year, monthIndex, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const monthCells = [];
+  dayLabels.forEach(label => {
+    monthCells.push(`<div class="month-day-label">${label}</div>`);
+  });
+  for (let index = 0; index < 42; index += 1) {
+    const cellDate = new Date(year, monthIndex, index - startOffset + 1);
+    const isoDate = isoDateFromParts(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+    const meetings = getMeetingsForDate(isoDate);
+    const inMonth = cellDate.getMonth() === monthIndex;
+    const hasMeetings = meetings.length > 0;
+    const isSelected = isoDate === currentSelectedDate;
+    const isPast = isPastIsoDate(isoDate);
+    const isToday = isTodayIsoDate(isoDate);
+    const eventChips = meetings.slice(0, 2).map(meeting => `
+      <button type="button" class="month-event" onclick="event.stopPropagation(); selectCalendarMeeting('${meeting.id}')">${esc(meeting.title || groupName(meeting))}</button>
+    `).join('');
+    const moreCount = meetings.length > 2 ? `<div class="month-more">+${meetings.length - 2} mere</div>` : '';
+    monthCells.push(`
+      <div role="button" tabindex="0"
+              class="month-day ${inMonth ? '' : 'other-month'} ${hasMeetings ? 'has-meetings' : ''} ${meetings.length > 1 ? 'multi' : ''} ${isSelected ? 'selected' : ''} ${isPast ? 'past-day' : ''} ${isToday ? 'today' : ''}"
+              onclick="selectCalendarDate('${isoDate}')"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectCalendarDate('${isoDate}')}">
+        <span class="month-day-num">${cellDate.getDate()}</span>
+        <div class="month-events">
+          ${eventChips}
+          ${moreCount}
+        </div>
+      </div>
+    `);
+  }
+  const selectedMonthMeetings = [...meetingsByDate.keys()].filter(date => {
+    const d = isoDateToDate(date);
+    return d.getFullYear() === year && d.getMonth() === monthIndex;
+  }).length;
+  return `
+    <section class="month-card ${viewMode === 'month' && monthIndex === currentCalendarMonth ? 'active' : ''}">
+      <div class="month-head">
+        <div>
+          <div class="month-title">${monthName(monthIndex)} ${year}</div>
+          <div class="month-meta">${selectedMonthMeetings} datoer med hold</div>
+        </div>
+      </div>
+      <div class="month-grid">${monthCells.join('')}</div>
+    </section>
+  `;
+}
+
+function renderWeekView() {
+  const yearCalendar = document.getElementById('yearCalendar');
+  const yearLabel = document.getElementById('calendarYearLabel');
+  const monthLabel = document.getElementById('calendarMonthLabel');
+  const monthSub = document.getElementById('calendarMonthSub');
+  if (!yearCalendar || !yearLabel || !monthLabel || !monthSub) return;
+
+  setOverviewCard(
+    'Fremmødekalender',
+    'Alle hold ligger på deres dato i året. Flere hold på samme dag vises samlet, og du kan åbne hvert hold direkte fra datoen for at tjekke medlemmer ind.'
+  );
+  const selectedDate = currentSelectedDate ? isoDateToDate(currentSelectedDate) : new Date();
+  const weekStart = getWeekStart(selectedDate);
+  yearLabel.textContent = `Uge ${isoWeekNumber(isoDateFromParts(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate()))}`;
+  monthLabel.textContent = `Ugevisning`;
+  monthSub.textContent = `${weekStart.toLocaleDateString('da-DK', { day: 'numeric', month: 'long' })} – ${new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6).toLocaleDateString('da-DK', { day: 'numeric', month: 'long' })}`;
+  const headers = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'].map(label => `<div class="week-day-header">${label}</div>`).join('');
+  const cells = [];
+  for (let i = 0; i < 7; i += 1) {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    const isoDate = isoDateFromParts(date.getFullYear(), date.getMonth(), date.getDate());
+    const meetings = getMeetingsForDate(isoDate);
+    const isSelected = isoDate === currentSelectedDate;
+    const isPast = isPastIsoDate(isoDate);
+    const isToday = isTodayIsoDate(isoDate);
+    const eventChips = meetings.slice(0, 3).map(meeting => `
+      <button type="button" class="week-day-event" onclick="event.stopPropagation(); selectCalendarMeeting('${meeting.id}')">${esc(meeting.title || groupName(meeting))}</button>
+    `).join('');
+    const more = meetings.length > 3 ? `<div class="week-day-more">+${meetings.length - 3} mere</div>` : '';
+    cells.push(`
+      <div role="button" tabindex="0" class="week-day ${isSelected ? 'selected' : ''} ${isPast ? 'past-day' : ''} ${isToday ? 'today' : ''}"
+           onclick="selectCalendarDate('${isoDate}')"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectCalendarDate('${isoDate}')}">
+        <div class="week-day-num">${formatDayHeader(date)}</div>
+        <div class="week-day-events">
+          ${eventChips}
+          ${more}
+        </div>
+      </div>
+    `);
+  }
+  yearCalendar.innerHTML = `
+    <section class="month-card">
+      <div class="month-head">
+        <div>
+          <div class="month-title">${weekStart.toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          <div class="month-meta">7 dage med hold direkte i dagene</div>
+        </div>
+      </div>
+      <div class="week-grid">
+        ${headers}
+        ${cells.join('')}
+      </div>
+    </section>
+  `;
+}
+
+function updateCalendarViewButtons() {
+  document.querySelectorAll('.calendar-view-btn').forEach(btn => btn.classList.remove('active'));
+  const activeMap = {
+    all: 'viewAllBtn',
+    day: 'viewDayBtn',
+    month: 'viewMonthBtn',
+    week: 'viewWeekBtn',
+  };
+  const activeBtn = document.getElementById(activeMap[currentCalendarView]);
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+function renderCalendar() {
+  const yearCalendar = document.getElementById('yearCalendar');
+  const yearLabel = document.getElementById('calendarYearLabel');
+  const monthLabel = document.getElementById('calendarMonthLabel');
+  const monthSub = document.getElementById('calendarMonthSub');
+  const prevBtn = document.getElementById('prevMonthBtn');
+  const nextBtn = document.getElementById('nextMonthBtn');
+  if (!yearCalendar || !yearLabel || !monthLabel || !monthSub || !prevBtn || !nextBtn) return;
+  document.body.dataset.calendarView = currentCalendarView;
+  if (currentCalendarView !== 'day') {
+    setOverviewCard(
+      'Fremmødekalender',
+      'Alle hold ligger på deres dato i året. Flere hold på samme dag vises samlet, og du kan åbne hvert hold direkte fra datoen for at tjekke medlemmer ind.'
+    );
+  }
+  yearCalendar.className = `year-calendar ${currentCalendarView}`;
+  prevBtn.disabled = false;
+  nextBtn.disabled = false;
+  updateCalendarViewButtons();
+  if (currentCalendarView === 'all') {
+    renderAllMonthsView();
+    return;
+  }
+  if (currentCalendarView === 'day') {
+    renderDayView();
+    return;
+  }
+  if (currentCalendarView === 'month') {
+    yearLabel.textContent = `År ${currentCalendarYear}`;
+    monthLabel.textContent = `${monthName(currentCalendarMonth)} ${currentCalendarYear}`;
+    monthSub.textContent = 'Viser kun den valgte måned';
+    yearCalendar.innerHTML = renderMonthCard(currentCalendarYear, currentCalendarMonth, 'month');
+    return;
+  }
+  renderWeekView();
+}
+
+function renderSelectedDatePanel() {
+  const panel = document.getElementById('dateMeetingsPanel');
+  if (!panel) return;
+  if (!currentSelectedDate) {
+    panel.innerHTML = '<div class="calendar-empty">Ingen fremmødedatoer er oprettet endnu.</div>';
+    return;
+  }
+  const meetings = getMeetingsForDate(currentSelectedDate);
+  if (currentCalendarView === 'day') {
+    panel.innerHTML = `
+      <div class="calendar-date-panel-head">
+        <div>
+          <div class="calendar-date-panel-title">Hold</div>
+        </div>
+      </div>
+      <div class="day-filter-list">
+        ${meetings.length ? meetings.map(meeting => {
+          const active = currentDayVisibleMeetingIds.has(meeting.id);
+          const title = meeting.title || 'Uden titel';
+          const branch = groupName(meeting);
+          const dayLabel = meeting.day ? (getDayNameById(meeting.day) || meeting.day) : '';
+          const meta = [meeting.time || 'Tid ikke angivet', branch, dayLabel].filter(Boolean).join(' · ');
+          return `
+            <button type="button" class="day-filter-btn ${active ? 'active' : ''}" onclick="toggleDayMeetingVisibility('${meeting.id}')">
+              <span class="label">${esc(title)}</span>
+              <span class="count">${esc(meta)}</span>
+            </button>
+          `;
+        }).join('') : '<div class="calendar-empty">Ingen hold på dagen.</div>'}
+      </div>
+    `;
+    return;
+  }
+  const dateLabel = isoDateToDate(currentSelectedDate).toLocaleDateString('da-DK', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  panel.innerHTML = `
+    <div class="calendar-date-panel-head">
+      <div>
+        <div class="calendar-date-panel-title">${dateLabel}</div>
+        <div class="calendar-date-panel-sub">${meetings.length} hold på dagen</div>
+      </div>
+    </div>
+    <div class="calendar-date-meetings">
+      ${meetings.length ? meetings.map(meeting => {
+        const isActive = currentSelectedMeetingId === meeting.id;
+        const title = meeting.title || 'Uden titel';
+        const branch = groupName(meeting);
+        const dayLabel = meeting.day ? (getDayNameById(meeting.day) || meeting.day) : '';
+        return `
+          <button type="button" class="calendar-date-meeting ${isActive ? 'active' : ''}" onclick="selectCalendarMeeting('${meeting.id}')">
+            <div class="calendar-date-meeting-main">
+              <div class="calendar-date-meeting-title">${esc(branch)}${dayLabel ? ' · ' + esc(dayLabel) : ''} — ${esc(title)}</div>
+              <div class="calendar-date-meeting-sub">${meeting.time ? esc(meeting.time) : 'Tid ikke angivet'}</div>
+            </div>
+            <div class="calendar-date-meeting-badge">Åbn fremmøde</div>
+          </button>
+        `;
+      }).join('') : '<div class="calendar-empty">Der er ingen hold på denne dato.</div>'}
+    </div>
+  `;
+}
+
+function updateDateNav() {
+  const selectedDateEl = document.getElementById('selectedMeetingDate');
+  const selectedMetaEl = document.getElementById('selectedMeetingMeta');
+  const prevBtn = document.getElementById('prevMeetingBtn');
+  const nextBtn = document.getElementById('nextMeetingBtn');
+  if (!selectedDateEl || !selectedMetaEl || !prevBtn || !nextBtn) return;
+
+  if (!availableDates.length || !currentSelectedDate) {
+    selectedDateEl.textContent = 'Ingen datoer';
+    selectedMetaEl.textContent = 'Der er ingen fremmødedatoer endnu.';
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+
+  const selectedDate = isoDateToDate(currentSelectedDate);
+  const selectedIndex = availableDates.indexOf(currentSelectedDate);
+  selectedDateEl.textContent = selectedDate.toLocaleDateString('da-DK', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  selectedMetaEl.textContent = `${getMeetingsForDate(currentSelectedDate).length} hold på dagen`;
+  prevBtn.disabled = selectedIndex <= 0;
+  nextBtn.disabled = selectedIndex < 0 || selectedIndex >= availableDates.length - 1;
+}
+
+function renderMeetingWorkspace() {
+  if (!availableDates.length) {
+    currentMeeting = null;
+    currentSelectedDate = '';
+    currentSelectedMeetingId = '';
+    updateDateNav();
+    renderCalendar();
+    renderSelectedDatePanel();
+    document.getElementById('attHeader').innerHTML = '<div class="att-title">Ingen møder</div><div class="att-date">Der er endnu ikke oprettet fremmødedatoer.</div>';
+    document.getElementById('filterTabs').style.display = 'none';
+    document.getElementById('memberListContent').innerHTML = '<div class="calendar-empty">Der findes endnu ikke nogen fremmødedatoer.</div>';
+    return;
+  }
+
+  if (!currentSelectedDate || !meetingsByDate.has(currentSelectedDate)) {
+    currentSelectedDate = pickInitialSelectedDate();
+  }
+  currentCalendarYear = currentSelectedDate ? isoDateToDate(currentSelectedDate).getFullYear() : currentCalendarYear;
+  currentCalendarMonth = currentSelectedDate ? isoDateToDate(currentSelectedDate).getMonth() : currentCalendarMonth;
+  const meetingsForDate = getMeetingsForDate(currentSelectedDate);
+  if (currentCalendarView === 'day') {
+    updateDateNav();
+    currentMeeting = null;
+    document.getElementById('filterTabs').style.display = 'none';
+    renderCalendar();
+    return;
+  }
+  if (!meetingsForDate.length) {
+    currentSelectedMeetingId = '';
+    currentMeeting = null;
+    updateDateNav();
+    renderCalendar();
+    renderSelectedDatePanel();
+    document.getElementById('attHeader').innerHTML = '<div class="att-title">Vælg en dato</div><div class="att-date">Datoen indeholder ingen hold.</div>';
+    document.getElementById('filterTabs').style.display = 'none';
+    document.getElementById('memberListContent').innerHTML = '<div class="calendar-empty">Vælg en dato med hold for at åbne fremmøde.</div>';
+    return;
+  }
+
+  if (!currentSelectedMeetingId || !meetingsForDate.some(meeting => meeting.id === currentSelectedMeetingId)) {
+    currentSelectedMeetingId = meetingsForDate[0].id;
+  }
+
+  updateDateNav();
+  renderCalendar();
+  renderSelectedDatePanel();
+
+  const selectedMeeting = meetingsForDate.find(meeting => meeting.id === currentSelectedMeetingId) || meetingsForDate[0];
+  if (!currentMeeting || currentMeeting.id !== selectedMeeting.id) {
+    openMeeting(selectedMeeting);
+  }
+}
+
+async function openMeeting(meeting) {
+  const token = ++currentOpenMeetingToken;
+  currentMeeting = meeting;
+  currentSelectedDate = meeting.date || currentSelectedDate;
+  currentCalendarYear = currentSelectedDate ? isoDateToDate(currentSelectedDate).getFullYear() : currentCalendarYear;
+  currentCalendarMonth = currentSelectedDate ? isoDateToDate(currentSelectedDate).getMonth() : currentCalendarMonth;
+  currentSelectedMeetingId = meeting.id;
+  updateDateNav();
+  renderCalendar();
+  renderSelectedDatePanel();
+  const memberSnap = await getDocs(collection(db, 'members'));
+  if (token !== currentOpenMeetingToken) return;
   allMembers = memberSnap.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .filter(member => member.active !== false)
@@ -305,7 +1369,7 @@ async function openMeeting(meeting) {
   const dStr = d.toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   const meetingGroup = groupName(meeting);
   document.getElementById('attHeader').innerHTML = `
-    <div class="att-title">${esc(meetingGroup)}${meeting.title ? ' — ' + esc(meeting.title) : ''}</div>
+    <div class="att-title">${esc(meetingGroup)}${meeting.day ? ' · ' + esc(getDayNameById(meeting.day)) : ''}${meeting.title ? ' — ' + esc(meeting.title) : ''}</div>
     <div class="att-date">${dStr}</div>
     <div class="att-summary">
       <div class="att-chip present" id="chipArrived">— ankommet</div>
@@ -317,12 +1381,11 @@ async function openMeeting(meeting) {
   unsubAttendance = onSnapshot(
     query(collection(db, 'attendance'), where('meetingId', '==', meeting.id)),
     snap => {
+      if (token !== currentOpenMeetingToken) return;
       currentArrived = new Set(snap.docs.map(d => d.data().memberId));
       renderAttendanceList();
     }
   );
-
-  showAttendanceView();
 }
 
 function renderAttendanceList() {
@@ -337,10 +1400,11 @@ function renderAttendanceList() {
 
   if (allMembers.length === 0) {
     document.getElementById('memberListContent').innerHTML =
-      '<div class="empty-card">Ingen aktive medlemmer i denne gren endnu.<br>Tilføj dem i <a href="admin.html" style="color:#0f4172">Lederportalen</a>.</div>';
+      '<div class="empty-card">Ingen aktive medlemmer i denne gren endnu.<br>Tilføj dem i <a href="admin-medlemmer.html" style="color:#0f4172">Lederportalen</a>.</div>';
     return;
   }
 
+  const locked = currentMeeting ? isPastIsoDate(currentMeeting.date) : false;
   const visible = allMembers.filter(m => {
     if (currentFilter === 'arrived') return currentArrived.has(m.id);
     if (currentFilter === 'waiting') return !currentArrived.has(m.id);
@@ -350,9 +1414,9 @@ function renderAttendanceList() {
   document.getElementById('memberListContent').innerHTML = visible.map(m => {
     const isArrived = currentArrived.has(m.id);
     const ini = m.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    return `<div class="member-row ${isArrived ? 'arrived' : 'waiting'}"
+    return `<div class="member-row ${isArrived ? 'arrived' : 'waiting'} ${locked ? 'readonly' : ''}"
                  data-member-id="${m.id}"
-                 onclick="toggleArrived('${m.id}')">
+                 onclick="${locked ? '' : `toggleArrived('${m.id}')`}">
       <div class="member-av">${esc(ini)}</div>
       <div class="member-name">${esc(m.name)}</div>
       ${isArrived ? '<div class="member-status"><i class="ti ti-check"></i><span>Ankommet</span></div>' : ''}
@@ -368,8 +1432,63 @@ window.setFilter = function(f) {
   renderAttendanceList();
 };
 
+window.setCalendarView = function(view) {
+  currentCalendarView = view;
+  if (!currentSelectedDate) {
+    currentSelectedDate = pickInitialSelectedDate();
+  }
+  const focusDate = currentSelectedDate ? isoDateToDate(currentSelectedDate) : new Date();
+  currentCalendarYear = focusDate.getFullYear();
+  currentCalendarMonth = focusDate.getMonth();
+  if (view === 'day') {
+    currentDayVisibleMeetingIds = new Set(getMeetingsForDate(currentSelectedDate).map(meeting => meeting.id));
+    currentDayFilterDate = currentSelectedDate;
+    currentDayMemberSearch = '';
+  }
+  renderCalendar();
+};
+
+window.toggleDayMeetingVisibility = function(meetingId) {
+  if (currentDayVisibleMeetingIds.has(meetingId)) {
+    currentDayVisibleMeetingIds.delete(meetingId);
+  } else {
+    currentDayVisibleMeetingIds.add(meetingId);
+  }
+  renderDayView();
+};
+
+window.toggleDayArrived = async function(meetingId, memberId) {
+  const meeting = getMeetingsForDate(currentSelectedDate).find(item => item.id === meetingId);
+  if (!meeting || isPastIsoDate(meeting.date)) return;
+  const docId = `${meeting.id}_${memberId}`;
+  const docRef = doc(db, 'attendance', docId);
+  const row = document.querySelector(`[data-day-member-id="${meetingId}_${memberId}"]`);
+  if (row) row.classList.add('updating');
+  const snap = await getDocs(query(collection(db, 'attendance'), where('meetingId', '==', meetingId)));
+  const isArrived = snap.docs.some(docSnap => docSnap.data().memberId === memberId);
+  try {
+    if (isArrived) {
+      await deleteDoc(docRef);
+    } else {
+      await setDoc(docRef, {
+        meetingId,
+        memberId,
+        arrived: true,
+        markedAt: serverTimestamp(),
+        markedBy: auth.currentUser?.uid || '',
+      });
+    }
+    renderDayView();
+  } catch (e) {
+    console.error(e);
+    if (row) row.classList.remove('updating');
+    alert('Kunne ikke opdatere fremmøde — prøv igen.');
+  }
+};
+
 window.toggleArrived = async function(memberId) {
   if (!currentMeeting) return;
+  if (isPastIsoDate(currentMeeting.date)) return;
   const row = document.querySelector(`[data-member-id="${memberId}"]`);
   if (row) row.classList.add('updating');
 
@@ -396,15 +1515,80 @@ window.toggleArrived = async function(memberId) {
   }
 };
 
+window.selectCalendarDate = function(isoDate) {
+  currentSelectedDate = isoDate;
+  currentCalendarYear = currentSelectedDate ? isoDateToDate(currentSelectedDate).getFullYear() : currentCalendarYear;
+  currentCalendarMonth = currentSelectedDate ? isoDateToDate(currentSelectedDate).getMonth() : currentCalendarMonth;
+  const meetings = getMeetingsForDate(isoDate);
+  currentSelectedMeetingId = meetings[0]?.id || '';
+  currentDayMemberSearch = '';
+  if (currentCalendarView === 'day') {
+    currentDayVisibleMeetingIds = new Set(meetings.map(meeting => meeting.id));
+    currentDayFilterDate = currentSelectedDate;
+  }
+  currentMeeting = null;
+  renderMeetingWorkspace();
+};
+
+window.selectCalendarMeeting = function(meetingId) {
+  const dateMeetings = getMeetingsForDate(currentSelectedDate);
+  const meeting = dateMeetings.find(item => item.id === meetingId);
+  if (!meeting) return;
+  currentSelectedMeetingId = meeting.id;
+  openMeeting(meeting);
+  renderSelectedDatePanel();
+};
+
+window.selectRelativeMeeting = function(direction) {
+  if (!availableDates.length || !currentSelectedDate) return;
+  const currentIndex = availableDates.indexOf(currentSelectedDate);
+  if (currentIndex < 0) return;
+  const nextIndex = currentIndex + direction;
+  if (nextIndex < 0 || nextIndex >= availableDates.length) return;
+  currentSelectedDate = availableDates[nextIndex];
+  currentCalendarYear = currentSelectedDate ? isoDateToDate(currentSelectedDate).getFullYear() : currentCalendarYear;
+  currentCalendarMonth = currentSelectedDate ? isoDateToDate(currentSelectedDate).getMonth() : currentCalendarMonth;
+  currentSelectedMeetingId = getMeetingsForDate(currentSelectedDate)[0]?.id || '';
+  currentMeeting = null;
+  renderMeetingWorkspace();
+};
+
+window.shiftCalendar = function(direction) {
+  if (currentCalendarView === 'all') {
+    currentCalendarYear += direction;
+  } else if (currentCalendarView === 'day') {
+    const base = currentSelectedDate ? isoDateToDate(currentSelectedDate) : new Date();
+    base.setDate(base.getDate() + direction);
+    currentSelectedDate = isoDateFromParts(base.getFullYear(), base.getMonth(), base.getDate());
+    currentCalendarYear = base.getFullYear();
+    currentCalendarMonth = base.getMonth();
+    currentSelectedMeetingId = getMeetingsForDate(currentSelectedDate)[0]?.id || '';
+    currentDayMemberSearch = '';
+    currentMeeting = null;
+  } else if (currentCalendarView === 'month') {
+    const next = new Date(currentCalendarYear, currentCalendarMonth + direction, 1);
+    currentCalendarYear = next.getFullYear();
+    currentCalendarMonth = next.getMonth();
+  } else if (currentCalendarView === 'week') {
+    const base = currentSelectedDate ? isoDateToDate(currentSelectedDate) : new Date();
+    base.setDate(base.getDate() + (7 * direction));
+    currentSelectedDate = isoDateFromParts(base.getFullYear(), base.getMonth(), base.getDate());
+    currentCalendarYear = base.getFullYear();
+    currentCalendarMonth = base.getMonth();
+    currentSelectedMeetingId = getMeetingsForDate(currentSelectedDate)[0]?.id || '';
+    currentDayMemberSearch = '';
+    currentMeeting = null;
+  }
+  renderCalendar();
+};
+
 // ── Navigation ────────────────────────────────────────────────────────────
 function showMeetingList() {
   document.getElementById('viewMeetingList').style.display = 'block';
-  document.getElementById('viewAttendance').style.display  = 'none';
 }
 
 function showAttendanceView() {
-  document.getElementById('viewMeetingList').style.display = 'none';
-  document.getElementById('viewAttendance').style.display  = 'block';
+  document.getElementById('viewMeetingList').style.display = 'block';
 }
 
 window.backToMeetings = function() {
@@ -414,7 +1598,7 @@ window.backToMeetings = function() {
   currentArrived = new Set();
   currentFilter  = 'all';
   document.getElementById('filterTabs').style.display = 'none';
-  loadMeetings();
+  renderMeetingWorkspace();
 };
 </script>
 </body>

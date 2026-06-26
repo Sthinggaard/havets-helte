@@ -50,6 +50,9 @@ node_modules/
 # Optional npm cache directory
 .npm
 
+# Build output
+dist/
+
 # Optional eslint cache
 .eslintcache
 
@@ -61,6 +64,9 @@ node_modules/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# TypeScript build artifacts
+*.tsbuildinfo
 
 # dotenv environment variables file
 .env

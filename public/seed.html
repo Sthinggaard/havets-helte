@@ -26,11 +26,11 @@
 <script type="module">
 import { initializeApp }     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, connectFirestoreEmulator,
-         collection, doc, addDoc, deleteDoc, getDocs, serverTimestamp }
+         collection, doc, addDoc, deleteDoc, getDocs, setDoc, serverTimestamp }
                              from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword }
                              from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getGroupNameById }   from './groups.js';
+import { getGroupNameById, getTeamId, getTeamLabel }   from './groups.js?v=20260621';
 
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 if (!isLocal) {
@@ -55,8 +55,22 @@ async function createSignupViaApi(payload) {
     body: JSON.stringify(payload),
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.message || 'Signup API fejl');
+  if (!response.ok) {
+    out('→ Signup API ikke tilgængelig, springer over testtilmelding.');
+    return null;
+  }
   return data;
+}
+
+async function ensureTeamDoc(groupId, day) {
+  await setDoc(doc(db, 'groupTeams', getTeamId(groupId, day)), {
+    groupId,
+    day,
+    label: getTeamLabel(day),
+    active: true,
+    created: serverTimestamp(),
+    updated: serverTimestamp(),
+  }, { merge: true });
 }
 
 window.seed = async function() {
@@ -65,14 +79,14 @@ window.seed = async function() {
 
   try {
     // ── Leder-konto ─────────────────────────────────────────────────────
-    out('Opretter leder@test.dk …');
+    out('Opretter leder@havetshelte.dk …');
     try {
-      await createUserWithEmailAndPassword(auth, 'leder@test.dk', 'test1234');
-      out('✓ Leder oprettet (leder@test.dk / test1234)');
+      await createUserWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
+      out('✓ Leder oprettet (leder@havetshelte.dk / test1234)');
     } catch(e) {
       out('→ Leder eksisterer allerede (OK)');
     }
-    await signInWithEmailAndPassword(auth, 'leder@test.dk', 'test1234');
+    await signInWithEmailAndPassword(auth, 'leder@havetshelte.dk', 'test1234');
 
     // ── Sankt Hans event ─────────────────────────────────────────────────
     out('Opretter Sankt Hans event…');
@@ -172,26 +186,52 @@ window.seed = async function() {
     });
     out('✓ Nathejk oprettet');
 
-    // ── Fremmøde: Søspejder-medlemmer ──────────────────────────────────────
-    out('Opretter testmedlemmer (Søspejder)…');
-    const søspejdere = [
-      { name:'Magnus Hansen',     fødselsdato:'2013-03-12', startdato:'2024-04-30', foto:true  },
-      { name:'Anna Larsen',       fødselsdato:'2013-09-05', startdato:'2024-05-01', foto:true  },
-      { name:'Peter Jensen',      fødselsdato:'2014-01-22', startdato:'2024-05-01', foto:false },
-      { name:'Sofie Nielsen',     fødselsdato:'2013-11-08', startdato:'2025-05-05', foto:true  },
-      { name:'Emil Christensen',  fødselsdato:'2014-06-17', startdato:'2025-05-05', foto:false },
-      { name:'Laura Pedersen',    fødselsdato:'2013-07-30', startdato:'2025-06-09', foto:false },
-      { name:'Oliver Andersen',   fødselsdato:'2014-02-14', startdato:'2025-08-18', foto:false },
-      { name:'Emma Thomsen',      fødselsdato:'2013-12-03', startdato:'2025-09-09', foto:false },
-      { name:'Lucas Møller',      fødselsdato:'2014-04-25', startdato:'2025-09-09', foto:false },
-      { name:'Ida Poulsen',       fødselsdato:'2013-08-19', startdato:'2025-09-09', foto:false },
+    // ── Fremmøde: Landkrabber-medlemmer ────────────────────────────────────
+    out('Opretter testmedlemmer (Landkrabber)…');
+    const landkrabber = [
+      { name:'Magnus Hansen',     fødselsdato:'2013-03-12', startdato:'2024-04-30', foto:true,  day:'mandag' },
+      { name:'Anna Larsen',       fødselsdato:'2013-09-05', startdato:'2024-05-01', foto:true,  day:'tirsdag' },
+      { name:'Peter Jensen',      fødselsdato:'2014-01-22', startdato:'2024-05-01', foto:false, day:'mandag' },
+      { name:'Sofie Nielsen',     fødselsdato:'2013-11-08', startdato:'2025-05-05', foto:true,  day:'tirsdag' },
+      { name:'Emil Christensen',  fødselsdato:'2014-06-17', startdato:'2025-05-05', foto:false, day:'mandag' },
+      { name:'Laura Pedersen',    fødselsdato:'2013-07-30', startdato:'2025-06-09', foto:false, day:'tirsdag' },
+      { name:'Oliver Andersen',   fødselsdato:'2014-02-14', startdato:'2025-08-18', foto:false, day:'mandag' },
+      { name:'Emma Thomsen',      fødselsdato:'2013-12-03', startdato:'2025-09-09', foto:false, day:'tirsdag' },
+      { name:'Lucas Møller',      fødselsdato:'2014-04-25', startdato:'2025-09-09', foto:false, day:'mandag' },
+      { name:'Ida Poulsen',       fødselsdato:'2013-08-19', startdato:'2025-09-09', foto:false, day:'tirsdag' },
     ];
-    for (const m of søspejdere) {
+    for (const m of landkrabber) {
+      await ensureTeamDoc('landkrabber', m.day);
       await addDoc(collection(db, 'members'), {
         ...m,
-        groupId:'soespejder',
-        groupName:getGroupNameById('soespejder'),
-        gren:getGroupNameById('soespejder'),
+        groupId:'landkrabber',
+        groupName:getGroupNameById('landkrabber'),
+        gren:getGroupNameById('landkrabber'),
+        teamId:getTeamId('landkrabber', m.day),
+        teamLabel:getTeamLabel(m.day),
+        active:true,
+        created:now
+      });
+      out('  ✓ ' + m.name);
+    }
+
+    // ── Fremmøde: Trop-medlemmer ───────────────────────────────────────────
+    out('Opretter testmedlemmer (Trop)…');
+    const trop = [
+      { name:'Alma Sørensen',     fødselsdato:'2011-03-12', startdato:'2024-08-15', foto:false, day:'onsdag' },
+      { name:'Mikkel Ravn',       fødselsdato:'2011-09-04', startdato:'2024-08-15', foto:false, day:'torsdag' },
+      { name:'Signe Holm',        fødselsdato:'2010-11-27', startdato:'2025-02-03', foto:false, day:'onsdag' },
+      { name:'Victor Jørgensen',  fødselsdato:'2011-05-18', startdato:'2025-02-03', foto:false, day:'torsdag' },
+    ];
+    for (const m of trop) {
+      await ensureTeamDoc('trop', m.day);
+      await addDoc(collection(db, 'members'), {
+        ...m,
+        groupId:'trop',
+        groupName:getGroupNameById('trop'),
+        gren:getGroupNameById('trop'),
+        teamId:getTeamId('trop', m.day),
+        teamLabel:getTeamLabel(m.day),
         active:true,
         created:now
       });
@@ -201,17 +241,20 @@ window.seed = async function() {
     // ── Fremmøde: Junior-medlemmer ──────────────────────────────────────────
     out('Opretter testmedlemmer (Junior)…');
     const juniorer = [
-      { name:'Mathilde Hansen', fødselsdato:'2016-05-10', startdato:'2024-12-08', foto:false },
-      { name:'Noah Larsen',     fødselsdato:'2016-08-22', startdato:'2024-12-08', foto:false },
-      { name:'Freja Jensen',    fødselsdato:'2017-02-14', startdato:'2025-01-15', foto:false },
-      { name:'William Nielsen', fødselsdato:'2016-11-30', startdato:'2025-01-15', foto:false },
+      { name:'Mathilde Hansen', fødselsdato:'2016-05-10', startdato:'2024-12-08', foto:false, day:'mandag' },
+      { name:'Noah Larsen',     fødselsdato:'2016-08-22', startdato:'2024-12-08', foto:false, day:'tirsdag' },
+      { name:'Freja Jensen',    fødselsdato:'2017-02-14', startdato:'2025-01-15', foto:false, day:'mandag' },
+      { name:'William Nielsen', fødselsdato:'2016-11-30', startdato:'2025-01-15', foto:false, day:'tirsdag' },
     ];
     for (const m of juniorer) {
+      await ensureTeamDoc('junior', m.day);
       await addDoc(collection(db, 'members'), {
         ...m,
         groupId:'junior',
         groupName:getGroupNameById('junior'),
         gren:getGroupNameById('junior'),
+        teamId:getTeamId('junior', m.day),
+        teamLabel:getTeamLabel(m.day),
         active:true,
         created:now
       });
@@ -221,9 +264,9 @@ window.seed = async function() {
     // ── Fremmøde: Møder ────────────────────────────────────────────────────
     out('Opretter testmøder…');
     const meetings = [
-      { date:'2026-06-10', groupId:'soespejder', groupName:getGroupNameById('soespejder'), gren:getGroupNameById('soespejder'), title:'' },
-      { date:'2026-06-16', groupId:'soespejder', groupName:getGroupNameById('soespejder'), gren:getGroupNameById('soespejder'), title:'Sommermøde' },
-      { date:'2026-06-23', groupId:'soespejder', groupName:getGroupNameById('soespejder'), gren:getGroupNameById('soespejder'), title:'' },
+      { date:'2026-06-10', groupId:'landkrabber', groupName:getGroupNameById('landkrabber'), gren:getGroupNameById('landkrabber'), title:'' },
+      { date:'2026-06-16', groupId:'landkrabber', groupName:getGroupNameById('landkrabber'), gren:getGroupNameById('landkrabber'), title:'Sommermøde' },
+      { date:'2026-06-23', groupId:'landkrabber', groupName:getGroupNameById('landkrabber'), gren:getGroupNameById('landkrabber'), title:'' },
       { date:'2026-06-16', groupId:'junior', groupName:getGroupNameById('junior'), gren:getGroupNameById('junior'), title:'' },
     ];
     const meetingRefs = [];
@@ -234,7 +277,7 @@ window.seed = async function() {
     }
 
     out('\n✅ Færdig! Åbn http://localhost:5003 for at se resultatet.');
-    out('   Admin: http://localhost:5003/admin.html  →  leder@test.dk / test1234');
+    out('   Admin: http://localhost:5003/admin-vagter.html  →  leder@havetshelte.dk / test1234');
     out('   Fremmøde: http://localhost:5003/attendance.html');
   } catch(e) {
     out('\n❌ Fejl: ' + e.message);

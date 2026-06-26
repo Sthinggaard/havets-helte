@@ -26,8 +26,23 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
+      - name: Set up Node for Vue app
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/www/package-lock.json
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Vue dependencies
+        working-directory: apps/www
+        run: npm ci
+
+      - name: Build Vue app
+        working-directory: apps/www
+        run: npm run build
 
       - name: Start Firebase emulators and smoke test signup endpoint
         working-directory: ..

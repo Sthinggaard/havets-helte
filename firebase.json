@@ -9,12 +9,24 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "public": "public",
+    "public": "apps/www/dist",
+    "predeploy": [
+      "npm --prefix apps/www run build"
+    ],
     "rewrites": [
       {
         "source": "/api/submitSignup",
         "function": "submitSignup",
         "region": "europe-west1"
+      },
+      {
+        "source": "/share",
+        "function": "shareEvent",
+        "region": "europe-west1"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ],
     "ignore": [

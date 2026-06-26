@@ -1,0 +1,29 @@
+{
+  "name": "foraeldrehelte-www",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/seedEmulator.mjs",
+    "dev": "vite",
+    "seed": "node scripts/seedEmulator.mjs",
+    "seed:live": "node scripts/seedLive.mjs",
+    "build": "vue-tsc -p tsconfig.app.json --noEmit && vite build",
+    "build:dev": "vue-tsc -p tsconfig.app.json --noEmit && vite build --mode dev",
+    "build:stage": "vue-tsc -p tsconfig.app.json --noEmit && vite build --mode stage",
+    "build:prod": "vue-tsc -p tsconfig.app.json --noEmit && vite build --mode prod",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc -p tsconfig.app.json --noEmit"
+  },
+  "dependencies": {
+    "firebase": "^12.15.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.0",
+    "vue-tsc": "^2.1.10"
+  }
+}

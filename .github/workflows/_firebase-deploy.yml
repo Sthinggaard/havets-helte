@@ -1,0 +1,74 @@
+name: Firebase Deploy (reusable)
+
+# Reusable deploy job shared by every environment. The caller (deploy.yml)
+# supplies the GitHub environment, the .firebaserc alias, the Vue build script,
+# and the matching service-account secret.
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment name (dev / stage / production)
+        required: true
+        type: string
+      firebase_alias:
+        description: .firebaserc project alias to deploy (dev / stage / prod)
+        required: true
+        type: string
+      build_script:
+        description: npm script that builds the Vue app for this env
+        required: true
+        type: string
+    secrets:
+      service_account:
+        description: Firebase service-account JSON for the target project
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.firebase_alias }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node for Functions
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Set up Node for Vue app
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/www/package-lock.json
+
+      - name: Install Functions dependencies
+        working-directory: functions
+        run: npm ci
+
+      - name: Install Vue dependencies
+        working-directory: apps/www
+        run: npm ci
+
+      - name: Build Vue app
+        working-directory: apps/www
+        run: npm run ${{ inputs.build_script }}
+
+      - name: Write service account credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.service_account }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "Missing service account secret for environment '${{ inputs.environment }}'"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$HOME/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-service-account.json" >> "$GITHUB_ENV"
+
+      - name: Deploy to Firebase
+        run: npx -y firebase-tools@latest deploy --project ${{ inputs.firebase_alias }} --only hosting,functions,firestore:rules,storage

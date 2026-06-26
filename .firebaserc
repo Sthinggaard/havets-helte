@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "havets-helte"
+    "default": "havets-helte",
+    "dev": "havets-helte-dev",
+    "stage": "havets-helte-stage",
+    "prod": "havets-helte"
   }
 }

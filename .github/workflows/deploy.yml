@@ -1,39 +1,61 @@
 name: Deploy
 
+# Branch -> environment promotion:
+#   develop -> dev    (havets-helte-dev)
+#   staging -> stage  (havets-helte-stage)
+#   main    -> prod   (havets-helte)
+# Also deployable on demand via the Actions tab (pick the environment).
 on:
+  push:
+    branches:
+      - develop
+      - staging
+      - main
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+
+# Serialize deploys per ref so a newer push to the same branch never races an
+# in-flight deploy. Different branches/envs still deploy in parallel.
+concurrency:
+  group: firebase-deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Deploy Hosting and Functions
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+  dev:
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
+    uses: ./.github/workflows/_firebase-deploy.yml
+    with:
+      environment: dev
+      firebase_alias: dev
+      build_script: build:dev
+    secrets:
+      service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: functions/package-lock.json
+  stage:
+    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'stage')
+    uses: ./.github/workflows/_firebase-deploy.yml
+    with:
+      environment: stage
+      firebase_alias: stage
+      build_script: build:stage
+    secrets:
+      service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGE }}
 
-      - name: Install Functions dependencies
-        working-directory: functions
-        run: npm ci
-
-      - name: Write service account credentials
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE }}
-        run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "Missing FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE secret"
-            exit 1
-          fi
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$HOME/firebase-service-account.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-service-account.json" >> "$GITHUB_ENV"
-
-      - name: Deploy to Firebase
-        run: npx -y firebase-tools@latest deploy --project havets-helte --only hosting,functions
+  prod:
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
+    uses: ./.github/workflows/_firebase-deploy.yml
+    with:
+      environment: production
+      firebase_alias: prod
+      build_script: build:prod
+    secrets:
+      service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE }}
