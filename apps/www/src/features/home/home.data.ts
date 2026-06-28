@@ -1,3 +1,4 @@
+import type { AdminEvent, EventType } from '../eventAdmin/eventAdmin.types';
 import { eventItems } from '../events/events.data';
 import type { EventFilterType } from '../events/events.types';
 import type { HomeFeedItem, HomeSignupItem, HomeTabId } from './home.types';
@@ -28,6 +29,42 @@ function toCtaLabel(type: EventFilterType) {
   if (type === 'event') return 'Meld dig på';
   if (type === 'shift') return 'Se vagter';
   return 'Se opgaver';
+}
+
+function toFeedType(type: EventType): Exclude<EventFilterType, 'all'> {
+  if (type === 'task') return 'task';
+  if (type === 'event') return 'event';
+  return 'shift';
+}
+
+function toCtaRoute(type: EventType) {
+  if (type === 'event') return '/events';
+  if (type === 'timed') return '/vagter';
+  return '/opgaver';
+}
+
+function spotsLabel(event: AdminEvent): string {
+  if (!event.slots.length) return 'Ingen pladser';
+  if (event.slots.some(slot => slot.capacity === 0)) return 'Ubegrænset';
+  const total = event.slots.reduce((sum, slot) => sum + slot.capacity, 0);
+  return `${total} ${total === 1 ? 'plads' : 'pladser'}`;
+}
+
+export function toHomeFeedItem(event: AdminEvent): HomeFeedItem {
+  const feedType = toFeedType(event.type);
+  const fallbackImage = eventItems.find(item => item.type === feedType)?.image || '/og-sankthans.png';
+  return {
+    id: event.id,
+    type: feedType,
+    title: event.title,
+    dateText: event.dateText,
+    location: event.location,
+    spots: spotsLabel(event),
+    summary: event.description,
+    image: event.imageUrl || fallbackImage,
+    ctaLabel: toCtaLabel(feedType),
+    ctaRoute: toCtaRoute(event.type),
+  };
 }
 
 export const homeFeedItems: HomeFeedItem[] = eventItems.map(item => ({

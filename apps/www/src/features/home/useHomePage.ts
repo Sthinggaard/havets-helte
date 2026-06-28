@@ -1,7 +1,11 @@
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { homeFeedItems, homeHero } from './home.data';
-import type { HomeTabId } from './home.types';
+import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
+import type { AdminEvent } from '@/features/eventAdmin/eventAdmin.types';
+
+import { homeFeedItems, homeHero, toHomeFeedItem } from './home.data';
+import type { HomeFeedItem, HomeTabId } from './home.types';
 
 function typeLabel(type: HomeTabId) {
   if (type === 'event') return 'Event';
@@ -12,9 +16,30 @@ function typeLabel(type: HomeTabId) {
 
 export function useHomePage() {
   const router = useRouter();
+  const items = ref<HomeFeedItem[]>(homeFeedItems);
+  const loading = ref(true);
+
+  function isLivePublic(event: AdminEvent) {
+    return event.active;
+  }
+
+  onMounted(async () => {
+    try {
+      const live = (await fetchAllAdminEvents()).filter(isLivePublic);
+      if (live.length) {
+        items.value = live
+          .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || a.title.localeCompare(b.title, 'da'))
+          .map(toHomeFeedItem);
+      }
+    } catch (error) {
+      console.error('[home] live load failed, using static seed', error);
+    } finally {
+      loading.value = false;
+    }
+  });
 
   function feedHref(itemId: string) {
-    const item = homeFeedItems.find(feed => feed.id === itemId);
+    const item = items.value.find(feed => feed.id === itemId);
     if (!item) return '/';
     return router.resolve({
       path: item.ctaRoute,
@@ -23,9 +48,10 @@ export function useHomePage() {
   }
 
   return {
-    homeFeedItems,
+    homeFeedItems: computed(() => items.value),
     homeHero,
     feedHref,
+    loading,
     typeLabel,
   };
 }
