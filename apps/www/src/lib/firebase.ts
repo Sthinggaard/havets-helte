@@ -59,7 +59,7 @@ async function initFirestore() {
     : getFirestore(app);
 
   if (useEmulators) {
-    connectFirestoreEmulator(db, '127.0.0.1', 8081);
+    connectFirestoreEmulator(db, 'localhost', 8081);
   }
 
   return db;
@@ -78,7 +78,7 @@ async function initStorage() {
   const storage = getStorage(app);
 
   if (useEmulators) {
-    connectStorageEmulator(storage, '127.0.0.1', 9199);
+    connectStorageEmulator(storage, 'localhost', 9199);
   }
 
   return storage;

@@ -1,4 +1,4 @@
-const LOCAL_FUNCTIONS_URL = 'http://127.0.0.1:5004/havets-helte/europe-west1/submitSignup';
+const LOCAL_FUNCTIONS_URL = 'http://localhost:5004/havets-helte/europe-west1/submitSignup';
 const PROD_FUNCTIONS_URL = '/api/submitSignup';
 const emulatorOverride = import.meta.env.VITE_USE_FIREBASE_EMULATORS;
 const useEmulators = emulatorOverride !== undefined ? emulatorOverride === 'true' : import.meta.env.DEV;
