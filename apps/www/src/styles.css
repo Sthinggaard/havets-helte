@@ -52,6 +52,7 @@
   --dur-fast: 150ms;
   --dur-base: 200ms;
   --dur-slow: 300ms;
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Type */
   --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
