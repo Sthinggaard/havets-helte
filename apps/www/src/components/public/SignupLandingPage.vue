@@ -244,19 +244,19 @@ const SECTION_META: Record<LandingSection, { badge: string; title: string; descr
     badge: 'Events',
     title: 'Events',
     description: 'Vælg et arrangement og tilmeld dig direkte på den plads, der passer dig.',
-    cta: 'Se arrangementer',
+    cta: 'Spring til tilmelding',
   },
   task: {
     badge: 'Opgaver',
     title: 'Opgaver',
     description: 'Find en praktisk opgave, og meld dig på uden at lede rundt i admin.',
-    cta: 'Se opgaver',
+    cta: 'Spring til opgaver',
   },
   timed: {
     badge: 'Vagtplaner',
     title: 'Vagtplaner',
     description: 'Se vagterne, læs pladserne og skriv dig på den tid, du kan tage.',
-    cta: 'Se vagter',
+    cta: 'Spring til vagter',
   },
 };
 
