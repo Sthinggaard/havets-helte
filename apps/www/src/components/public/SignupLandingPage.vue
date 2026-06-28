@@ -50,36 +50,6 @@
     </section>
 
     <main class="page-shell">
-      <section class="page-section">
-        <div v-if="loading" class="loading-row">
-          <i class="ti ti-loader spinning" aria-hidden="true"></i>
-          Henter tilmeldinger…
-        </div>
-
-        <div v-else-if="selectedEvent" class="event-summary">
-          <p v-if="selectedEvent.description" class="lead event-lead">{{ selectedEvent.description }}</p>
-          <div class="info-strip">
-            <span class="info-chip" v-if="selectedEvent.location">
-              <i class="ti ti-map-pin" aria-hidden="true"></i>
-              {{ selectedEvent.location }}
-            </span>
-            <span class="info-chip">
-              <i class="ti ti-list" aria-hidden="true"></i>
-              {{ selectedEvent.slots.length }} slots
-            </span>
-            <span class="info-chip" v-if="selectedEvent.paymentUrl">
-              <i class="ti ti-credit-card" aria-hidden="true"></i>
-              Betaling via MobilePay
-            </span>
-          </div>
-        </div>
-
-        <div v-else class="empty-state">
-          <div class="empty-state-title">Ingen aktiv tilmelding</div>
-          <div class="empty-state-copy">Der ligger ikke et opslag til denne landing-side endnu.</div>
-        </div>
-      </section>
-
       <section v-if="selectedEvent" ref="signupSection" class="page-section">
         <div class="section-head section-head--compact">
           <div>
