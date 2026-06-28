@@ -83,7 +83,7 @@
             />
           </label>
 
-          <div class="library-cat-list" role="tablist" aria-label="Bibliotekskategorier">
+          <div class="library-cat-list" role="group" aria-label="Bibliotekskategorier">
             <button
               v-for="category in categories"
               :key="category.id"

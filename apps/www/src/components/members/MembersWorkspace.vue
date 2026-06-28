@@ -8,13 +8,14 @@
             <h1 class="page-title">Samlet medlemsliste</h1>
           </div>
 
-          <div class="filter-tabs filter-tabs--tight" role="tablist" aria-label="Medlemsfilter">
+          <div class="filter-tabs filter-tabs--tight" role="group" aria-label="Medlemsfilter">
             <button
               v-for="option in statusOptions"
               :key="option.id"
               type="button"
               class="filter-tab"
               :class="{ active: statusFilter === option.id }"
+              :aria-pressed="statusFilter === option.id"
               @click="setStatusFilter(option.id)"
             >
               {{ option.label }}

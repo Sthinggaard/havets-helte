@@ -597,6 +597,7 @@ onMounted(loadEvents);
 
 .hero {
   position: relative;
+  z-index: 0;
   min-height: 60vh;
   overflow: hidden;
   background: linear-gradient(135deg, #0b4378 0%, #0f467b 100%);
@@ -692,8 +693,10 @@ onMounted(loadEvents);
 }
 
 .content-shell {
+  position: relative;
+  z-index: 2;
   width: min(560px, calc(100% - 32px));
-  margin: -44px auto 48px;
+  margin: -72px auto 48px;
   display: grid;
   gap: 16px;
 }
@@ -701,7 +704,7 @@ onMounted(loadEvents);
 .page-section {
   background: #fff;
   border: 1px solid rgba(216, 225, 234, 0.95);
-  border-radius: 20px;
+  border-radius: 24px;
   padding: 18px;
   box-shadow: 0 12px 28px rgba(9, 38, 68, 0.05);
 }

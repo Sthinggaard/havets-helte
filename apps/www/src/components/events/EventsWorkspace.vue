@@ -8,13 +8,14 @@
             <h1 class="page-title">Event-oversigt</h1>
           </div>
 
-          <div class="filter-tabs filter-tabs--tight" role="tablist" aria-label="Event filter">
+          <div class="filter-tabs filter-tabs--tight" role="group" aria-label="Event filter">
             <button
               v-for="option in eventFilterOptions"
               :key="option.id"
               type="button"
               class="filter-tab"
               :class="{ active: activeFilter === option.id }"
+              :aria-pressed="activeFilter === option.id"
               @click="selectFilter(option.id)"
             >
               {{ option.label }}
