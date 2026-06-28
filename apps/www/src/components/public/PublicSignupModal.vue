@@ -1,37 +1,35 @@
 <template>
-  <Teleport to="body">
-    <div v-if="open" class="modal-overlay" @click.self="emit('close')">
-      <div class="modal">
-        <div class="modal-head">
-          <div>
-            <div class="modal-title">{{ title }}</div>
-            <div v-if="subtitle" class="modal-sub">{{ subtitle }}</div>
-          </div>
-          <button type="button" class="icon-button" @click="emit('close')">
-            <i class="ti ti-x" aria-hidden="true"></i>
+  <div v-if="open" class="modal-overlay" @click.self="emit('close')">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">{{ title }}</div>
+          <div v-if="subtitle" class="modal-sub">{{ subtitle }}</div>
+        </div>
+        <button type="button" class="icon-button" @click="emit('close')">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div v-if="bannerText" class="modal-banner" :class="bannerClass">
+        <i v-if="bannerIcon" class="modal-banner-icon" :class="bannerIcon" aria-hidden="true"></i>
+        <span>{{ bannerText }}</span>
+      </div>
+
+      <form class="signup-form" @submit.prevent="emit('submit')">
+        <slot />
+
+        <p v-if="generalError" class="general-error" role="alert">{{ generalError }}</p>
+
+        <div class="modal-actions">
+          <button type="button" class="modal-button" @click="emit('close')">{{ cancelLabel }}</button>
+          <button type="submit" class="modal-button modal-button--primary" :disabled="submitting">
+            {{ submitting ? submittingLabel : submitLabel }}
           </button>
         </div>
-
-        <div v-if="bannerText" class="modal-banner" :class="bannerClass">
-          <i v-if="bannerIcon" class="modal-banner-icon" :class="bannerIcon" aria-hidden="true"></i>
-          <span>{{ bannerText }}</span>
-        </div>
-
-        <form class="signup-form" @submit.prevent="emit('submit')">
-          <slot />
-
-          <p v-if="generalError" class="general-error" role="alert">{{ generalError }}</p>
-
-          <div class="modal-actions">
-            <button type="button" class="modal-button" @click="emit('close')">{{ cancelLabel }}</button>
-            <button type="submit" class="modal-button modal-button--primary" :disabled="submitting">
-              {{ submitting ? submittingLabel : submitLabel }}
-            </button>
-          </div>
-        </form>
-      </div>
+      </form>
     </div>
-  </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
