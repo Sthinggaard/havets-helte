@@ -1,56 +1,47 @@
 <template>
   <div class="signup-landing">
-    <section class="hero">
-      <img v-if="heroImage" class="hero-image" :src="heroImage" :alt="heroTitle" />
-      <div class="hero-scrim" aria-hidden="true" />
+    <PublicHero
+      :image="heroImage"
+      :image-alt="heroTitle"
+      :badge="sectionMeta.badge"
+      count-label="1 aktiv"
+      :title="sectionMeta.title"
+      :copy="sectionMeta.description"
+    >
+      <template #actions>
+        <button type="button" class="hero-action hero-action--primary" @click="scrollToSignup">
+          <i class="ti ti-arrow-down" aria-hidden="true"></i>
+          {{ sectionMeta.cta }}
+        </button>
+        <RouterLink class="hero-action" :to="backHref">
+          <i class="ti ti-arrow-left" aria-hidden="true"></i>
+          Tilbage
+        </RouterLink>
+        <button type="button" class="hero-action" @click="copyCurrentLink">
+          <i class="ti ti-link" aria-hidden="true"></i>
+          Kopiér link
+        </button>
+        <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
+          <i class="ti ti-brand-facebook" aria-hidden="true"></i>
+          Del
+        </button>
+      </template>
 
-      <div class="hero-inner">
-        <div class="hero-brand">
-          <img class="hero-logo" src="/havets-helte-logo.svg" alt="Havets Helte logo" />
-        </div>
-        <div class="hero-kicker">
-          <span class="hero-badge">{{ sectionMeta.badge }}</span>
-          <span class="hero-count">1 aktiv</span>
-        </div>
-
-        <h1 class="hero-title">{{ sectionMeta.title }}</h1>
-        <p class="hero-copy">{{ sectionMeta.description }}</p>
-
-        <div class="hero-actions">
-          <button type="button" class="hero-action hero-action--primary" @click="scrollToSignup">
-            <i class="ti ti-arrow-down" aria-hidden="true"></i>
-            {{ sectionMeta.cta }}
-          </button>
-          <RouterLink class="hero-action" :to="backHref">
-            <i class="ti ti-arrow-left" aria-hidden="true"></i>
-            Tilbage
-          </RouterLink>
-          <button type="button" class="hero-action" @click="copyCurrentLink">
-            <i class="ti ti-link" aria-hidden="true"></i>
-            Kopiér link
-          </button>
-          <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
-            <i class="ti ti-brand-facebook" aria-hidden="true"></i>
-            Del
-          </button>
-        </div>
-
-        <div class="hero-meta" v-if="selectedEvent">
-          <span class="meta-chip">
-            <i class="ti ti-calendar" aria-hidden="true"></i>
-            {{ selectedEvent.dateText }}
-          </span>
-          <span class="meta-chip" v-if="selectedEvent.location">
-            <i class="ti ti-map-pin" aria-hidden="true"></i>
-            {{ selectedEvent.location }}
-          </span>
-          <span class="meta-chip">
-            <i class="ti ti-list" aria-hidden="true"></i>
-            {{ selectedEvent.slots.length }} pladser
-          </span>
-        </div>
-      </div>
-    </section>
+      <template #meta>
+        <span class="meta-chip">
+          <i class="ti ti-calendar" aria-hidden="true"></i>
+          {{ selectedEvent?.dateText }}
+        </span>
+        <span class="meta-chip" v-if="selectedEvent?.location">
+          <i class="ti ti-map-pin" aria-hidden="true"></i>
+          {{ selectedEvent.location }}
+        </span>
+        <span class="meta-chip">
+          <i class="ti ti-list" aria-hidden="true"></i>
+          {{ selectedEvent?.slots.length ?? 0 }} pladser
+        </span>
+      </template>
+    </PublicHero>
 
     <main class="page-shell">
       <section v-if="selectedEvent" ref="signupSection" class="page-section">
@@ -149,76 +140,61 @@
       </section>
     </main>
 
-    <div v-if="modalOpen" class="modal-overlay" @click.self="closeModal">
-      <div class="modal">
-        <div class="modal-head">
-          <div>
-            <div class="modal-title">{{ selectedEvent?.title }}</div>
-            <div class="modal-sub">{{ modalSlot ? modalSlot.label : '' }}<span v-if="modalSlot?.sublabel"> · {{ modalSlot.sublabel }}</span></div>
-          </div>
-          <button type="button" class="icon-button" @click="closeModal">
-            <i class="ti ti-x" aria-hidden="true"></i>
-          </button>
-        </div>
+    <PublicSignupModal
+      :open="modalOpen"
+      :title="selectedEvent?.title || ''"
+      :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
+      :banner-text="waitlistMode ? 'Denne plads er fuld. Tilmeld dig ventelisten.' : ''"
+      banner-icon="ti ti-clock"
+      banner-class="warning"
+      submit-label="Bekræft tilmelding"
+      submitting-label="Tilmelder…"
+      :submitting="submitting"
+      :general-error="errors.general"
+      @close="closeModal"
+      @submit="submit"
+    >
+      <label class="field" :class="{ error: errors.name }">
+        <span class="field-label">Navn</span>
+        <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fulde navn" />
+        <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
+      </label>
 
-        <div v-if="waitlistMode" class="waitlist-banner">
-          <i class="ti ti-clock" aria-hidden="true"></i>
-          Denne plads er fuld. Tilmeld dig ventelisten.
-        </div>
+      <label v-if="showChildToggle" class="check-row">
+        <input v-model="form.childMode" type="checkbox" @change="syncChildMode" />
+        <span>Tilmeld et barn</span>
+      </label>
 
-        <form class="signup-form" @submit.prevent="submit">
-          <label class="field" :class="{ error: errors.name }">
-            <span class="field-label">Navn</span>
-            <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fulde navn" />
-            <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
-          </label>
+      <label v-if="!form.childMode" class="field" :class="{ error: errors.email }">
+        <span class="field-label">Mail</span>
+        <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
+        <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
+      </label>
 
-          <label v-if="showChildToggle" class="check-row">
-            <input v-model="form.childMode" type="checkbox" @change="syncChildMode" />
-            <span>Tilmeld et barn</span>
-          </label>
+      <label v-if="showAdultToggle" class="check-row">
+        <input v-model="form.adult" type="checkbox" />
+        <span>{{ adultLabel }}</span>
+      </label>
 
-          <label v-if="!form.childMode" class="field" :class="{ error: errors.email }">
-            <span class="field-label">Mail</span>
-            <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
-            <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
-          </label>
+      <label v-if="showGroupSize" class="field" :class="{ error: errors.groupSize }">
+        <span class="field-label">Antal deltagere</span>
+        <input
+          v-model.number="form.groupSize"
+          class="field-input"
+          type="number"
+          :min="groupMin"
+          :max="groupMax"
+          step="1"
+          inputmode="numeric"
+        />
+        <span v-if="errors.groupSize" class="field-error" role="alert">{{ errors.groupSize }}</span>
+      </label>
 
-          <label v-if="showAdultToggle" class="check-row">
-            <input v-model="form.adult" type="checkbox" />
-            <span>{{ adultLabel }}</span>
-          </label>
-
-          <label v-if="showGroupSize" class="field" :class="{ error: errors.groupSize }">
-            <span class="field-label">Antal deltagere</span>
-            <input
-              v-model.number="form.groupSize"
-              class="field-input"
-              type="number"
-              :min="groupMin"
-              :max="groupMax"
-              step="1"
-              inputmode="numeric"
-            />
-            <span v-if="errors.groupSize" class="field-error" role="alert">{{ errors.groupSize }}</span>
-          </label>
-
-          <div v-if="modalSlot?.kind === 'paid' && modalSlot.price" class="price-banner">
-            <i class="ti ti-credit-card" aria-hidden="true"></i>
-            Pris: {{ modalSlot.price }} kr. Du bliver sendt til betaling efter tilmelding.
-          </div>
-
-          <p v-if="errors.general" class="general-error" role="alert">{{ errors.general }}</p>
-
-          <div class="modal-actions">
-            <button type="button" class="modal-button" @click="closeModal">Annullér</button>
-            <button type="submit" class="modal-button modal-button--primary" :disabled="submitting">
-              {{ submitting ? 'Tilmelder…' : confirmLabel }}
-            </button>
-          </div>
-        </form>
+      <div v-if="modalSlot?.kind === 'paid' && modalSlot.price" class="price-banner">
+        <i class="ti ti-credit-card" aria-hidden="true"></i>
+        Pris: {{ modalSlot.price }} kr. Du bliver sendt til betaling efter tilmelding.
       </div>
-    </div>
+    </PublicSignupModal>
 
     <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>
   </div>
@@ -229,6 +205,8 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
+import PublicHero from '@/components/public/PublicHero.vue';
+import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { eventItems } from '@/features/events/events.data';
 import type { EventItem } from '@/features/events/events.types';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
@@ -336,16 +314,9 @@ const selectedEvent = computed(() => filteredEvents.value.find(event => event.id
 
 const heroTitle = computed(() => selectedEvent.value?.title || sectionMeta.value.title);
 const heroImage = computed(() => selectedEvent.value?.imageUrl || fallbackImage(props.section));
-const typeLabel = computed(() => sectionMeta.value.badge);
 const backHref = computed(() => {
   const tab = props.section === 'event' ? 'event' : props.section === 'timed' ? 'shift' : 'task';
   return router.resolve({ path: '/', query: { tab } }).href;
-});
-const confirmLabel = computed(() => {
-  if (!modalSlot.value) return 'Bekræft tilmelding';
-  if (waitlistMode.value) return 'Bekræft venteliste';
-  if (modalSlot.value.kind === 'paid' && modalSlot.value.price) return 'Gå til betaling';
-  return 'Bekræft tilmelding';
 });
 
 const showChildToggle = computed(() => modalSlot.value?.kind === 'volunteer');

@@ -1,41 +1,38 @@
 <template>
   <div class="legacy-shifts-page">
-    <section class="hero">
-      <img v-if="heroImage" class="hero-image" :src="heroImage" :alt="heroTitle" />
-      <div class="hero-scrim" aria-hidden="true" />
-
-      <div class="hero-inner">
-        <div class="hero-brand">
-          <img class="hero-logo" src="/havets-helte-logo.svg" alt="Havets Helte logo" />
-        </div>
-        <div class="hero-badge">Havets Helte</div>
-        <h1 class="hero-title">{{ heroTitle }}</h1>
+    <PublicHero
+      :image="heroImage"
+      :image-alt="heroTitle"
+      badge="Havets Helte"
+      :title="heroTitle"
+      :copy="heroCopy"
+    >
+      <template #meta>
         <div class="hero-date" v-if="selectedEvent">
           <i class="ti ti-calendar" aria-hidden="true"></i>
           {{ selectedEvent.dateText }}
         </div>
-        <p class="hero-desc">{{ heroCopy }}</p>
+      </template>
 
-        <div class="hero-actions">
-          <button type="button" class="hero-action hero-action--primary" @click="scrollToRoleTabs">
-            <i class="ti ti-arrow-down" aria-hidden="true"></i>
-            Se vagter
-          </button>
-          <RouterLink class="hero-action" :to="backHref">
-            <i class="ti ti-arrow-left" aria-hidden="true"></i>
-            Tilbage
-          </RouterLink>
-          <button type="button" class="hero-action" @click="copyCurrentLink">
-            <i class="ti ti-link" aria-hidden="true"></i>
-            Kopiér link
-          </button>
-          <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
-            <i class="ti ti-brand-facebook" aria-hidden="true"></i>
-            Del
-          </button>
-        </div>
-      </div>
-    </section>
+      <template #actions>
+        <button type="button" class="hero-action hero-action--primary" @click="scrollToRoleTabs">
+          <i class="ti ti-arrow-down" aria-hidden="true"></i>
+          Se vagter
+        </button>
+        <RouterLink class="hero-action" :to="backHref">
+          <i class="ti ti-arrow-left" aria-hidden="true"></i>
+          Tilbage
+        </RouterLink>
+        <button type="button" class="hero-action" @click="copyCurrentLink">
+          <i class="ti ti-link" aria-hidden="true"></i>
+          Kopiér link
+        </button>
+        <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
+          <i class="ti ti-brand-facebook" aria-hidden="true"></i>
+          Del
+        </button>
+      </template>
+    </PublicHero>
 
     <main class="content-shell">
       <section v-if="selectedEvent" ref="roleTabsSection" class="page-section">
@@ -134,47 +131,37 @@
       </section>
     </main>
 
-    <div v-if="modalOpen" class="modal-overlay" @click.self="closeModal">
-      <div class="modal">
-        <div class="modal-title">{{ selectedEvent?.title }}</div>
-        <div class="modal-sub">
-          {{ modalSlot ? modalSlot.label : '' }}<span v-if="modalSlot?.sublabel"> · {{ modalSlot.sublabel }}</span>
-        </div>
+    <PublicSignupModal
+      :open="modalOpen"
+      :title="selectedEvent?.title || ''"
+      :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
+      :banner-text="showAdultToggle ? 'Mindst én hjælper over 18 år pr. vagt i drinksboden.' : ''"
+      banner-icon="ti ti-id"
+      banner-class="info"
+      submit-label="Tilmeld mig"
+      submitting-label="Tilmelder…"
+      :submitting="submitting"
+      :general-error="errors.general"
+      @close="closeModal"
+      @submit="submit"
+    >
+      <label class="field" :class="{ error: errors.name }">
+        <span class="field-label">Dit navn</span>
+        <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fornavn Efternavn" />
+        <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
+      </label>
 
-        <div v-if="showAdultToggle" class="modal-note">
-          <i class="ti ti-id" aria-hidden="true"></i>
-          Mindst én hjælper over 18 år pr. vagt i drinksboden.
-        </div>
+      <label class="field" :class="{ error: errors.email }">
+        <span class="field-label">Din mail</span>
+        <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
+        <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
+      </label>
 
-        <form class="signup-form" @submit.prevent="submit">
-          <label class="field" :class="{ error: errors.name }">
-            <span class="field-label">Dit navn</span>
-            <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fornavn Efternavn" />
-            <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
-          </label>
-
-          <label class="field" :class="{ error: errors.email }">
-            <span class="field-label">Din mail</span>
-            <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
-            <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
-          </label>
-
-          <label v-if="showAdultToggle" class="check-row">
-            <input v-model="form.adult" type="checkbox" />
-            <span>Jeg er over 18 år</span>
-          </label>
-
-          <div v-if="errors.general" class="general-error" role="alert">{{ errors.general }}</div>
-
-          <div class="modal-actions">
-            <button type="button" class="modal-button" @click="closeModal">Annullér</button>
-            <button type="submit" class="modal-button modal-button--primary" :disabled="submitting">
-              {{ submitting ? 'Tilmelder…' : 'Tilmeld mig' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      <label v-if="showAdultToggle" class="check-row">
+        <input v-model="form.adult" type="checkbox" />
+        <span>Jeg er over 18 år</span>
+      </label>
+    </PublicSignupModal>
 
     <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>
   </div>
@@ -185,6 +172,8 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
+import PublicHero from '@/components/public/PublicHero.vue';
+import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { eventItems } from '@/features/events/events.data';
 import type { EventItem } from '@/features/events/events.types';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
