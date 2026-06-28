@@ -1,52 +1,54 @@
 <template>
-  <div class="legacy-shifts-page">
-    <PublicHero
-      :image="heroImage"
-      :image-alt="heroTitle"
-      badge="Havets Helte"
-      :title="heroTitle"
-      :copy="heroCopy"
-    >
-      <template #meta>
-        <div class="hero-date" v-if="selectedEvent">
-          <i class="ti ti-calendar" aria-hidden="true"></i>
-          {{ selectedEvent.dateText }}
-        </div>
-      </template>
+  <PublicLandingPageShell
+    :hero-image="heroImage"
+    :hero-image-alt="heroTitle"
+    hero-badge="Havets Helte"
+    :hero-title="heroTitle"
+    :hero-copy="heroCopy"
+    section-eyebrow="Vagtplan"
+    :section-title="selectedEvent?.title || heroTitle"
+    :section-chip="selectedEvent?.dateText || ''"
+    :section-lead="selectedEvent?.description || heroCopy"
+  >
+    <template #hero-meta>
+      <div class="hero-date" v-if="selectedEvent">
+        <i class="ti ti-calendar" aria-hidden="true"></i>
+        {{ selectedEvent.dateText }}
+      </div>
+    </template>
 
-      <template #actions>
-        <button type="button" class="hero-action hero-action--primary" @click="scrollToRoleTabs">
-          <i class="ti ti-arrow-down" aria-hidden="true"></i>
-          Se vagter
-        </button>
-        <RouterLink class="hero-action" :to="backHref">
-          <i class="ti ti-arrow-left" aria-hidden="true"></i>
-          Tilbage
-        </RouterLink>
-        <button type="button" class="hero-action" @click="copyCurrentLink">
-          <i class="ti ti-link" aria-hidden="true"></i>
-          Kopiér link
-        </button>
-        <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
-          <i class="ti ti-brand-facebook" aria-hidden="true"></i>
-          Del
-        </button>
-      </template>
-    </PublicHero>
+    <template #hero-actions>
+      <button type="button" class="hero-action hero-action--primary" @click="scrollToRoleTabs">
+        <i class="ti ti-arrow-down" aria-hidden="true"></i>
+        Se vagter
+      </button>
+      <RouterLink class="hero-action" :to="backHref">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i>
+        Tilbage
+      </RouterLink>
+      <button type="button" class="hero-action" @click="copyCurrentLink">
+        <i class="ti ti-link" aria-hidden="true"></i>
+        Kopiér link
+      </button>
+      <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
+        <i class="ti ti-brand-facebook" aria-hidden="true"></i>
+        Del
+      </button>
+    </template>
 
-    <main class="content-shell">
-      <section v-if="selectedEvent" ref="roleTabsSection" class="page-section">
-        <div class="info-strip">
-          <div class="info-chip">
-            <strong><i class="ti ti-map-pin"></i>Sted</strong>
-            {{ selectedEvent.location || 'Havets Helte' }}
-          </div>
-          <div class="info-chip">
-            <strong><i class="ti ti-clock"></i>Vagter</strong>
-            {{ shiftSummary }}
-          </div>
-        </div>
+    <template #info>
+      <span class="info-chip">
+        <i class="ti ti-map-pin" aria-hidden="true"></i>
+        {{ selectedEvent?.location || 'Havets Helte' }}
+      </span>
+      <span class="info-chip">
+        <i class="ti ti-clock" aria-hidden="true"></i>
+        {{ shiftSummary || 'Vagter' }}
+      </span>
+    </template>
 
+    <template #body>
+      <section v-if="selectedEvent" ref="roleTabsSection" class="shift-body">
         <div class="role-tabs" v-if="roleGroups.length">
           <button
             v-for="group in roleGroups"
@@ -123,13 +125,11 @@
         </div>
       </section>
 
-      <section v-else class="page-section">
-        <div class="empty-state">
-          <div class="empty-state-title">Ingen aktiv vagtplan</div>
-          <div class="empty-state-copy">Der ligger ikke et vagtopslag til denne side endnu.</div>
-        </div>
+      <section v-else class="empty-state">
+        <div class="empty-state-title">Ingen aktiv vagtplan</div>
+        <div class="empty-state-copy">Der ligger ikke et vagtopslag til denne side endnu.</div>
       </section>
-    </main>
+    </template>
 
     <PublicSignupModal
       :open="modalOpen"
@@ -163,8 +163,10 @@
       </label>
     </PublicSignupModal>
 
-    <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>
-  </div>
+    <template #toast>
+      <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>
+    </template>
+  </PublicLandingPageShell>
 </template>
 
 <script setup lang="ts">
@@ -172,7 +174,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
-import PublicHero from '@/components/public/PublicHero.vue';
+import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { eventItems } from '@/features/events/events.data';
 import type { EventItem } from '@/features/events/events.types';

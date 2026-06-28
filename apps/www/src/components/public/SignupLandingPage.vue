@@ -1,75 +1,67 @@
 <template>
-  <div class="signup-landing">
-    <PublicHero
-      :image="heroImage"
-      :image-alt="heroTitle"
-      :badge="sectionMeta.badge"
-      count-label="1 aktiv"
-      :title="sectionMeta.title"
-      :copy="sectionMeta.description"
-    >
-      <template #actions>
-        <button type="button" class="hero-action hero-action--primary" @click="scrollToSignup">
-          <i class="ti ti-arrow-down" aria-hidden="true"></i>
-          {{ sectionMeta.cta }}
-        </button>
-        <RouterLink class="hero-action" :to="backHref">
-          <i class="ti ti-arrow-left" aria-hidden="true"></i>
-          Tilbage
-        </RouterLink>
-        <button type="button" class="hero-action" @click="copyCurrentLink">
-          <i class="ti ti-link" aria-hidden="true"></i>
-          Kopiér link
-        </button>
-        <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
-          <i class="ti ti-brand-facebook" aria-hidden="true"></i>
-          Del
-        </button>
-      </template>
+  <PublicLandingPageShell
+    :hero-image="heroImage"
+    :hero-image-alt="heroTitle"
+    :hero-badge="sectionMeta.badge"
+    hero-count-label="1 aktiv"
+    :hero-title="sectionMeta.title"
+    :hero-copy="sectionMeta.description"
+    section-eyebrow="Tilmelding"
+    :section-title="selectedEvent?.title || sectionMeta.title"
+    :section-chip="selectedEvent?.dateText || ''"
+    :section-lead="selectedEvent?.description || ''"
+  >
+    <template #hero-actions>
+      <button type="button" class="hero-action hero-action--primary" @click="scrollToSignup">
+        <i class="ti ti-arrow-down" aria-hidden="true"></i>
+        {{ sectionMeta.cta }}
+      </button>
+      <RouterLink class="hero-action" :to="backHref">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i>
+        Tilbage
+      </RouterLink>
+      <button type="button" class="hero-action" @click="copyCurrentLink">
+        <i class="ti ti-link" aria-hidden="true"></i>
+        Kopiér link
+      </button>
+      <button type="button" class="hero-action" @click="shareCurrentOnFacebook">
+        <i class="ti ti-brand-facebook" aria-hidden="true"></i>
+        Del
+      </button>
+    </template>
 
-      <template #meta>
-        <span class="meta-chip">
-          <i class="ti ti-calendar" aria-hidden="true"></i>
-          {{ selectedEvent?.dateText }}
-        </span>
-        <span class="meta-chip" v-if="selectedEvent?.location">
-          <i class="ti ti-map-pin" aria-hidden="true"></i>
-          {{ selectedEvent.location }}
-        </span>
-        <span class="meta-chip">
-          <i class="ti ti-list" aria-hidden="true"></i>
-          {{ selectedEvent?.slots.length ?? 0 }} pladser
-        </span>
-      </template>
-    </PublicHero>
+    <template #hero-meta>
+      <span class="meta-chip">
+        <i class="ti ti-calendar" aria-hidden="true"></i>
+        {{ selectedEvent?.dateText }}
+      </span>
+      <span class="meta-chip" v-if="selectedEvent?.location">
+        <i class="ti ti-map-pin" aria-hidden="true"></i>
+        {{ selectedEvent.location }}
+      </span>
+      <span class="meta-chip">
+        <i class="ti ti-list" aria-hidden="true"></i>
+        {{ selectedEvent?.slots.length ?? 0 }} pladser
+      </span>
+    </template>
 
-    <main class="page-shell">
-      <section v-if="selectedEvent" ref="signupSection" class="page-section">
-        <div class="section-head section-head--compact">
-          <div>
-            <p class="eyebrow">Tilmelding</p>
-            <h2 class="section-title">{{ selectedEvent.title }}</h2>
-          </div>
-          <div class="section-chip" v-if="selectedEvent.dateText">{{ selectedEvent.dateText }}</div>
-        </div>
+    <template #info>
+      <span class="info-chip" v-if="selectedEvent?.location">
+        <i class="ti ti-map-pin" aria-hidden="true"></i>
+        {{ selectedEvent.location }}
+      </span>
+      <span class="info-chip">
+        <i class="ti ti-list" aria-hidden="true"></i>
+        {{ selectedEvent?.slots.length ?? 0 }} slots
+      </span>
+      <span class="info-chip" v-if="selectedEvent?.paymentUrl">
+        <i class="ti ti-credit-card" aria-hidden="true"></i>
+        Betaling via MobilePay
+      </span>
+    </template>
 
-        <div class="info-strip">
-          <span class="info-chip" v-if="selectedEvent.location">
-            <i class="ti ti-map-pin" aria-hidden="true"></i>
-            {{ selectedEvent.location }}
-          </span>
-          <span class="info-chip">
-            <i class="ti ti-list" aria-hidden="true"></i>
-            {{ selectedEvent.slots.length }} slots
-          </span>
-          <span class="info-chip" v-if="selectedEvent.paymentUrl">
-            <i class="ti ti-credit-card" aria-hidden="true"></i>
-            Betaling via MobilePay
-          </span>
-        </div>
-
-        <p v-if="selectedEvent.description" class="lead event-lead">{{ selectedEvent.description }}</p>
-
+    <template #body>
+      <div v-if="selectedEvent">
         <div v-if="loadingSignups" class="loading-row">
           <i class="ti ti-loader spinning" aria-hidden="true"></i>
           Henter tilmeldinger…
@@ -137,8 +129,8 @@
             </div>
           </article>
         </div>
-      </section>
-    </main>
+      </div>
+    </template>
 
     <PublicSignupModal
       :open="modalOpen"
@@ -196,8 +188,10 @@
       </div>
     </PublicSignupModal>
 
-    <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>
-  </div>
+    <template #toast>
+      <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>
+    </template>
+  </PublicLandingPageShell>
 </template>
 
 <script setup lang="ts">
@@ -205,7 +199,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
-import PublicHero from '@/components/public/PublicHero.vue';
+import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { eventItems } from '@/features/events/events.data';
 import type { EventItem } from '@/features/events/events.types';
