@@ -111,6 +111,15 @@ export function useHomePage() {
     syncRoute();
   }
 
+  function feedHref(itemId: string) {
+    const item = homeFeedItems.find(feed => feed.id === itemId);
+    if (!item) return '/';
+    return router.resolve({
+      path: item.ctaRoute,
+      query: item.id ? { event: item.id } : undefined,
+    }).href;
+  }
+
   function selectNextVisibleFeed() {
     const currentIndex = visibleFeed.value.findIndex(item => item.id === selectedFeedId.value);
     const nextItem = visibleFeed.value[currentIndex + 1] ?? visibleFeed.value[0] ?? null;
@@ -173,6 +182,7 @@ export function useHomePage() {
     mineCounts,
     mineFilter,
     routeHref,
+    feedHref,
     selectedFeedId,
     selectFeed,
     selectNextVisibleFeed,

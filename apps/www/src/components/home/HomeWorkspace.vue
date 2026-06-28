@@ -85,21 +85,20 @@
                   <i class="ti ti-link" aria-hidden="true" />
                   Kopiér link
                 </button>
-                <router-link class="btn-action" :to="featuredFeed.ctaRoute">
+                <RouterLink class="btn-action" :to="feedHref(featuredFeed.id)">
                   {{ featuredFeed.ctaLabel }}
-                </router-link>
+                </RouterLink>
               </div>
             </div>
           </section>
 
           <div class="events-grid">
-            <button
+            <RouterLink
               v-for="item in visibleFeed"
               :key="item.id"
-              type="button"
               class="event-card"
               :class="{ active: item.id === selectedFeedId }"
-              @click="selectFeed(item.id)"
+              :to="feedHref(item.id)"
             >
               <img class="event-card-image" :src="item.image" :alt="item.title" />
               <div class="event-card-body">
@@ -114,7 +113,7 @@
                   <span>{{ typeLabel(item.type) }}</span>
                 </div>
               </div>
-            </button>
+            </RouterLink>
           </div>
         </div>
 
@@ -164,8 +163,8 @@ const {
   mineFilter,
   openFacebookShare,
   copyLink,
+  feedHref,
   selectedFeedId,
-  selectFeed,
   setActiveTab,
   setMineFilter,
   typeLabel,

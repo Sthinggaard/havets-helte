@@ -25,8 +25,8 @@ export const homeHero = {
 } as const;
 
 function toCtaLabel(type: EventFilterType) {
-  if (type === 'event') return 'Se event';
-  if (type === 'shift') return 'Find en vagt';
+  if (type === 'event') return 'Meld dig på';
+  if (type === 'shift') return 'Se vagter';
   return 'Se opgaver';
 }
 
