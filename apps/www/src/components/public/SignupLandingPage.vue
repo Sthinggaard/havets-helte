@@ -632,6 +632,7 @@ onMounted(loadEvents);
   min-height: 100vh;
   background: #f6f6f6;
   color: var(--text);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hero {
@@ -707,13 +708,6 @@ onMounted(loadEvents);
   font-weight: 700;
 }
 
-.hero-badge,
-.hero-count {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
-}
-
 .hero-title {
   margin: 0;
   max-width: 760px;
@@ -745,13 +739,22 @@ onMounted(loadEvents);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s, background 0.15s, border-color 0.15s, opacity 0.15s;
+  transition:
+    transform 0.15s var(--ease-out-quint),
+    background 0.15s var(--ease-out-quint),
+    border-color 0.15s var(--ease-out-quint),
+    opacity 0.15s var(--ease-out-quint);
 }
 
 .hero-action:hover,
 .slot-button:hover,
 .modal-button:hover {
   transform: translateY(-1px);
+}
+
+.hero-action:active,
+.slot-button:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .hero-action--primary,
@@ -940,6 +943,7 @@ onMounted(loadEvents);
   border: 1px solid rgba(216, 225, 234, 0.95);
   border-radius: 18px;
   background: #fff;
+  animation: slot-in 280ms var(--ease-out-quint) backwards;
 }
 
 .slot-card-head {
@@ -992,6 +996,7 @@ onMounted(loadEvents);
   border-radius: 14px;
   background: var(--success-bg);
   border: 1px solid var(--success-border);
+  animation: row-in 260ms var(--ease-out-quint) backwards;
 }
 
 .signup-row.waitlist {
@@ -1221,12 +1226,40 @@ onMounted(loadEvents);
   padding: 12px 18px;
   border-radius: 999px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
-  transition: transform 0.25s ease;
+  transition: transform 0.28s var(--ease-out-quint);
   z-index: 60;
 }
 
 .toast.show {
   transform: translateX(-50%) translateY(0);
+}
+
+/* Arrival motion. The new signup row animates in on mount (peak-end feedback);
+   slot cards stagger on first load. Global prefers-reduced-motion disables both. */
+@keyframes slot-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.slot-card:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.slot-card:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.slot-card:nth-child(n + 4) {
+  animation-delay: 135ms;
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 
 @media (max-width: 840px) {

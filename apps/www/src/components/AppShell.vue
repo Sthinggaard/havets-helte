@@ -9,7 +9,7 @@
 
         <nav class="nav" aria-label="Sektioner">
           <router-link
-            v-for="item in navigationItems"
+            v-for="item in navItems"
             :key="item.path"
             class="nav-link"
             :to="item.path"
@@ -35,8 +35,9 @@ import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useRoute } from 'vue-router';
 
-import { navigationItems } from '@/content/navigation';
+import { adminNavigationItems, navigationItems } from '@/content/navigation';
 
 const route = useRoute();
 const isLanding = computed(() => route.meta.shell === 'landing');
+const navItems = computed(() => (route.path.startsWith('/admin') ? adminNavigationItems : navigationItems));
 </script>
