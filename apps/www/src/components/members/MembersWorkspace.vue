@@ -24,6 +24,63 @@
         </div>
       </template>
 
+      <section class="member-create-panel">
+        <div class="member-create-head">
+          <div>
+            <p class="eyebrow">Nyt medlem</p>
+            <h2 class="member-create-title">Opret medlem</h2>
+          </div>
+          <p class="member-create-copy">Det nye medlem bliver tilføjet til listen med det samme og kan vælges videre herfra.</p>
+        </div>
+
+        <form class="member-create-form" @submit.prevent="handleCreateMember">
+          <label class="field">
+            <span class="field-label">Navn</span>
+            <input v-model="memberName" class="field-input" type="text" autocomplete="name" placeholder="Fulde navn" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Gren</span>
+            <select v-model="memberBranchId" class="field-input">
+              <option v-for="branch in branchOptions" :key="branch.id" :value="branch.id">
+                {{ branch.label }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Mødedag</span>
+            <select v-model="memberWeekday" class="field-input">
+              <option v-for="weekday in memberWeekdayOptions" :key="weekday" :value="weekday">
+                {{ weekday }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Fødselsår</span>
+            <input
+              v-model.number="memberBirthYear"
+              class="field-input"
+              type="number"
+              min="1900"
+              :max="currentYear"
+              inputmode="numeric"
+            />
+          </label>
+
+          <label class="member-create-switch">
+            <input v-model="memberActive" type="checkbox" />
+            <span>Aktiv</span>
+          </label>
+
+          <div class="member-create-actions">
+            <p v-if="memberError" class="member-create-error" role="alert">{{ memberError }}</p>
+            <button type="submit" class="btn-action btn-action--primary">Opret medlem</button>
+          </div>
+        </form>
+      </section>
+
       <section class="members-toolbar">
         <input
           class="day-search-input"
@@ -211,8 +268,16 @@ const {
   branchFilter,
   branchOptions,
   clearMemberImage,
+  createMember,
   counts,
   filteredMembers,
+  memberActive,
+  memberBirthYear,
+  memberBranchId,
+  memberError,
+  memberName,
+  memberWeekday,
+  memberWeekdayOptions,
   searchTerm,
   selectedMember,
   selectMember,
@@ -227,6 +292,8 @@ const { items, categories, uploadItem } = useLibraryPage();
 
 const pickerOpen = ref(false);
 
+const currentYear = new Date().getFullYear();
+
 const statusOptions = computed(() => [
   { id: 'all' as const, label: 'Alle', count: counts.value.total },
   { id: 'active' as const, label: 'Aktive', count: counts.value.active },
@@ -236,6 +303,10 @@ const statusOptions = computed(() => [
 function onSearchInput(event: Event) {
   const target = event.target as HTMLInputElement | null;
   searchTerm.value = target?.value ?? '';
+}
+
+function handleCreateMember() {
+  createMember();
 }
 
 function openImagePicker() {
@@ -258,3 +329,111 @@ async function handleImageUpload(file: File, categoryId: string) {
   }
 }
 </script>
+
+<style scoped>
+.member-create-panel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(216, 225, 234, 0.92);
+}
+
+.member-create-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.member-create-title {
+  margin: 0;
+  color: var(--navy-dark);
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+.member-create-copy {
+  margin: 0;
+  max-width: 560px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.member-create-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--navy-dark);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.field-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+.field-input:focus {
+  outline: 2px solid rgba(15, 70, 123, 0.18);
+  outline-offset: 1px;
+}
+
+.member-create-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+  padding: 0 0 10px;
+  color: var(--navy-dark);
+  font-weight: 700;
+}
+
+.member-create-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+.member-create-error {
+  margin: 0;
+  color: #c94853;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .member-create-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .member-create-form {
+    grid-template-columns: 1fr;
+  }
+
+  .member-create-switch {
+    padding: 0;
+  }
+}
+</style>

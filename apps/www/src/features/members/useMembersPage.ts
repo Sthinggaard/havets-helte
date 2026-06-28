@@ -6,6 +6,7 @@ import {
   createRosterMemberId,
   rosterBranches,
   rosterMembers,
+  saveRosterMembers,
 } from '../roster/roster.data';
 import type { BranchId } from '../roster/roster.types';
 import type { MemberProfile, MemberStatusFilter } from './members.types';
@@ -39,6 +40,14 @@ export function useMembersPage() {
       memberWeekday.value = nextWeekdays[0] ?? 'Mandag';
     },
     { immediate: true },
+  );
+
+  watch(
+    rosterMembers,
+    members => {
+      saveRosterMembers(members);
+    },
+    { deep: true },
   );
 
   const filteredMembers = computed(() => {

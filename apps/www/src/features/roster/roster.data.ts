@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue';
+import { reactive } from 'vue';
 
 import type { Branch, Member, BranchId } from './roster.types';
 
@@ -66,7 +66,7 @@ function memberInitials(name: string) {
 }
 
 function memberTeam(weekday: string) {
-  return `${weekday}hold`;
+  return `${weekday}shold`;
 }
 
 function cloneDefaults(): Member[] {
@@ -130,14 +130,9 @@ export function buildMemberTeam(weekday: string) {
 
 export const rosterMembers: Member[] = reactive(loadRosterMembers());
 
-if (typeof window !== 'undefined') {
-  watch(
-    rosterMembers,
-    members => {
-      window.localStorage.setItem(rosterStorageKey, JSON.stringify(members));
-    },
-    { deep: true },
-  );
+export function saveRosterMembers(members: Member[] = rosterMembers) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(rosterStorageKey, JSON.stringify(members));
 }
 
 export function branchLabel(branchId: string) {
