@@ -164,11 +164,16 @@
           <div class="img-block">
             <img v-if="draft.imageUrl" class="img-preview" :src="draft.imageUrl" alt="" />
             <div class="img-actions">
+              <input ref="uploadInput" class="sr-only" type="file" accept="image/*" @change="handleUpload" />
+              <button type="button" class="btn-action" @click="triggerUpload">
+                <i class="ti ti-upload" aria-hidden="true"></i>Upload nyt billede
+              </button>
               <button type="button" class="btn-action" @click="pickerOpen = true">
                 <i class="ti ti-photo-search" aria-hidden="true"></i>Vælg fra bibliotek
               </button>
               <button v-if="draft.imageUrl" type="button" class="btn-action" @click="draft.imageUrl = ''">Fjern billede</button>
             </div>
+            <p v-if="uploadError" class="upload-error" role="alert">{{ uploadError }}</p>
           </div>
         </div>
 
@@ -253,6 +258,7 @@ import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.v
 import { useEventAdmin } from '@/features/eventAdmin/useEventAdmin';
 import type { AdminEvent, EventSection } from '@/features/eventAdmin/eventAdmin.types';
 import { eventItems } from '@/features/events/events.data';
+import { IMAGE_LIBRARY_UNCATEGORIZED_ID } from '@/features/library/library.data';
 import { useLibraryPage } from '@/features/library/useLibraryPage';
 import type { LibraryItem } from '@/features/library/library.types';
 
@@ -312,9 +318,11 @@ const {
   items: libraryItems,
   categories: libraryCategories,
   load: loadLibrary,
+  uploadError,
   uploadItem,
 } = useLibraryPage({ autoLoad: false });
 
+const uploadInput = ref<HTMLInputElement | null>(null);
 const pickerOpen = ref(false);
 const libraryLoaded = ref(false);
 const route = useRoute();
@@ -540,6 +548,21 @@ function locationOptionId(index: number) {
 function onPickImage(item: LibraryItem) {
   draft.imageUrl = item.imageUrl;
   pickerOpen.value = false;
+}
+
+function triggerUpload() {
+  uploadInput.value?.click();
+}
+
+async function handleUpload(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  const uploaded = await uploadItem(file, IMAGE_LIBRARY_UNCATEGORIZED_ID);
+  if (uploaded) {
+    draft.imageUrl = uploaded.imageUrl;
+  }
+  input.value = '';
 }
 
 async function onUploadImage(file: File, categoryId: string) {
@@ -934,6 +957,13 @@ textarea.form-input {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.upload-error {
+  margin: 0;
+  color: #c94853;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .divider {
