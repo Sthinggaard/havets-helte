@@ -104,8 +104,8 @@ function eventTypeLabel(type: 'event' | 'task' | 'shift') {
 
 // Route an event into the matching admin form, opened in edit mode via ?edit.
 const ADMIN_ROUTE: Record<EventItem['type'], string> = {
-  shift: '/vagter',
-  task: '/opgaver',
+  shift: '/admin/vagter',
+  task: '/admin/opgaver',
   event: '/admin/arrangementer',
 };
 

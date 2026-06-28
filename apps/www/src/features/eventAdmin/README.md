@@ -13,6 +13,8 @@ The admin surface is the source of truth for creating, editing, and deleting eve
 - `EventAdminWorkspace.vue` is the admin list/form shell.
 - `useEventAdmin.ts` owns the editable draft, validation, save, and delete flow.
 - `eventAdmin.data.ts` owns the shared event record mapping and slot conversion logic.
+- Admin entry routes live under `/admin/vagter`, `/admin/opgaver`, and `/admin/arrangementer`.
+- Those pages are the editable backend versions of the public landing pages.
 - Public pages must not become alternate edit surfaces.
 - Public landing page refactors must not move admin behavior into `src/components/public`.
 

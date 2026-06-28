@@ -1,5 +1,5 @@
 <template>
-  <div class="public-landing-shell">
+  <div class="public-landing-shell" :style="shellStyle">
     <PublicHero
       :image="heroImage"
       :image-alt="heroImageAlt || heroTitle"
@@ -45,8 +45,9 @@
 <script setup lang="ts">
 import PublicHero from '@/components/public/PublicHero.vue';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
+    contentWidth?: string;
     heroBadge?: string;
     heroCopy: string;
     heroCountLabel?: string;
@@ -59,6 +60,7 @@ withDefaults(
     sectionTitle: string;
   }>(),
   {
+    contentWidth: '560px',
     heroBadge: '',
     heroCountLabel: '',
     heroImage: '',
@@ -68,6 +70,10 @@ withDefaults(
     sectionLead: '',
   },
 );
+
+const shellStyle = {
+  '--landing-shell-width': props.contentWidth,
+} as Record<string, string>;
 </script>
 
 <style scoped>
@@ -78,7 +84,7 @@ withDefaults(
 }
 
 .page-shell {
-  width: min(560px, calc(100% - 32px));
+  width: min(var(--landing-shell-width), calc(100% - 32px));
   margin: -72px auto 48px;
   display: grid;
   gap: 16px;

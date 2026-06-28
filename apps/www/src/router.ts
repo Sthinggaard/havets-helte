@@ -12,6 +12,8 @@ const MembersPage = () => import('./pages/MembersPage.vue');
 const BranchesPage = () => import('./pages/BranchesPage.vue');
 const AdminLibraryPage = () => import('./pages/AdminLibraryPage.vue');
 const AdminArrangementerPage = () => import('./pages/AdminArrangementerPage.vue');
+const AdminOpgaverPage = () => import('./pages/AdminOpgaverPage.vue');
+const AdminVagterPage = () => import('./pages/AdminVagterPage.vue');
 const AdminShellPage = () => import('./pages/AdminShellPage.vue');
 
 const routes = [
@@ -33,14 +35,14 @@ const routes = [
     path: '/opgaver',
     name: 'tasks',
     component: TasksPage,
-    alias: ['/opgaver.html', '/admin-opgaver.html', '/admin-opgaver-form.html'],
+    alias: ['/opgaver.html'],
     meta: { shell: 'landing' },
   },
   {
     path: '/vagter',
     name: 'shifts',
     component: ShiftsPage,
-    alias: ['/vagter.html', '/admin-vagter.html', '/admin-vagter-form.html'],
+    alias: ['/vagter.html'],
     meta: { shell: 'landing' },
   },
   {
@@ -72,6 +74,18 @@ const routes = [
     name: 'admin-library',
     component: AdminLibraryPage,
     alias: ['/admin-billedbibliotek.html'],
+  },
+  {
+    path: '/admin/opgaver',
+    name: 'admin-opgaver',
+    component: AdminOpgaverPage,
+    alias: ['/admin-opgaver.html', '/admin-opgaver-form.html'],
+  },
+  {
+    path: '/admin/vagter',
+    name: 'admin-vagter',
+    component: AdminVagterPage,
+    alias: ['/admin-vagter.html', '/admin-vagter-form.html'],
   },
   {
     path: '/admin/arrangementer',

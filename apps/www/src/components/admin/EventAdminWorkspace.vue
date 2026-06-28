@@ -1,22 +1,60 @@
 <template>
-  <div class="page-stack">
-    <PageCard>
-      <template #header>
-        <div class="workspace-header">
-          <div>
-            <p class="eyebrow">{{ config.title }}</p>
-            <h1 class="page-title">{{ mode === 'form' ? formTitle : config.title }}</h1>
-          </div>
-          <button v-if="mode === 'list'" type="button" class="btn-action btn-action--primary" @click="startCreate()">
-            <i class="ti ti-plus" aria-hidden="true"></i>{{ config.newLabel }}
-          </button>
-          <button v-else type="button" class="btn-action" @click="cancel">
-            <i class="ti ti-arrow-left" aria-hidden="true"></i>Annullér
-          </button>
-        </div>
-      </template>
+  <PublicLandingPageShell
+    content-width="1100px"
+    hero-badge="Lederportal"
+    :hero-copy="heroCopy"
+    :hero-count-label="heroCountLabel"
+    :hero-image="heroImage"
+    :hero-image-alt="heroTitle"
+    :hero-title="heroTitle"
+    :section-chip="sectionChip"
+    :section-eyebrow="sectionEyebrow"
+    :section-lead="sectionLead"
+    :section-title="sectionTitle"
+  >
+    <template #hero-actions>
+      <button v-if="mode === 'list'" type="button" class="hero-action hero-action--primary" @click="startCreate()">
+        <i class="ti ti-plus" aria-hidden="true"></i>{{ config.newLabel }}
+      </button>
+      <button v-else type="button" class="hero-action hero-action--primary" @click="cancel">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i>Annullér
+      </button>
+      <button v-if="mode === 'form'" type="button" class="hero-action" @click="cancel">
+        <i class="ti ti-layout-list" aria-hidden="true"></i>Tilbage til oversigt
+      </button>
+    </template>
 
-      <!-- List view -->
+    <template #hero-meta>
+      <span class="meta-chip">
+        <i class="ti ti-list" aria-hidden="true"></i>
+        {{ heroCountLabel }}
+      </span>
+      <span class="meta-chip">
+        <i class="ti ti-photo" aria-hidden="true"></i>
+        {{ mode === 'form' ? 'Formular' : 'Oversigt' }}
+      </span>
+      <span v-if="mode === 'form'" class="meta-chip">
+        <i class="ti ti-eye" aria-hidden="true"></i>
+        {{ draft.active ? 'Synlig' : 'Skjult' }}
+      </span>
+    </template>
+
+    <template #info>
+      <span class="info-chip">
+        <i class="ti ti-calendar" aria-hidden="true"></i>
+        {{ config.title }}
+      </span>
+      <span class="info-chip" v-if="mode === 'list'">
+        <i class="ti ti-edit" aria-hidden="true"></i>
+        Rediger landing page-indhold
+      </span>
+      <span class="info-chip" v-else>
+        <i class="ti ti-layout-list" aria-hidden="true"></i>
+        {{ formTitle }}
+      </span>
+    </template>
+
+    <template #body>
       <section v-if="mode === 'list'" class="admin-list">
         <p v-if="loading" class="lead">Henter {{ config.title.toLowerCase() }}…</p>
         <p v-else-if="loadError" class="admin-error">{{ loadError }}</p>
@@ -48,7 +86,6 @@
         </ul>
       </section>
 
-      <!-- Form view -->
       <form v-else class="admin-form" @submit.prevent="onSave">
         <div class="field" :class="{ 'has-error': titleError }">
           <label for="evTitle">Titel *</label>
@@ -176,7 +213,7 @@
           <p v-if="saveError" class="admin-error" role="alert">{{ saveError }}</p>
         </div>
       </form>
-    </PageCard>
+    </template>
 
     <LibraryPickerModal
       :open="pickerOpen"
@@ -198,7 +235,7 @@
       @confirm="performRemove"
       @cancel="pendingRemove = null"
     />
-  </div>
+  </PublicLandingPageShell>
 </template>
 
 <script setup lang="ts">
@@ -206,9 +243,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router';
 
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import PageCard from '@/components/PageCard.vue';
 import EventSlotEditor from '@/components/admin/EventSlotEditor.vue';
 import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
+import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import { useEventAdmin } from '@/features/eventAdmin/useEventAdmin';
 import type { AdminEvent, EventSection } from '@/features/eventAdmin/eventAdmin.types';
 import { eventItems } from '@/features/events/events.data';
@@ -242,6 +279,30 @@ const {
   save,
   remove,
 } = useEventAdmin(props.section);
+
+const heroTitle = computed(() => (mode.value === 'form' ? draft.title || formTitle.value : config.title));
+const heroImage = computed(() => {
+  if (mode.value === 'form') return draft.imageUrl || eventItems.find(item => item.type === config.type)?.image || '';
+  const firstImage = events.value[0]?.imageUrl;
+  return firstImage || eventItems.find(item => item.type === config.type)?.image || '';
+});
+const heroCopy = computed(() =>
+  mode.value === 'form'
+    ? `Rediger den offentlige landing page for ${config.title.toLowerCase()}.`
+    : `Åbn et opslag og rediger det som den offentlige landing page viser det.`,
+);
+const heroCountLabel = computed(() => {
+  if (mode.value === 'form') return `${draft.slots.length} pladser`;
+  return `${events.value.length} opslag`;
+});
+const sectionEyebrow = computed(() => (mode.value === 'form' ? config.formEdit : 'Oversigt'));
+const sectionTitle = computed(() => (mode.value === 'form' ? (draft.title || formTitle.value) : `${config.title} opslag`));
+const sectionChip = computed(() => (mode.value === 'form' ? (draft.active ? 'Synlig' : 'Skjult') : ''));
+const sectionLead = computed(() =>
+  mode.value === 'form'
+    ? 'Skift titel, tekst, billede, pladser og betaling.'
+    : `Det her er den redigerbare backend-version af ${config.title.toLowerCase()}.`,
+);
 
 const {
   items: libraryItems,
@@ -504,6 +565,57 @@ function performRemove() {
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+}
+
+.hero-actions,
+.hero-meta,
+.info-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hero-action,
+.meta-chip,
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.hero-action {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.hero-action:hover,
+.hero-action:focus-visible {
+  transform: translateY(-1px);
+}
+
+.hero-action--primary {
+  background: #0b1f3a;
+  border-color: #0b1f3a;
+}
+
+.meta-chip {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.info-chip {
+  background: #edf6fc;
+  border: 1px solid rgba(11, 67, 120, 0.16);
+  color: #0b4378;
 }
 
 .admin-error {
