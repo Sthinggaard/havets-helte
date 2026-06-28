@@ -7,7 +7,7 @@
       <div class="hero-inner">
         <div class="hero-kicker">
           <span class="hero-badge">{{ sectionMeta.badge }}</span>
-          <span class="hero-count">{{ filteredEvents.length }} aktive</span>
+          <span class="hero-count">1 aktiv</span>
         </div>
 
         <h1 class="hero-title">{{ sectionMeta.title }}</h1>
@@ -18,6 +18,10 @@
             <i class="ti ti-arrow-down" aria-hidden="true"></i>
             {{ sectionMeta.cta }}
           </button>
+          <RouterLink class="hero-action" :to="backHref">
+            <i class="ti ti-arrow-left" aria-hidden="true"></i>
+            Tilbage
+          </RouterLink>
           <button type="button" class="hero-action" @click="copyCurrentLink">
             <i class="ti ti-link" aria-hidden="true"></i>
             Kopiér link
@@ -49,10 +53,10 @@
       <section class="page-section">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Aktive tilmeldinger</p>
-            <h2 class="section-title">Vælg det, der passer dig</h2>
+            <p class="eyebrow">Aktiv tilmelding</p>
+            <h2 class="section-title">{{ selectedEvent?.title }}</h2>
           </div>
-          <div class="section-chip">{{ filteredEvents.length }} åbne</div>
+          <RouterLink class="section-chip" :to="backHref">Tilbage til oversigten</RouterLink>
         </div>
 
         <div v-if="loading" class="loading-row">
@@ -60,36 +64,28 @@
           Henter tilmeldinger…
         </div>
 
-        <div v-else-if="filteredEvents.length" class="event-grid">
-          <button
-            v-for="event in filteredEvents"
-            :key="event.id"
-            type="button"
-            class="event-card"
-            :class="{ active: event.id === selectedEventId }"
-            @click="selectEvent(event.id)"
-          >
-            <img class="event-card-image" :src="event.imageUrl" :alt="event.title" />
-            <div class="event-card-body">
-              <div class="event-card-top">
-                <div>
-                  <p class="card-kicker">{{ typeLabel }}</p>
-                  <h3 class="event-card-title">{{ event.title }}</h3>
-                </div>
-                <span class="event-card-pill">{{ event.slots.length }} pladser</span>
-              </div>
-              <p class="event-card-copy">{{ event.description }}</p>
-              <div class="event-card-meta">
-                <span>{{ event.dateText }}</span>
-                <span v-if="event.location">{{ event.location }}</span>
-              </div>
-            </div>
-          </button>
+        <div v-else-if="selectedEvent" class="event-summary">
+          <img class="event-summary-image" :src="selectedEvent.imageUrl" :alt="selectedEvent.title" />
+          <p v-if="selectedEvent.description" class="lead event-lead">{{ selectedEvent.description }}</p>
+          <div class="info-strip">
+            <span class="info-chip" v-if="selectedEvent.location">
+              <i class="ti ti-map-pin" aria-hidden="true"></i>
+              {{ selectedEvent.location }}
+            </span>
+            <span class="info-chip">
+              <i class="ti ti-list" aria-hidden="true"></i>
+              {{ selectedEvent.slots.length }} slots
+            </span>
+            <span class="info-chip" v-if="selectedEvent.paymentUrl">
+              <i class="ti ti-credit-card" aria-hidden="true"></i>
+              Betaling via MobilePay
+            </span>
+          </div>
         </div>
 
         <div v-else class="empty-state">
-          <div class="empty-state-title">Ingen aktive tilmeldinger endnu</div>
-          <div class="empty-state-copy">Når der er oprettet noget i systemet, dukker det op her.</div>
+          <div class="empty-state-title">Ingen aktiv tilmelding</div>
+          <div class="empty-state-copy">Der ligger ikke et opslag til denne landing-side endnu.</div>
         </div>
       </section>
 
@@ -266,7 +262,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
 import { eventItems } from '@/features/events/events.data';
@@ -377,6 +373,10 @@ const selectedEvent = computed(() => filteredEvents.value.find(event => event.id
 const heroTitle = computed(() => selectedEvent.value?.title || sectionMeta.value.title);
 const heroImage = computed(() => selectedEvent.value?.imageUrl || fallbackImage(props.section));
 const typeLabel = computed(() => sectionMeta.value.badge);
+const backHref = computed(() => {
+  const tab = props.section === 'event' ? 'event' : props.section === 'timed' ? 'shift' : 'task';
+  return router.resolve({ path: '/', query: { tab } }).href;
+});
 const confirmLabel = computed(() => {
   if (!modalSlot.value) return 'Bekræft tilmelding';
   if (waitlistMode.value) return 'Bekræft venteliste';
@@ -935,6 +935,19 @@ onMounted(loadEvents);
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
+}
+
+.event-summary {
+  display: grid;
+  gap: 14px;
+}
+
+.event-summary-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 18px;
+  background: var(--white);
 }
 
 .event-card-meta,
