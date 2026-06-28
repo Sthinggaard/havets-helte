@@ -13,12 +13,6 @@
     :section-title="sectionTitle"
   >
     <template #hero-actions>
-      <button v-if="mode === 'list'" type="button" class="hero-action hero-action--primary" @click="startCreate()">
-        <i class="ti ti-plus" aria-hidden="true"></i>{{ config.newLabel }}
-      </button>
-      <button v-else type="button" class="hero-action hero-action--primary" @click="cancel">
-        <i class="ti ti-arrow-left" aria-hidden="true"></i>Annullér
-      </button>
       <button v-if="mode === 'form'" type="button" class="hero-action" @click="cancel">
         <i class="ti ti-layout-list" aria-hidden="true"></i>Tilbage til oversigt
       </button>
@@ -56,6 +50,16 @@
 
     <template #body>
       <section v-if="mode === 'list'" class="admin-list">
+        <div class="admin-list-head">
+          <div class="admin-list-head-main">
+            <p class="admin-list-eyebrow">Oversigt</p>
+            <h2 class="admin-list-title">{{ config.title }}</h2>
+            <p class="admin-list-sub">Rediger den eksisterende liste, eller opret en ny øverst.</p>
+          </div>
+          <button type="button" class="btn-action btn-action--primary admin-list-create" @click="startCreate()">
+            <i class="ti ti-plus" aria-hidden="true"></i>{{ config.newLabel }}
+          </button>
+        </div>
         <p v-if="loading" class="lead">Henter {{ config.title.toLowerCase() }}…</p>
         <p v-else-if="loadError" class="admin-error">{{ loadError }}</p>
         <p v-else-if="!events.length" class="admin-empty">{{ config.empty }}</p>
@@ -623,6 +627,45 @@ function performRemove() {
   font-weight: 600;
 }
 
+.admin-list-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.admin-list-head-main {
+  min-width: 0;
+}
+
+.admin-list-eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-list-title {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.admin-list-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.admin-list-create {
+  flex-shrink: 0;
+}
+
 .admin-empty {
   padding: 18px;
   border: 1px dashed var(--border);
@@ -937,6 +980,16 @@ textarea.form-input {
 }
 
 @media (max-width: 640px) {
+  .admin-list-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-list-create {
+    width: 100%;
+    justify-content: center;
+  }
+
   .form-row {
     grid-template-columns: 1fr;
   }
