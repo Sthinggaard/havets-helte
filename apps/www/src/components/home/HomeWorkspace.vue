@@ -42,12 +42,13 @@
       </div>
 
       <div class="content home-content">
-        <div class="type-bar" role="tablist" aria-label="Type">
+        <div class="type-bar" role="group" aria-label="Type">
           <button
             v-for="tab in homeTabs"
             :key="tab.id"
             class="type-btn"
             :class="{ active: activeTab === tab.id }"
+            :aria-pressed="activeTab === tab.id"
             type="button"
             @click="setActiveTab(tab.id)"
           >
@@ -118,12 +119,13 @@
         </div>
 
         <div v-else class="home-mine">
-          <div class="type-bar type-bar--mine" role="tablist" aria-label="Tilmeldinger">
+          <div class="type-bar type-bar--mine" role="group" aria-label="Tilmeldinger">
             <button
               v-for="tab in homeMineTabs"
               :key="tab.id"
               class="type-btn"
               :class="{ active: mineFilter === tab.id }"
+              :aria-pressed="mineFilter === tab.id"
               type="button"
               @click="setMineFilter(tab.id)"
             >

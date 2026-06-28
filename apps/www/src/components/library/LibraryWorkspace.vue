@@ -210,6 +210,14 @@
         @pick="handlePickerPick"
         @upload="handlePickerUpload"
       />
+      <ConfirmDialog
+        :open="confirmDeleteCategory"
+        title="Slet kategori"
+        :message="confirmCategoryMessage"
+        confirm-label="Slet kategori"
+        @confirm="performDeleteCategory"
+        @cancel="confirmDeleteCategory = false"
+      />
     </PageCard>
   </div>
 </template>
@@ -217,6 +225,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import PageCard from '@/components/PageCard.vue';
 import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
 import { IMAGE_LIBRARY_UNCATEGORIZED_ID } from '@/features/library/library.data';
@@ -257,6 +266,8 @@ const replaceInput = ref<HTMLInputElement | null>(null);
 const pickerOpen = ref(false);
 const newCategoryName = ref('');
 const selectedCategoryName = ref('');
+const confirmDeleteCategory = ref(false);
+const confirmCategoryMessage = ref('');
 
 watch(
   selectedCategory,
@@ -289,12 +300,15 @@ async function saveCategoryName() {
   await renameSelectedCategory(selectedCategoryName.value);
 }
 
-async function deleteCategory() {
+function deleteCategory() {
   const category = selectedCategory.value;
   if (!category || category.locked) return;
-  if (!window.confirm(`Slet kategorien "${category.name}"? Billederne flyttes til ${categoryLabel(IMAGE_LIBRARY_UNCATEGORIZED_ID)}.`)) {
-    return;
-  }
+  confirmCategoryMessage.value = `Slet kategorien "${category.name}"? Billederne flyttes til ${categoryLabel(IMAGE_LIBRARY_UNCATEGORIZED_ID)}.`;
+  confirmDeleteCategory.value = true;
+}
+
+async function performDeleteCategory() {
+  confirmDeleteCategory.value = false;
   await deleteSelectedCategory();
 }
 

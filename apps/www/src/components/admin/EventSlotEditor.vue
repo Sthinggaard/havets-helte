@@ -247,6 +247,11 @@ function onPrice(event: Event) {
   border-color: var(--navy-mid, var(--navy));
 }
 
+.sl-input:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
 .si-cap {
   display: grid;
   gap: 6px;

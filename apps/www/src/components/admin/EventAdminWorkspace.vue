@@ -189,6 +189,15 @@
       @pick="onPickImage"
       @upload="onUploadImage"
     />
+
+    <ConfirmDialog
+      :open="pendingRemove !== null"
+      title="Slet arrangement"
+      :message="pendingRemove ? `Slet “${pendingRemove.title}”? Dette kan ikke fortrydes.` : ''"
+      confirm-label="Slet arrangement"
+      @confirm="performRemove"
+      @cancel="pendingRemove = null"
+    />
   </div>
 </template>
 
@@ -196,6 +205,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import PageCard from '@/components/PageCard.vue';
 import EventSlotEditor from '@/components/admin/EventSlotEditor.vue';
 import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
@@ -475,10 +485,16 @@ async function onUploadImage(file: File, categoryId: string) {
   }
 }
 
+const pendingRemove = ref<AdminEvent | null>(null);
+
 function confirmRemove(event: AdminEvent) {
-  if (window.confirm(`Slet "${event.title}"? Dette kan ikke fortrydes.`)) {
-    void remove(event.id);
-  }
+  pendingRemove.value = event;
+}
+
+function performRemove() {
+  const event = pendingRemove.value;
+  pendingRemove.value = null;
+  if (event) void remove(event.id);
 }
 </script>
 
@@ -632,6 +648,11 @@ function confirmRemove(event: AdminEvent) {
   background: #fff;
 }
 
+.form-input:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
 textarea.form-input {
   resize: vertical;
 }
@@ -670,7 +691,11 @@ textarea.form-input {
 .field-icon-button:focus-visible {
   border-color: var(--border);
   background: #f3f5f8;
-  outline: none;
+}
+
+.field-icon-button:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
 }
 
 .native-date-picker {

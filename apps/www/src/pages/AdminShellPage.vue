@@ -58,7 +58,11 @@ const adminItems = [
 .admin-hub-card:hover,
 .admin-hub-card:focus-visible {
   border-color: var(--navy-light);
-  outline: none;
+}
+
+.admin-hub-card:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
 }
 
 .admin-hub-icon {
