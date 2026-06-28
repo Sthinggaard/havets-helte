@@ -25,18 +25,21 @@ const routes = [
     name: 'events',
     component: EventsPage,
     alias: ['/events.html'],
+    meta: { shell: 'landing' },
   },
   {
     path: '/opgaver',
     name: 'tasks',
     component: TasksPage,
     alias: ['/opgaver.html', '/admin-opgaver.html', '/admin-opgaver-form.html'],
+    meta: { shell: 'landing' },
   },
   {
     path: '/vagter',
     name: 'shifts',
     component: ShiftsPage,
     alias: ['/vagter.html', '/admin-vagter.html', '/admin-vagter-form.html'],
+    meta: { shell: 'landing' },
   },
   {
     path: '/attendance',

@@ -1,8 +1,7 @@
 <template>
-  <EventsWorkspace />
+  <SignupLandingPage section="event" />
 </template>
 
 <script setup lang="ts">
-import EventsWorkspace from '@/components/events/EventsWorkspace.vue';
+import SignupLandingPage from '@/components/public/SignupLandingPage.vue';
 </script>
-

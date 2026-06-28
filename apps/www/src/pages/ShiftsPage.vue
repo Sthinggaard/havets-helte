@@ -1,10 +1,7 @@
 <template>
-  <AdminAuthGate>
-    <EventAdminWorkspace section="vagter" />
-  </AdminAuthGate>
+  <SignupLandingPage section="timed" />
 </template>
 
 <script setup lang="ts">
-import AdminAuthGate from '@/components/admin/AdminAuthGate.vue';
-import EventAdminWorkspace from '@/components/admin/EventAdminWorkspace.vue';
+import SignupLandingPage from '@/components/public/SignupLandingPage.vue';
 </script>
