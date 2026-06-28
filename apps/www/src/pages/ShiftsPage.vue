@@ -1,7 +1,7 @@
 <template>
-  <SignupLandingPage section="timed" />
+  <LegacyShiftsPage />
 </template>
 
 <script setup lang="ts">
-import SignupLandingPage from '@/components/public/SignupLandingPage.vue';
+import LegacyShiftsPage from '@/components/public/LegacyShiftsPage.vue';
 </script>
