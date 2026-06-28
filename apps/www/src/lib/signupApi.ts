@@ -1,5 +1,7 @@
 const LOCAL_FUNCTIONS_URL = 'http://127.0.0.1:5004/havets-helte/europe-west1/submitSignup';
 const PROD_FUNCTIONS_URL = '/api/submitSignup';
+const emulatorOverride = import.meta.env.VITE_USE_FIREBASE_EMULATORS;
+const useEmulators = emulatorOverride !== undefined ? emulatorOverride === 'true' : import.meta.env.DEV;
 
 export type SignupRequestPayload = {
   eventId: string;
@@ -21,7 +23,7 @@ export type SignupResponsePayload = {
 };
 
 function getSignupApiUrl() {
-  return import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true' ? LOCAL_FUNCTIONS_URL : PROD_FUNCTIONS_URL;
+  return useEmulators ? LOCAL_FUNCTIONS_URL : PROD_FUNCTIONS_URL;
 }
 
 export async function submitSignupRequest(payload: SignupRequestPayload): Promise<SignupResponsePayload> {
