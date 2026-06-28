@@ -5,6 +5,9 @@
       <div class="hero-scrim" aria-hidden="true" />
 
       <div class="hero-inner">
+        <div class="hero-brand">
+          <img class="hero-logo" src="/havets-helte-logo.svg" alt="Havets Helte logo" />
+        </div>
         <div class="hero-badge">Havets Helte</div>
         <h1 class="hero-title">{{ heroTitle }}</h1>
         <div class="hero-date" v-if="selectedEvent">
@@ -628,6 +631,19 @@ onMounted(loadEvents);
   display: grid;
   gap: 12px;
   color: #fff;
+}
+
+.hero-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.hero-logo {
+  display: block;
+  width: min(184px, 52vw);
+  height: auto;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.18));
 }
 
 .hero-badge {
