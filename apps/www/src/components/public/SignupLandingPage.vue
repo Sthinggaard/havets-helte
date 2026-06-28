@@ -61,7 +61,7 @@
     </template>
 
     <template #body>
-      <div v-if="selectedEvent">
+      <div v-if="selectedEvent" ref="signupSection">
         <div v-if="loadingSignups" class="loading-row">
           <i class="ti ti-loader spinning" aria-hidden="true"></i>
           Henter tilmeldinger…

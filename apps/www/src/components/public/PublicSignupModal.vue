@@ -1,38 +1,36 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal">
-      <div v-if="open" class="modal-overlay" @click.self="emit('close')">
-        <div class="modal">
-          <div class="modal-head">
-            <div>
-              <div class="modal-title">{{ title }}</div>
-              <div v-if="subtitle" class="modal-sub">{{ subtitle }}</div>
-            </div>
-            <button type="button" class="icon-button" @click="emit('close')">
-              <i class="ti ti-x" aria-hidden="true"></i>
+    <div v-if="open" class="modal-overlay" @click.self="emit('close')">
+      <div class="modal">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">{{ title }}</div>
+            <div v-if="subtitle" class="modal-sub">{{ subtitle }}</div>
+          </div>
+          <button type="button" class="icon-button" @click="emit('close')">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div v-if="bannerText" class="modal-banner" :class="bannerClass">
+          <i v-if="bannerIcon" class="modal-banner-icon" :class="bannerIcon" aria-hidden="true"></i>
+          <span>{{ bannerText }}</span>
+        </div>
+
+        <form class="signup-form" @submit.prevent="emit('submit')">
+          <slot />
+
+          <p v-if="generalError" class="general-error" role="alert">{{ generalError }}</p>
+
+          <div class="modal-actions">
+            <button type="button" class="modal-button" @click="emit('close')">{{ cancelLabel }}</button>
+            <button type="submit" class="modal-button modal-button--primary" :disabled="submitting">
+              {{ submitting ? submittingLabel : submitLabel }}
             </button>
           </div>
-
-          <div v-if="bannerText" class="modal-banner" :class="bannerClass">
-            <i v-if="bannerIcon" class="modal-banner-icon" :class="bannerIcon" aria-hidden="true"></i>
-            <span>{{ bannerText }}</span>
-          </div>
-
-          <form class="signup-form" @submit.prevent="emit('submit')">
-            <slot />
-
-            <p v-if="generalError" class="general-error" role="alert">{{ generalError }}</p>
-
-            <div class="modal-actions">
-              <button type="button" class="modal-button" @click="emit('close')">{{ cancelLabel }}</button>
-              <button type="submit" class="modal-button modal-button--primary" :disabled="submitting">
-                {{ submitting ? submittingLabel : submitLabel }}
-              </button>
-            </div>
-          </form>
-        </div>
+        </form>
       </div>
-    </Transition>
+    </div>
   </Teleport>
 </template>
 
@@ -83,7 +81,7 @@ const bannerClass = computed(() =>
   place-items: center;
   padding: 18px;
   background: rgba(6, 18, 33, 0.58);
-  z-index: 100;
+  z-index: 1000;
 }
 
 .modal {
@@ -213,42 +211,5 @@ const bannerClass = computed(() =>
   margin: 0;
   color: #9d2f3c;
   font-weight: 600;
-}
-
-/* Modal enter/exit: overlay fades, dialog rises from below. Exit is subtler.
-   The global prefers-reduced-motion guard disables these automatically. */
-.modal-enter-active {
-  transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.modal-leave-active {
-  transition: opacity 150ms ease-in;
-}
-
-.modal-enter-active .modal {
-  transition:
-    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.modal-leave-active .modal {
-  transition:
-    transform 150ms ease-in,
-    opacity 150ms ease-in;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-from .modal {
-  opacity: 0;
-  transform: translateY(12px) scale(0.98);
-}
-
-.modal-leave-to .modal {
-  opacity: 0;
-  transform: translateY(8px) scale(0.99);
 }
 </style>
