@@ -10,5 +10,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('firebase') || id.includes('@firebase')) return 'firebase';
+          return 'vendor';
+        },
+      },
+    },
+  },
 });
 

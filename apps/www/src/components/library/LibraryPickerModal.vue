@@ -74,7 +74,7 @@
                 :class="{ active: selectedItem?.id === item.id }"
                 @click="selectedItemId = item.id"
               >
-                <img class="library-thumb" :src="item.imageUrl" :alt="item.name" />
+                <img class="library-thumb" :src="item.imageUrl" :alt="item.name" loading="lazy" decoding="async" />
                 <div class="library-name">{{ item.name }}</div>
               </button>
             </div>

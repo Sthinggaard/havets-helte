@@ -25,7 +25,7 @@
         <ul v-else class="admin-cards">
           <li v-for="event in events" :key="event.id" class="admin-card">
             <button type="button" class="admin-card-main" @click="startEdit(event.id)">
-              <img v-if="event.imageUrl" class="admin-card-thumb" :src="event.imageUrl" :alt="event.title" />
+              <img v-if="event.imageUrl" class="admin-card-thumb" :src="event.imageUrl" :alt="event.title" loading="lazy" decoding="async" />
               <div class="admin-card-body">
                 <div class="admin-card-title-row">
                   <span class="admin-card-title">{{ event.title }}</span>

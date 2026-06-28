@@ -62,7 +62,7 @@
           :class="{ active: event.id === selectedEventId }"
           @click="selectEvent(event.id)"
         >
-          <img class="event-card-image" :src="event.image" :alt="event.title" />
+          <img class="event-card-image" :src="event.image" :alt="event.title" loading="lazy" decoding="async" />
           <div class="event-card-body">
             <div class="event-card-head">
               <h2 class="row-title">{{ event.title }}</h2>

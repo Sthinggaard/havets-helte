@@ -1470,7 +1470,10 @@ a {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background-color 0.15s ease-out,
+    border-color 0.15s ease-out,
+    color 0.15s ease-out;
 }
 
 .type-btn.active {

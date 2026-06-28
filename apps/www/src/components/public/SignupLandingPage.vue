@@ -51,21 +51,12 @@
 
     <main class="page-shell">
       <section class="page-section">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Aktiv tilmelding</p>
-            <h2 class="section-title">{{ selectedEvent?.title }}</h2>
-          </div>
-          <RouterLink class="section-chip" :to="backHref">Tilbage til oversigten</RouterLink>
-        </div>
-
         <div v-if="loading" class="loading-row">
           <i class="ti ti-loader spinning" aria-hidden="true"></i>
           Henter tilmeldinger…
         </div>
 
         <div v-else-if="selectedEvent" class="event-summary">
-          <img class="event-summary-image" :src="selectedEvent.imageUrl" :alt="selectedEvent.title" />
           <p v-if="selectedEvent.description" class="lead event-lead">{{ selectedEvent.description }}</p>
           <div class="info-strip">
             <span class="info-chip" v-if="selectedEvent.location">
@@ -940,14 +931,6 @@ onMounted(loadEvents);
 .event-summary {
   display: grid;
   gap: 14px;
-}
-
-.event-summary-image {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border-radius: 18px;
-  background: var(--white);
 }
 
 .event-card-meta,

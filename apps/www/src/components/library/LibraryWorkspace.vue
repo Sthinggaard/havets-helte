@@ -183,7 +183,7 @@
               :class="{ active: selectedItem?.id === item.id }"
               @click="selectItem(item.id)"
             >
-              <img class="library-card-image" :src="item.imageUrl" :alt="item.name" />
+              <img class="library-card-image" :src="item.imageUrl" :alt="item.name" loading="lazy" decoding="async" />
               <div class="library-card-body">
                 <div class="library-card-head">
                   <h3 class="library-card-title">{{ item.name }}</h3>

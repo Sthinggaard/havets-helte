@@ -1,16 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
+// Home is eager for fast first paint; every other route is split into its own chunk.
 import HomePage from './pages/HomePage.vue';
-import EventsPage from './pages/EventsPage.vue';
-import TasksPage from './pages/TasksPage.vue';
-import ShiftsPage from './pages/ShiftsPage.vue';
-import AttendancePage from './pages/AttendancePage.vue';
-import SignupsPage from './pages/SignupsPage.vue';
-import MembersPage from './pages/MembersPage.vue';
-import BranchesPage from './pages/BranchesPage.vue';
-import AdminLibraryPage from './pages/AdminLibraryPage.vue';
-import AdminArrangementerPage from './pages/AdminArrangementerPage.vue';
-import AdminShellPage from './pages/AdminShellPage.vue';
+
+const EventsPage = () => import('./pages/EventsPage.vue');
+const TasksPage = () => import('./pages/TasksPage.vue');
+const ShiftsPage = () => import('./pages/ShiftsPage.vue');
+const AttendancePage = () => import('./pages/AttendancePage.vue');
+const SignupsPage = () => import('./pages/SignupsPage.vue');
+const MembersPage = () => import('./pages/MembersPage.vue');
+const BranchesPage = () => import('./pages/BranchesPage.vue');
+const AdminLibraryPage = () => import('./pages/AdminLibraryPage.vue');
+const AdminArrangementerPage = () => import('./pages/AdminArrangementerPage.vue');
+const AdminShellPage = () => import('./pages/AdminShellPage.vue');
 
 const routes = [
   {

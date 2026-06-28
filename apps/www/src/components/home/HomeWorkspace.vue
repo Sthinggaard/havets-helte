@@ -100,7 +100,7 @@
               :class="{ active: item.id === selectedFeedId }"
               :to="feedHref(item.id)"
             >
-              <img class="event-card-image" :src="item.image" :alt="item.title" />
+              <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
               <div class="event-card-body">
                 <div class="event-card-head">
                   <h2 class="row-title">{{ item.title }}</h2>

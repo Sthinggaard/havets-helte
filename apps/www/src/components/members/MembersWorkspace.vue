@@ -125,7 +125,7 @@
             @click="selectMember(member.id)"
           >
             <div class="member-card-main">
-              <img v-if="member.imageUrl" class="member-card-image" :src="member.imageUrl" :alt="member.name" />
+              <img v-if="member.imageUrl" class="member-card-image" :src="member.imageUrl" :alt="member.name" loading="lazy" decoding="async" />
               <div class="member-card-top">
                 <div class="member-card-head">
                   <span class="member-av">{{ member.initials }}</span>
