@@ -28,9 +28,9 @@ import AdminAuthGate from '@/components/admin/AdminAuthGate.vue';
 import PageCard from '@/components/PageCard.vue';
 
 const adminItems = [
-  { path: '/admin/vagter?new', icon: 'ti ti-clock-plus', title: 'Ny vagt', meta: 'Tidsrum og pladser' },
-  { path: '/admin/opgaver?new', icon: 'ti ti-list-check', title: 'Ny opgave', meta: 'Praktiske opgaver' },
-  { path: '/admin/arrangementer?new', icon: 'ti ti-calendar-plus', title: 'Nyt arrangement', meta: 'Tilmelding og betaling' },
+  { path: '/admin/vagter', icon: 'ti ti-clock', title: 'Vagter', meta: 'Åbn liste og rediger' },
+  { path: '/admin/opgaver', icon: 'ti ti-list-check', title: 'Opgaver', meta: 'Åbn liste og rediger' },
+  { path: '/admin/arrangementer', icon: 'ti ti-calendar', title: 'Arrangementer', meta: 'Åbn liste og rediger' },
   { path: '/admin/billedbibliotek', icon: 'ti ti-photo', title: 'Billedbibliotek', meta: 'Upload og vælg billeder' },
 ] as const;
 </script>

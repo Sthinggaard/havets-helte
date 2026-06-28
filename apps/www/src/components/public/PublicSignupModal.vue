@@ -1,5 +1,6 @@
 <template>
-  <div v-if="open" class="modal-overlay" @click.self="emit('close')">
+  <Transition name="modal">
+    <div v-if="open" class="modal-overlay" @click.self="emit('close')">
     <div class="modal">
       <div class="modal-head">
         <div>
@@ -30,6 +31,7 @@
       </form>
     </div>
   </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -187,6 +189,11 @@ const bannerClass = computed(() =>
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  transition: transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal-button:active {
+  transform: scale(0.97);
 }
 
 .modal-button--primary {
@@ -204,5 +211,42 @@ const bannerClass = computed(() =>
   margin: 0;
   color: #9d2f3c;
   font-weight: 600;
+}
+
+/* Modal enter/exit: overlay fades, dialog rises from below. Exit is subtler.
+   The global prefers-reduced-motion guard disables these automatically. */
+.modal-enter-active {
+  transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal-leave-active {
+  transition: opacity 150ms ease-in;
+}
+
+.modal-enter-active .modal {
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal-leave-active .modal {
+  transition:
+    transform 150ms ease-in,
+    opacity 150ms ease-in;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .modal {
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+}
+
+.modal-leave-to .modal {
+  opacity: 0;
+  transform: translateY(8px) scale(0.99);
 }
 </style>
