@@ -1,5 +1,6 @@
 <template>
   <PublicLandingPageShell
+    content-width="70vw"
     :hero-image="heroImage"
     :hero-image-alt="heroTitle"
     hero-badge="Havets Helte"
@@ -37,9 +38,19 @@
     </template>
 
     <template #info>
-      <span class="info-chip">
+      <a
+        v-if="selectedEvent?.location"
+        class="info-chip chip-link"
+        :href="buildMapsUrl(selectedEvent.location)"
+        target="_blank"
+        rel="noreferrer noopener"
+      >
         <i class="ti ti-map-pin" aria-hidden="true"></i>
-        {{ selectedEvent?.location || 'Havets Helte' }}
+        {{ selectedEvent.location }}
+      </a>
+      <span v-else class="info-chip">
+        <i class="ti ti-map-pin" aria-hidden="true"></i>
+        Havets Helte
       </span>
       <span class="info-chip">
         <i class="ti ti-clock" aria-hidden="true"></i>
@@ -49,6 +60,10 @@
 
     <template #body>
       <section v-if="selectedEvent" ref="roleTabsSection" class="shift-body">
+        <div v-if="locationMapUrl" class="location-map-wrap">
+          <iframe class="location-map" :src="locationMapUrl" loading="lazy" title="Kort over valgt sted"></iframe>
+        </div>
+
         <div class="role-tabs" v-if="roleGroups.length">
           <button
             v-for="group in roleGroups"
@@ -183,6 +198,7 @@ import type { EventItem } from '@/features/events/events.types';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
+import { buildMapsEmbedUrl, buildMapsUrl } from '@/lib/maps';
 import { submitSignupRequest } from '@/lib/signupApi';
 
 type LandingSection = EventType;
@@ -252,6 +268,7 @@ const errors = reactive({
 const backHref = computed(() => router.resolve({ path: '/', query: { tab: 'shift' } }).href);
 
 const selectedEvent = computed(() => timedEvents.value.find(event => event.id === selectedEventId.value) ?? timedEvents.value[0] ?? null);
+const locationMapUrl = computed(() => buildMapsEmbedUrl(selectedEvent.value?.location));
 const heroTitle = computed(() => selectedEvent.value?.title || 'Vagter');
 const heroImage = computed(() => selectedEvent.value?.imageUrl || fallbackImage());
 const heroCopy = computed(() => selectedEvent.value?.description || 'Vælg den vagt, der passer dig, og meld dig på direkte i den faste vagtplan.');
@@ -701,6 +718,10 @@ onMounted(loadEvents);
   border-color: #0b1f3a;
 }
 
+.chip-link {
+  text-decoration: none;
+}
+
 .content-shell {
   position: relative;
   z-index: 2;
@@ -716,6 +737,21 @@ onMounted(loadEvents);
   border-radius: 24px;
   padding: 18px;
   box-shadow: 0 12px 28px rgba(9, 38, 68, 0.05);
+}
+
+.location-map-wrap {
+  margin-bottom: 16px;
+  border: 1px solid rgba(216, 225, 234, 0.95);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f4f8fb;
+}
+
+.location-map {
+  display: block;
+  width: 100%;
+  min-height: 260px;
+  border: 0;
 }
 
 .info-strip,

@@ -1,5 +1,16 @@
 <template>
   <div class="app-frame" :class="{ 'app-frame--landing': isLanding }">
+    <div v-if="isAdmin" class="mode-switch-wrap" :class="{ 'mode-switch-wrap--landing': isLanding }">
+      <nav class="mode-switch" aria-label="Visning">
+        <router-link class="mode-switch-link" to="/" :class="{ active: isLanding }">
+          Landing
+        </router-link>
+        <router-link class="mode-switch-link" to="/admin" :class="{ active: isAdminRoute }">
+          Admin
+        </router-link>
+      </nav>
+    </div>
+
     <template v-if="!isLanding">
       <header class="topbar">
         <router-link class="brand" to="/">
@@ -18,7 +29,9 @@
           </router-link>
         </nav>
 
-        <div class="auth-chip">Lederportal</div>
+        <div class="topbar-meta">
+          <div class="auth-chip">Lederportal</div>
+        </div>
       </header>
 
       <main class="page-shell">
@@ -36,8 +49,14 @@ import { RouterLink } from 'vue-router';
 import { useRoute } from 'vue-router';
 
 import { adminNavigationItems, navigationItems } from '@/content/navigation';
+import { useAdminAuth } from '@/features/admin/useAdminAuth';
 
 const route = useRoute();
+const { isAdmin } = useAdminAuth();
 const isLanding = computed(() => route.meta.shell === 'landing');
-const navItems = computed(() => (route.path.startsWith('/admin') ? adminNavigationItems : navigationItems));
+const isAdminRoute = computed(() => route.path.startsWith('/admin'));
+const navItems = computed(() => {
+  if (isAdminRoute.value) return adminNavigationItems;
+  return isAdmin.value ? navigationItems : navigationItems.filter(item => item.path !== '/admin');
+});
 </script>

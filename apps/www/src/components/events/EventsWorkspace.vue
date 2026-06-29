@@ -40,7 +40,15 @@
 
           <div class="info-strip">
             <span class="info-chip">{{ featuredEvent.dateText }}</span>
-            <span class="info-chip">{{ featuredEvent.location }}</span>
+            <a
+              v-if="featuredEvent.location"
+              class="info-chip chip-link"
+              :href="buildMapsUrl(featuredEvent.location)"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {{ featuredEvent.location }}
+            </a>
             <span class="info-chip">{{ eventTypeLabel(featuredEvent.type) }}</span>
           </div>
 
@@ -72,7 +80,16 @@
             <p class="row-copy">{{ event.summary }}</p>
             <div class="event-card-meta">
               <span>{{ event.dateText }}</span>
-              <span>{{ event.location }}</span>
+              <a
+                v-if="event.location"
+                class="chip-link"
+                :href="buildMapsUrl(event.location)"
+                target="_blank"
+                rel="noreferrer noopener"
+                @click.stop
+              >
+                {{ event.location }}
+              </a>
               <span>{{ eventTypeLabel(event.type) }}</span>
             </div>
             <button v-if="isAdmin" type="button" class="btn-action event-card-edit" @click.stop="editEvent(event)">
@@ -92,6 +109,7 @@ import PageCard from '@/components/PageCard.vue';
 import { useAdminAuth } from '@/features/admin/useAdminAuth';
 import { useEventsPage } from '@/features/events/useEventsPage';
 import type { EventItem } from '@/features/events/events.types';
+import { buildMapsUrl } from '@/lib/maps';
 
 const { activeFilter, counts, eventFilterOptions, featuredEvent, filteredEvents, selectEvent, selectedEventId, selectFilter } =
   useEventsPage();

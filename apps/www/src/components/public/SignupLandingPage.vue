@@ -1,5 +1,6 @@
 <template>
   <PublicLandingPageShell
+    content-width="70vw"
     :hero-image="heroImage"
     :hero-image-alt="heroTitle"
     :hero-badge="sectionMeta.badge"
@@ -35,10 +36,16 @@
         <i class="ti ti-calendar" aria-hidden="true"></i>
         {{ selectedEvent?.dateText }}
       </span>
-      <span class="meta-chip" v-if="selectedEvent?.location">
+      <a
+        v-if="selectedEvent?.location"
+        class="meta-chip chip-link"
+        :href="buildMapsUrl(selectedEvent.location)"
+        target="_blank"
+        rel="noreferrer noopener"
+      >
         <i class="ti ti-map-pin" aria-hidden="true"></i>
         {{ selectedEvent.location }}
-      </span>
+      </a>
       <span class="meta-chip">
         <i class="ti ti-list" aria-hidden="true"></i>
         {{ selectedEvent?.slots.length ?? 0 }} pladser
@@ -46,10 +53,16 @@
     </template>
 
     <template #info>
-      <span class="info-chip" v-if="selectedEvent?.location">
+      <a
+        v-if="selectedEvent?.location"
+        class="info-chip chip-link"
+        :href="buildMapsUrl(selectedEvent.location)"
+        target="_blank"
+        rel="noreferrer noopener"
+      >
         <i class="ti ti-map-pin" aria-hidden="true"></i>
         {{ selectedEvent.location }}
-      </span>
+      </a>
       <span class="info-chip">
         <i class="ti ti-list" aria-hidden="true"></i>
         {{ selectedEvent?.slots.length ?? 0 }} slots
@@ -62,6 +75,10 @@
 
     <template #body>
       <div v-if="selectedEvent" ref="signupSection">
+        <div v-if="locationMapUrl" class="location-map-wrap">
+          <iframe class="location-map" :src="locationMapUrl" loading="lazy" title="Kort over valgt sted"></iframe>
+        </div>
+
         <div v-if="loadingSignups" class="loading-row">
           <i class="ti ti-loader spinning" aria-hidden="true"></i>
           Henter tilmeldinger…
@@ -208,6 +225,7 @@ import type { EventItem } from '@/features/events/events.types';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
+import { buildMapsEmbedUrl, buildMapsUrl } from '@/lib/maps';
 import { submitSignupRequest } from '@/lib/signupApi';
 
 type LandingSection = EventType;
@@ -307,6 +325,7 @@ const filteredEvents = computed(() =>
 );
 
 const selectedEvent = computed(() => filteredEvents.value.find(event => event.id === selectedEventId.value) ?? filteredEvents.value[0] ?? null);
+const locationMapUrl = computed(() => buildMapsEmbedUrl(selectedEvent.value?.location));
 
 const heroTitle = computed(() => selectedEvent.value?.title || sectionMeta.value.title);
 const heroImage = computed(() => selectedEvent.value?.imageUrl || fallbackImage(props.section));
@@ -767,6 +786,10 @@ onMounted(loadEvents);
   color: #fff;
 }
 
+.chip-link {
+  text-decoration: none;
+}
+
 .page-shell {
   width: min(1100px, calc(100% - 32px));
   margin: -42px auto 48px;
@@ -780,6 +803,21 @@ onMounted(loadEvents);
   border-radius: 22px;
   padding: 18px;
   box-shadow: 0 12px 28px rgba(9, 38, 68, 0.05);
+}
+
+.location-map-wrap {
+  margin-bottom: 16px;
+  border: 1px solid rgba(216, 225, 234, 0.95);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f4f8fb;
+}
+
+.location-map {
+  display: block;
+  width: 100%;
+  min-height: 260px;
+  border: 0;
 }
 
 .section-head {

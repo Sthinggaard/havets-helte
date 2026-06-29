@@ -1,6 +1,6 @@
 <template>
   <PublicLandingPageShell
-    content-width="1100px"
+    content-width="70vw"
     hero-badge="Lederportal"
     :hero-copy="heroCopy"
     :hero-count-label="heroCountLabel"

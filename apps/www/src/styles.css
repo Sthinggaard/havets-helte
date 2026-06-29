@@ -151,6 +151,12 @@ a {
   flex-wrap: wrap;
 }
 
+.topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .nav-link {
   padding: 8px 11px;
   border-radius: 12px;
@@ -171,6 +177,53 @@ a {
   color: var(--teal-light);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.mode-switch-wrap {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 24px 0;
+  pointer-events: none;
+}
+
+.mode-switch-wrap--landing {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  padding: 0;
+}
+
+.mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(15, 65, 114, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px rgba(9, 38, 68, 0.14);
+  pointer-events: auto;
+}
+
+.mode-switch-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mode-switch-link.active {
+  background: var(--navy);
+  color: #fff;
 }
 
 .page-shell {
@@ -1220,13 +1273,18 @@ a {
 }
 
 .info-chip,
-.event-card-meta span {
+.event-card-meta span,
+.event-card-meta a {
   padding: 8px 10px;
   border-radius: 999px;
   background: #f4f8fb;
   color: var(--navy-dark);
   font-size: 0.84rem;
   font-weight: 700;
+}
+
+.chip-link {
+  text-decoration: none;
 }
 
 .detail-actions {
@@ -1321,7 +1379,8 @@ a {
 }
 
 .home-shell {
-  max-width: 580px;
+  width: min(70vw, calc(100% - 36px));
+  max-width: none;
   margin: calc(-60vh + 60px) auto 0;
   padding: 92px 18px 48px;
   pointer-events: none;
@@ -1593,12 +1652,26 @@ a {
     flex-wrap: wrap;
   }
 
+  .topbar-meta {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
   .nav {
     justify-content: flex-start;
     order: 3;
     width: 100%;
     overflow-x: auto;
     padding-bottom: 2px;
+  }
+
+  .mode-switch-wrap {
+    padding: 10px 16px 0;
+  }
+
+  .mode-switch-wrap--landing {
+    top: 12px;
+    right: 12px;
   }
 
   .page-shell {
@@ -1646,6 +1719,7 @@ a {
   }
 
   .home-shell {
+    width: min(100%, calc(100% - 28px));
     margin: calc(-38vh + 40px) auto 0;
     padding: 72px 16px 40px;
   }

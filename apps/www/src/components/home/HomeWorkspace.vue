@@ -31,19 +31,18 @@
         <div class="hero-desc">{{ homeHero.description }}</div>
       </div>
 
-      <div class="content home-content">
-        <div class="section-head section-head--compact">
-          <div>
-            <p class="eyebrow">Vælg en side</p>
-            <h2 class="section-title">Arrangementer, opgaver og vagter</h2>
+        <div class="content home-content">
+          <div class="section-head section-head--compact">
+            <div>
+              <h2 class="section-title">Arrangementer, opgaver og vagter</h2>
+            </div>
           </div>
-        </div>
 
-        <div class="events-grid">
+        <div class="events-grid home-events-grid">
           <RouterLink
             v-for="item in homeFeedItems"
             :key="item.id"
-            class="event-card"
+            class="event-card home-event-card"
             :to="feedHref(item.id)"
           >
             <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
@@ -73,3 +72,27 @@ import { useHomePage } from '@/features/home/useHomePage';
 
 const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
 </script>
+
+<style scoped>
+.home-events-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+  justify-content: center;
+}
+
+.home-event-card {
+  width: 100%;
+  min-width: min(100%, 350px);
+  align-content: start;
+}
+
+.home-event-card .event-card-body {
+  align-content: start;
+  justify-items: start;
+  text-align: left;
+}
+
+.home-event-card .event-card-head {
+  width: 100%;
+  align-items: flex-start;
+}
+</style>
