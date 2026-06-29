@@ -11,7 +11,7 @@
         </div>
 
         <div class="library-toolbar">
-          <button type="button" class="library-upload" @click="triggerUpload">
+          <button type="button" class="btn-action" @click="triggerUpload">
             <i class="ti ti-upload"></i>Upload nyt billede
           </button>
           <input ref="uploadInput" class="sr-only" type="file" accept="image/*" @change="handleUpload" />
@@ -261,25 +261,6 @@ function handleUpload(event: Event) {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
   background: #fbfcfe;
-}
-
-.library-upload {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: #fff;
-  color: var(--navy);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.library-upload:hover {
-  border-color: var(--navy-mid);
 }
 
 .library-nav {

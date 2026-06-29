@@ -301,7 +301,7 @@ a {
   gap: 8px;
   padding: 9px 13px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--navy);
   cursor: pointer;
@@ -311,9 +311,16 @@ a {
   text-align: center;
 }
 
+.btn-action:hover {
+  opacity: 0.88;
+}
+
 .btn-action:disabled {
+  border-color: var(--border-soft);
+  background: var(--border-soft);
+  color: var(--muted);
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 1;
 }
 
 .btn-action--primary {
