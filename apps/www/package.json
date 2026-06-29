@@ -5,6 +5,8 @@
   "scripts": {
     "predev": "node scripts/seedEmulator.mjs",
     "dev": "vite",
+    "emulators": "cd ../.. && mkdir -p .firebase/emulator-data .firebase/npm-cache && npm_config_cache=.firebase/npm-cache npx -y firebase-tools@latest emulators:start --import=.firebase/emulator-data --export-on-exit=.firebase/emulator-data --only auth,firestore,functions,hosting,storage",
+    "emulators:fresh": "cd ../.. && mkdir -p .firebase/npm-cache && npm_config_cache=.firebase/npm-cache npx -y firebase-tools@latest emulators:start --only auth,firestore,functions,hosting,storage",
     "seed": "node scripts/seedEmulator.mjs",
     "seed:live": "node scripts/seedLive.mjs",
     "build": "vue-tsc -p tsconfig.app.json --noEmit && vite build",

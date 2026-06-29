@@ -10,6 +10,19 @@ This repository contains the `apps/www` Vue application for Havets Helte.
 
 ## Local development
 
+Start the local Firebase backend in one terminal:
+
+```bash
+cd apps/www
+npm run emulators
+```
+
+This uses `.firebase/emulator-data` as a local import/export directory, so
+Firestore, Auth, and Storage emulator data persist across emulator restarts.
+The directory is gitignored.
+
+Start the Vue dev server in another terminal:
+
 ```bash
 cd apps/www
 npm install
@@ -20,7 +33,8 @@ The Vue app uses Firebase emulators by default in development. `npm run dev`
 automatically seeds the local emulators with sample events, members, and
 meetings (see `apps/www/scripts/seedEmulator.mjs`) before starting — it's
 idempotent and skips itself if the emulator already has data. Run it manually
-with `npm run seed`. The local seeded leader login is `leder@havetshelte.dk / test1234`.
+with `npm run seed`. The local seeded leader login is
+`sthinggaard@havetshelte.dk / test1234`.
 
 To point local dev at the live `havets-helte` project instead of emulators
 (e.g. to check real production data), create `apps/www/.env` with
