@@ -4,8 +4,8 @@ Three isolated Firebase projects, promoted by branch:
 
 | Env   | Branch    | `.firebaserc` alias | Firebase project (default names) | GitHub environment | Service-account secret |
 |-------|-----------|---------------------|----------------------------------|--------------------|------------------------|
-| dev   | `develop` | `dev`               | `havets-helte-dev`               | `dev`              | `FIREBASE_SERVICE_ACCOUNT_DEV` |
-| stage | `staging` | `stage`             | `havets-helte-stage`             | `stage`            | `FIREBASE_SERVICE_ACCOUNT_STAGE` |
+| dev   | `dev`     | `dev`               | `havets-helte-dev`               | `dev`              | `FIREBASE_SERVICE_ACCOUNT_DEV` |
+| stage | `stage`   | `stage`             | `havets-helte-stage`             | `stage`            | `FIREBASE_SERVICE_ACCOUNT_STAGE` |
 | prod  | `main`    | `prod`              | `havets-helte`                   | `production`       | `FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE` |
 
 Pushing to a branch auto-deploys that environment (`.github/workflows/deploy.yml` →
@@ -48,7 +48,7 @@ it still uses Vite's default `development` mode and the gitignored local `.env`
    secret named per the table above (Settings → Secrets and variables → Actions).
    Prod's secret (`FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE`) already exists.
 
-5. **Create the long-lived branches** `develop` and `staging`, and push them so
+5. **Create the long-lived branches** `dev` and `stage`, and push them so
    the deploy workflow has something to track. Both branches exist locally as of
    2026-06-26; both still need to be pushed.
 

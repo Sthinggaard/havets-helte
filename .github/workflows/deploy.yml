@@ -1,15 +1,15 @@
 name: Deploy
 
 # Branch -> environment promotion:
-#   develop -> dev    (havets-helte-dev)
-#   staging -> stage  (havets-helte-stage)
+#   dev     -> dev    (havets-helte-dev)
+#   stage   -> stage  (havets-helte-stage)
 #   main    -> prod   (havets-helte)
 # Also deployable on demand via the Actions tab (pick the environment).
 on:
   push:
     branches:
-      - develop
-      - staging
+      - dev
+      - stage
       - main
   workflow_dispatch:
     inputs:
@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   dev:
-    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
+    if: github.ref == 'refs/heads/dev' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
     uses: ./.github/workflows/_firebase-deploy.yml
     with:
       environment: dev
@@ -41,7 +41,7 @@ jobs:
       service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
 
   stage:
-    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'stage')
+    if: github.ref == 'refs/heads/stage' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'stage')
     uses: ./.github/workflows/_firebase-deploy.yml
     with:
       environment: stage

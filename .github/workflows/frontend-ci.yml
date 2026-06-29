@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - main
-      - staging
-      - develop
+      - stage
+      - dev
   pull_request:
     branches:
       - main
-      - staging
-      - develop
+      - stage
+      - dev
 
 # A newer push to the same ref supersedes an in-flight run.
 concurrency:
