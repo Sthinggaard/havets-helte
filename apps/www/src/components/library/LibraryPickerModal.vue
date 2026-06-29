@@ -11,10 +11,10 @@
         </div>
 
         <div class="library-toolbar">
-          <label class="library-upload">
+          <button type="button" class="library-upload" @click="triggerUpload">
             <i class="ti ti-upload"></i>Upload nyt billede
-            <input type="file" accept="image/*" @change="handleUpload" />
-          </label>
+          </button>
+          <input ref="uploadInput" class="sr-only" type="file" accept="image/*" @change="handleUpload" />
 
           <div class="library-nav">
             <button type="button" class="btn-action" :disabled="!visibleItems.length" @click="stepSelection(-1)" aria-label="Forrige billede">
@@ -111,6 +111,7 @@ let titleSequence = 0;
 const titleId = `library-picker-title-${++titleSequence}`;
 const activeCategoryId = ref('all');
 const selectedItemId = ref('');
+const uploadInput = ref<HTMLInputElement | null>(null);
 
 watch(
   () => props.open,
@@ -183,6 +184,10 @@ function stepSelection(delta: number) {
 function applySelection() {
   if (!selectedItem.value) return;
   emit('pick', selectedItem.value);
+}
+
+function triggerUpload() {
+  uploadInput.value?.click();
 }
 
 function handleUpload(event: Event) {
@@ -275,10 +280,6 @@ function handleUpload(event: Event) {
 
 .library-upload:hover {
   border-color: var(--navy-mid);
-}
-
-.library-upload input {
-  display: none;
 }
 
 .library-nav {
@@ -395,6 +396,18 @@ function handleUpload(event: Event) {
   color: var(--navy-dark);
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (max-width: 900px) {
