@@ -1,4 +1,4 @@
-.PHONY: app app-stop
+.PHONY: app app-emulators app-stop
 
 APP_HOST ?= 127.0.0.1
 APP_PORT ?= 5175
@@ -6,6 +6,9 @@ APP_DIR ?= apps/www
 
 app:
 	pnpm --dir $(APP_DIR) dev --host $(APP_HOST) --port $(APP_PORT)
+
+app-emulators:
+	npm --prefix $(APP_DIR) run emulators
 
 app-stop:
 	@pids="$$(lsof -tiTCP:$(APP_PORT) -sTCP:LISTEN 2>/dev/null)"; \
