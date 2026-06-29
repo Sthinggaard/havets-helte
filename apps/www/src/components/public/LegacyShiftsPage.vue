@@ -131,37 +131,39 @@
       </section>
     </template>
 
-    <PublicSignupModal
-      :open="modalOpen"
-      :title="selectedEvent?.title || ''"
-      :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
-      :banner-text="showAdultToggle ? 'Mindst én hjælper over 18 år pr. vagt i drinksboden.' : ''"
-      banner-icon="ti ti-id"
-      banner-class="info"
-      submit-label="Tilmeld mig"
-      submitting-label="Tilmelder…"
-      :submitting="submitting"
-      :general-error="errors.general"
-      @close="closeModal"
-      @submit="submit"
-    >
-      <label class="field" :class="{ error: errors.name }">
-        <span class="field-label">Dit navn</span>
-        <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fornavn Efternavn" />
-        <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
-      </label>
+    <template #modal>
+      <PublicSignupModal
+        :open="modalOpen"
+        :title="selectedEvent?.title || ''"
+        :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
+        :banner-text="showAdultToggle ? 'Mindst én hjælper over 18 år pr. vagt i drinksboden.' : ''"
+        banner-icon="ti ti-id"
+        banner-class="info"
+        submit-label="Tilmeld mig"
+        submitting-label="Tilmelder…"
+        :submitting="submitting"
+        :general-error="errors.general"
+        @close="closeModal"
+        @submit="submit"
+      >
+        <label class="field" :class="{ error: errors.name }">
+          <span class="field-label">Dit navn</span>
+          <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fornavn Efternavn" />
+          <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
+        </label>
 
-      <label class="field" :class="{ error: errors.email }">
-        <span class="field-label">Din mail</span>
-        <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
-        <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
-      </label>
+        <label class="field" :class="{ error: errors.email }">
+          <span class="field-label">Din mail</span>
+          <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
+          <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
+        </label>
 
-      <label v-if="showAdultToggle" class="check-row">
-        <input v-model="form.adult" type="checkbox" />
-        <span>Jeg er over 18 år</span>
-      </label>
-    </PublicSignupModal>
+        <label v-if="showAdultToggle" class="check-row">
+          <input v-model="form.adult" type="checkbox" />
+          <span>Jeg er over 18 år</span>
+        </label>
+      </PublicSignupModal>
+    </template>
 
     <template #toast>
       <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>

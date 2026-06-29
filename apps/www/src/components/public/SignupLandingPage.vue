@@ -132,61 +132,63 @@
       </div>
     </template>
 
-    <PublicSignupModal
-      :open="modalOpen"
-      :title="selectedEvent?.title || ''"
-      :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
-      :banner-text="waitlistMode ? 'Denne plads er fuld. Tilmeld dig ventelisten.' : ''"
-      banner-icon="ti ti-clock"
-      banner-class="warning"
-      submit-label="Bekræft tilmelding"
-      submitting-label="Tilmelder…"
-      :submitting="submitting"
-      :general-error="errors.general"
-      @close="closeModal"
-      @submit="submit"
-    >
-      <label class="field" :class="{ error: errors.name }">
-        <span class="field-label">Navn</span>
-        <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fulde navn" />
-        <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
-      </label>
+    <template #modal>
+      <PublicSignupModal
+        :open="modalOpen"
+        :title="selectedEvent?.title || ''"
+        :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
+        :banner-text="waitlistMode ? 'Denne plads er fuld. Tilmeld dig ventelisten.' : ''"
+        banner-icon="ti ti-clock"
+        banner-class="warning"
+        submit-label="Bekræft tilmelding"
+        submitting-label="Tilmelder…"
+        :submitting="submitting"
+        :general-error="errors.general"
+        @close="closeModal"
+        @submit="submit"
+      >
+        <label class="field" :class="{ error: errors.name }">
+          <span class="field-label">Navn</span>
+          <input v-model="form.name" class="field-input" type="text" autocomplete="name" placeholder="Fulde navn" />
+          <span v-if="errors.name" class="field-error" role="alert">{{ errors.name }}</span>
+        </label>
 
-      <label v-if="showChildToggle" class="check-row">
-        <input v-model="form.childMode" type="checkbox" @change="syncChildMode" />
-        <span>Tilmeld et barn</span>
-      </label>
+        <label v-if="showChildToggle" class="check-row">
+          <input v-model="form.childMode" type="checkbox" @change="syncChildMode" />
+          <span>Tilmeld et barn</span>
+        </label>
 
-      <label v-if="!form.childMode" class="field" :class="{ error: errors.email }">
-        <span class="field-label">Mail</span>
-        <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
-        <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
-      </label>
+        <label v-if="!form.childMode" class="field" :class="{ error: errors.email }">
+          <span class="field-label">Mail</span>
+          <input v-model="form.email" class="field-input" type="email" autocomplete="email" placeholder="din@mail.dk" />
+          <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
+        </label>
 
-      <label v-if="showAdultToggle" class="check-row">
-        <input v-model="form.adult" type="checkbox" />
-        <span>{{ adultLabel }}</span>
-      </label>
+        <label v-if="showAdultToggle" class="check-row">
+          <input v-model="form.adult" type="checkbox" />
+          <span>{{ adultLabel }}</span>
+        </label>
 
-      <label v-if="showGroupSize" class="field" :class="{ error: errors.groupSize }">
-        <span class="field-label">Antal deltagere</span>
-        <input
-          v-model.number="form.groupSize"
-          class="field-input"
-          type="number"
-          :min="groupMin"
-          :max="groupMax"
-          step="1"
-          inputmode="numeric"
-        />
-        <span v-if="errors.groupSize" class="field-error" role="alert">{{ errors.groupSize }}</span>
-      </label>
+        <label v-if="showGroupSize" class="field" :class="{ error: errors.groupSize }">
+          <span class="field-label">Antal deltagere</span>
+          <input
+            v-model.number="form.groupSize"
+            class="field-input"
+            type="number"
+            :min="groupMin"
+            :max="groupMax"
+            step="1"
+            inputmode="numeric"
+          />
+          <span v-if="errors.groupSize" class="field-error" role="alert">{{ errors.groupSize }}</span>
+        </label>
 
-      <div v-if="modalSlot?.kind === 'paid' && modalSlot.price" class="price-banner">
-        <i class="ti ti-credit-card" aria-hidden="true"></i>
-        Pris: {{ modalSlot.price }} kr. Du bliver sendt til betaling efter tilmelding.
-      </div>
-    </PublicSignupModal>
+        <div v-if="modalSlot?.kind === 'paid' && modalSlot.price" class="price-banner">
+          <i class="ti ti-credit-card" aria-hidden="true"></i>
+          Pris: {{ modalSlot.price }} kr. Du bliver sendt til betaling efter tilmelding.
+        </div>
+      </PublicSignupModal>
+    </template>
 
     <template #toast>
       <div class="toast" :class="{ show: toastVisible }">{{ toastText }}</div>
