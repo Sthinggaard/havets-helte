@@ -224,26 +224,28 @@
       </form>
     </template>
 
-    <LibraryPickerModal
-      :open="pickerOpen"
-      title="Billedbibliotek"
-      subtitle="Vælg et eksisterende billede eller upload et nyt."
-      :items="libraryItems"
-      :categories="libraryCategories"
-      :selected-item-id="''"
-      @close="pickerOpen = false"
-      @pick="onPickImage"
-      @upload="onUploadImage"
-    />
+    <template #modal>
+      <LibraryPickerModal
+        :open="pickerOpen"
+        title="Billedbibliotek"
+        subtitle="Vælg et eksisterende billede eller upload et nyt."
+        :items="libraryItems"
+        :categories="libraryCategories"
+        :selected-item-id="''"
+        @close="pickerOpen = false"
+        @pick="onPickImage"
+        @upload="onUploadImage"
+      />
 
-    <ConfirmDialog
-      :open="pendingRemove !== null"
-      title="Slet arrangement"
-      :message="pendingRemove ? `Slet “${pendingRemove.title}”? Dette kan ikke fortrydes.` : ''"
-      confirm-label="Slet arrangement"
-      @confirm="performRemove"
-      @cancel="pendingRemove = null"
-    />
+      <ConfirmDialog
+        :open="pendingRemove !== null"
+        title="Slet arrangement"
+        :message="pendingRemove ? `Slet “${pendingRemove.title}”? Dette kan ikke fortrydes.` : ''"
+        confirm-label="Slet arrangement"
+        @confirm="performRemove"
+        @cancel="pendingRemove = null"
+      />
+    </template>
   </PublicLandingPageShell>
 </template>
 
