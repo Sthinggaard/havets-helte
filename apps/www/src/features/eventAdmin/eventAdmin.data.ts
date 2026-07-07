@@ -86,6 +86,15 @@ export function formatTimeRange(start: string, end: string): string {
   return start && end ? `${start}–${end}` : '';
 }
 
+// Formats a slot's ISO "YYYY-MM-DD" date for display, e.g. "21. maj".
+// Parsed with an explicit local time to avoid UTC day-shift on parse.
+export function formatSlotDate(date: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return '';
+  const parsed = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleDateString('da-DK', { day: 'numeric', month: 'long' });
+}
+
 function normalizeTimeInputValue(value: string): string {
   const [hour = '', minute = ''] = value.split(':');
   return `${hour.padStart(2, '0')}:${minute}`;
@@ -98,6 +107,7 @@ export function createSlot(partial?: Partial<EventSlot>): EventSlot {
     label: partial?.label ?? '',
     role: partial?.role ?? '',
     sublabel: partial?.sublabel ?? '',
+    date: partial?.date ?? '',
     capacity: partial?.capacity ?? 3,
     kind: partial?.kind ?? 'volunteer',
     price: partial?.price ?? 0,
@@ -139,6 +149,7 @@ export function createAdminEventFromRecord(record: { id: string; [key: string]: 
         label: typeof slot.label === 'string' ? slot.label : '',
         role: typeof slot.role === 'string' ? slot.role : '',
         sublabel: typeof slot.sublabel === 'string' ? slot.sublabel : '',
+        date: typeof slot.date === 'string' ? slot.date : '',
         capacity: typeof slot.capacity === 'number' ? slot.capacity : 1,
         kind: (slot.kind as SlotKind) ?? 'volunteer',
         price: typeof slot.price === 'number' ? slot.price : 0,
@@ -175,6 +186,7 @@ export function toEventRecord(event: AdminEvent) {
       label: slot.label.trim(),
       role: slot.role,
       sublabel: slot.sublabel,
+      date: slot.date,
       capacity: slot.capacity,
       kind: slot.kind,
       price: slot.kind === 'paid' ? slot.price : 0,

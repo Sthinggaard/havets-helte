@@ -14,6 +14,9 @@ export interface EventSlot {
   // For timed (vagt) slots this is a "HH:MM–HH:MM" time range; for the other
   // types it is a free-text detail note (e.g. "5 spejdere pr. patrulje").
   sublabel: string;
+  // ISO "YYYY-MM-DD", or '' when the slot has no date of its own and only
+  // inherits the parent posting's dateText.
+  date: string;
   capacity: number; // 0 means unlimited
   kind: SlotKind;
   price: number;

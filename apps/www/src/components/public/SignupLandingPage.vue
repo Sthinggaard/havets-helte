@@ -225,7 +225,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { eventItems } from '@/features/events/events.data';
-import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
+import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
 import { buildMapsEmbedUrl, buildMapsUrl } from '@/lib/maps';
@@ -467,7 +467,7 @@ function slotCapacityLabel(slot: EventSlot) {
 }
 
 function slotMeta(slot: EventSlot) {
-  const parts = [slot.role, slot.sublabel].filter(Boolean);
+  const parts = [formatSlotDate(slot.date), slot.role, slot.sublabel].filter(Boolean);
   return parts.join(' · ') || 'Plads';
 }
 

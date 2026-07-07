@@ -45,6 +45,11 @@
         </select>
       </div>
 
+      <div class="si-date">
+        <label class="si-field-label" :for="`${slot.id}-date`">Dato</label>
+        <input :id="`${slot.id}-date`" v-model="slot.date" class="sl-input" type="date" />
+      </div>
+
       <div class="si-sub">
         <label class="si-field-label" :for="`${slot.id}-sub`">{{ config.timedSlots ? 'Tidsrum' : 'Detalje' }}</label>
         <div v-if="config.timedSlots" class="time-range-row">
@@ -220,7 +225,7 @@ function onPrice(event: Event) {
 }
 
 .slot-secondary {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1.4fr;
 }
 
 .si-field-label {

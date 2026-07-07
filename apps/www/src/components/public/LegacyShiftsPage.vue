@@ -99,7 +99,7 @@
             <div class="shift-header">
               <div class="shift-time">
                 <i class="ti ti-clock" aria-hidden="true"></i>
-                {{ slot.sublabel || slot.label }}
+                {{ shiftTimeLabel(slot) }}
               </div>
               <span class="shift-cap" :class="{ 'cap-full': slotRemaining(slot) === 0, 'cap-open': slotRemaining(slot) > 0 }">
                 {{ slotCapacityLabel(slot) }}
@@ -195,7 +195,7 @@ import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.v
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { eventItems } from '@/features/events/events.data';
 import type { EventItem } from '@/features/events/events.types';
-import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
+import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
 import { buildMapsEmbedUrl, buildMapsUrl } from '@/lib/maps';
@@ -448,6 +448,11 @@ function emptyRows(slot: EventSlot) {
   const remaining = slotRemaining(slot);
   if (!Number.isFinite(remaining) || remaining === Infinity) return 0;
   return remaining;
+}
+
+function shiftTimeLabel(slot: EventSlot) {
+  const parts = [formatSlotDate(slot.date), slot.sublabel || slot.label].filter(Boolean);
+  return parts.join(' · ');
 }
 
 function slotCapacityLabel(slot: EventSlot) {
