@@ -1,9 +1,11 @@
-export type BranchId = 'junior' | 'ulv' | 'trop' | 'soespejder';
+export type BranchId = string;
 
 export interface Branch {
   id: BranchId;
   label: string;
-  ageRange: string;
+  active: boolean;
+  minAge: number;
+  maxAge: number;
   focus: string;
   meetingDays: string[];
 }

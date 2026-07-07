@@ -1,5 +1,3 @@
-export type AttendanceViewMode = 'day' | 'week' | 'month' | 'year';
-
 import type { BranchId } from '../roster/roster.types';
 
 export type { Branch, BranchId, Member } from '../roster/roster.types';

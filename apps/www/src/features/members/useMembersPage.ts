@@ -4,6 +4,7 @@ import {
   buildMemberInitials,
   buildMemberTeam,
   createRosterMemberId,
+  publicRosterBranches,
   rosterBranches,
   rosterMembers,
   saveRosterMembers,
@@ -24,20 +25,37 @@ export function useMembersPage() {
   const searchTerm = ref('');
   const selectedMemberId = ref(rosterMembers[0]?.id ?? '');
   const memberName = ref('');
-  const memberBranchId = ref<BranchId>(rosterBranches[0]?.id ?? 'junior');
-  const memberWeekday = ref(rosterBranches[0]?.meetingDays[0] ?? 'Mandag');
+  const memberBranchId = ref<BranchId>(publicRosterBranches.value[0]?.id ?? rosterBranches[0]?.id ?? 'junior');
+  const memberWeekday = ref(publicRosterBranches.value[0]?.meetingDays[0] ?? rosterBranches[0]?.meetingDays[0] ?? 'Mandag');
   const memberBirthYear = ref(2015);
   const memberActive = ref(true);
   const memberError = ref('');
 
-  const branchOptions = computed(() => rosterBranches);
+  const branchOptions = computed(() => publicRosterBranches.value);
   const memberWeekdayOptions = computed(() => branchOptions.value.find(branch => branch.id === memberBranchId.value)?.meetingDays ?? []);
+  const visibleBranchIds = computed(() => new Set(branchOptions.value.map(branch => branch.id)));
 
   watch(
     memberBranchId,
     nextBranchId => {
       const nextWeekdays = branchOptions.value.find(branch => branch.id === nextBranchId)?.meetingDays ?? [];
       memberWeekday.value = nextWeekdays[0] ?? 'Mandag';
+    },
+    { immediate: true },
+  );
+
+  watch(
+    branchOptions,
+    branches => {
+      if (!branches.length) return;
+
+      if (!branches.some(branch => branch.id === memberBranchId.value)) {
+        memberBranchId.value = branches[0].id;
+      }
+
+      if (branchFilter.value !== 'all' && !branches.some(branch => branch.id === branchFilter.value)) {
+        branchFilter.value = 'all';
+      }
     },
     { immediate: true },
   );
@@ -53,6 +71,7 @@ export function useMembersPage() {
   const filteredMembers = computed(() => {
     const term = searchTerm.value.trim().toLowerCase();
     return rosterMembers
+      .filter(member => visibleBranchIds.value.has(member.branchId))
       .filter(member => statusFilter.value === 'all' || (statusFilter.value === 'active' ? member.active : !member.active))
       .filter(member => branchFilter.value === 'all' || member.branchId === branchFilter.value)
       .filter(member => !term || member.name.toLowerCase().includes(term))
@@ -63,9 +82,9 @@ export function useMembersPage() {
   const selectedMember = computed(() => filteredMembers.value.find(member => member.id === selectedMemberId.value) ?? filteredMembers.value[0] ?? null);
 
   const counts = computed(() => ({
-    total: rosterMembers.length,
-    active: rosterMembers.filter(member => member.active).length,
-    inactive: rosterMembers.filter(member => !member.active).length,
+    total: rosterMembers.filter(member => visibleBranchIds.value.has(member.branchId)).length,
+    active: rosterMembers.filter(member => visibleBranchIds.value.has(member.branchId) && member.active).length,
+    inactive: rosterMembers.filter(member => visibleBranchIds.value.has(member.branchId) && !member.active).length,
   }));
 
   const timeline = computed(() => [
@@ -84,7 +103,7 @@ export function useMembersPage() {
   }
 
   function setBranchFilter(branchId: BranchId | 'all') {
-    branchFilter.value = branchId;
+    branchFilter.value = branchId === 'all' || visibleBranchIds.value.has(branchId) ? branchId : 'all';
   }
 
   function setMemberImage(memberId: string, imageUrl: string) {

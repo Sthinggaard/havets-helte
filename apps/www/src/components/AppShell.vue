@@ -1,6 +1,6 @@
 <template>
   <div class="app-frame" :class="{ 'app-frame--landing': isLanding }">
-    <div v-if="isAdmin" class="mode-switch-wrap" :class="{ 'mode-switch-wrap--landing': isLanding }">
+    <div v-if="isAdmin && !isAttendance" class="mode-switch-wrap" :class="{ 'mode-switch-wrap--landing': isLanding }">
       <nav class="mode-switch" aria-label="Visning">
         <router-link class="mode-switch-link" to="/" :class="{ active: isLanding }">
           Landing
@@ -11,7 +11,7 @@
       </nav>
     </div>
 
-    <template v-if="!isLanding">
+    <template v-if="!isLanding && !isAttendance">
       <header class="topbar">
         <router-link class="brand" to="/">
           <span class="brand-mark"><i class="ti ti-anchor" aria-hidden="true"></i></span>
@@ -54,6 +54,7 @@ import { useAdminAuth } from '@/features/admin/useAdminAuth';
 const route = useRoute();
 const { isAdmin } = useAdminAuth();
 const isLanding = computed(() => route.meta.shell === 'landing');
+const isAttendance = computed(() => route.meta.shell === 'attendance');
 const isAdminRoute = computed(() => route.path.startsWith('/admin'));
 const navItems = computed(() => {
   if (isAdminRoute.value) return adminNavigationItems;

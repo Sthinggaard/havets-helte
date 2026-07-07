@@ -31,6 +31,9 @@ const adminItems = [
   { path: '/admin/vagter', icon: 'ti ti-clock', title: 'Vagter', meta: 'Åbn liste og rediger' },
   { path: '/admin/opgaver', icon: 'ti ti-list-check', title: 'Opgaver', meta: 'Åbn liste og rediger' },
   { path: '/admin/arrangementer', icon: 'ti ti-calendar', title: 'Arrangementer', meta: 'Åbn liste og rediger' },
+  { path: '/admin/fremmoede', icon: 'ti ti-checkup-list', title: 'Fremmøde', meta: 'Vælg dag og åbn check-in' },
+  { path: '/medlemmer', icon: 'ti ti-users', title: 'Medlemmer', meta: 'Åbn medlemslisten og rediger' },
+  { path: '/grene', icon: 'ti ti-git-branch', title: 'Grene', meta: 'Åbn grene og medlemmer' },
   { path: '/admin/billedbibliotek', icon: 'ti ti-photo', title: 'Billedbibliotek', meta: 'Upload og vælg billeder' },
 ] as const;
 </script>

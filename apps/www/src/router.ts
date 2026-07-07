@@ -7,6 +7,7 @@ const EventsPage = () => import('./pages/EventsPage.vue');
 const TasksPage = () => import('./pages/TasksPage.vue');
 const ShiftsPage = () => import('./pages/ShiftsPage.vue');
 const AttendancePage = () => import('./pages/AttendancePage.vue');
+const AdminAttendancePage = () => import('./pages/AdminAttendancePage.vue');
 const SignupsPage = () => import('./pages/SignupsPage.vue');
 const MembersPage = () => import('./pages/MembersPage.vue');
 const BranchesPage = () => import('./pages/BranchesPage.vue');
@@ -50,6 +51,13 @@ const routes = [
     name: 'attendance',
     component: AttendancePage,
     alias: ['/attendance.html'],
+    meta: { shell: 'attendance' },
+  },
+  {
+    path: '/admin/fremmoede',
+    name: 'admin-attendance',
+    component: AdminAttendancePage,
+    alias: ['/admin-fremmoede-setup.html'],
   },
   {
     path: '/medlemmer',
