@@ -18,24 +18,39 @@
         </div>
       </template>
 
-      <form class="admin-login" @submit.prevent="handleLogin">
-        <label class="field">
-          <span class="field-label">Mail</span>
-          <input v-model="email" class="field-input" type="email" autocomplete="email" placeholder="sthinggaard@havetshelte.dk" />
-        </label>
-        <label class="field">
-          <span class="field-label">Adgangskode</span>
-          <input v-model="password" class="field-input" type="password" autocomplete="current-password" placeholder="••••••••" />
-        </label>
+      <div class="admin-login">
+        <button
+          type="button"
+          class="btn-action btn-action--primary"
+          :disabled="busy"
+          @click="handleGoogleLogin"
+        >
+          <i class="ti ti-brand-google" aria-hidden="true"></i>
+          Log ind med Google
+        </button>
 
         <p v-if="error" class="admin-error">{{ error }}</p>
 
-        <div class="admin-login-actions">
-          <button type="submit" class="btn-action btn-action--primary" :disabled="busy">
-            {{ busy ? 'Logger ind…' : 'Log ind' }}
-          </button>
-        </div>
-      </form>
+        <details class="admin-login-fallback">
+          <summary>Log ind med mail og adgangskode</summary>
+          <form class="admin-login" @submit.prevent="handleLogin">
+            <label class="field">
+              <span class="field-label">Mail</span>
+              <input v-model="email" class="field-input" type="email" autocomplete="email" placeholder="sthinggaard@havetshelte.dk" />
+            </label>
+            <label class="field">
+              <span class="field-label">Adgangskode</span>
+              <input v-model="password" class="field-input" type="password" autocomplete="current-password" placeholder="••••••••" />
+            </label>
+
+            <div class="admin-login-actions">
+              <button type="submit" class="btn-action btn-action--primary" :disabled="busy">
+                {{ busy ? 'Logger ind…' : 'Log ind' }}
+              </button>
+            </div>
+          </form>
+        </details>
+      </div>
     </PageCard>
 
     <PageCard v-else-if="!isAdmin">
@@ -68,10 +83,14 @@
 import PageCard from '@/components/PageCard.vue';
 import { useAdminAuth } from '@/features/admin/useAdminAuth';
 
-const { busy, email, error, isAdmin, login, logout, password, ready, user } = useAdminAuth();
+const { busy, email, error, isAdmin, login, loginWithGoogle, logout, password, ready, user } = useAdminAuth();
 
 async function handleLogin() {
   await login();
+}
+
+async function handleGoogleLogin() {
+  await loginWithGoogle();
 }
 </script>
 
@@ -85,6 +104,20 @@ async function handleLogin() {
   display: grid;
   gap: 14px;
   max-width: 420px;
+}
+
+.admin-login-fallback {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.admin-login-fallback summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-login-fallback .admin-login {
+  margin-top: 14px;
 }
 
 .admin-error {

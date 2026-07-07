@@ -1,5 +1,12 @@
 import { computed, onBeforeUnmount, ref } from 'vue';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+import {
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth';
 
 import { getAppAuth } from '@/lib/firebase';
 
@@ -53,6 +60,22 @@ async function login() {
   }
 }
 
+async function loginWithGoogle() {
+  const auth = await getAppAuth();
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ hd: ADMIN_EMAIL_DOMAIN.slice(1) });
+  busy.value = true;
+  error.value = '';
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error('[admin-auth] google login failed', err);
+    error.value = 'Google-login mislykkedes. Prøv igen.';
+  } finally {
+    busy.value = false;
+  }
+}
+
 async function logout() {
   const auth = await getAppAuth();
   await signOut(auth);
@@ -74,6 +97,7 @@ export function useAdminAuth() {
     error,
     isAdmin,
     login,
+    loginWithGoogle,
     logout,
     password,
     ready,
