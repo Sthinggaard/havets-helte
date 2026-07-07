@@ -53,6 +53,9 @@ jobs:
   prod:
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
     uses: ./.github/workflows/_firebase-deploy.yml
+    permissions:
+      contents: read
+      id-token: write
     with:
       environment: production
       firebase_alias: prod
