@@ -2,7 +2,8 @@ name: Firebase Deploy (reusable)
 
 # Reusable deploy job shared by every environment. The caller (deploy.yml)
 # supplies the GitHub environment, the .firebaserc alias, the Vue build script,
-# and the matching service-account secret.
+# and either a Workload Identity Federation provider (preferred — no stored
+# key) or a legacy service-account JSON secret.
 on:
   workflow_call:
     inputs:
@@ -18,10 +19,20 @@ on:
         description: npm script that builds the Vue app for this env
         required: true
         type: string
+      wif_provider:
+        description: Workload Identity provider resource name (leave empty to fall back to the JSON secret)
+        required: false
+        type: string
+        default: ''
+      wif_service_account:
+        description: Service account email to impersonate via Workload Identity Federation
+        required: false
+        type: string
+        default: ''
     secrets:
       service_account:
-        description: Firebase service-account JSON for the target project
-        required: true
+        description: Firebase service-account JSON for the target project (only needed when wif_provider is empty)
+        required: false
 
 jobs:
   deploy:
@@ -29,6 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -55,7 +69,15 @@ jobs:
         working-directory: apps/www
         run: npm ci
 
-      - name: Write service account credentials
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        if: inputs.wif_provider != ''
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ inputs.wif_provider }}
+          service_account: ${{ inputs.wif_service_account }}
+
+      - name: Write service account credentials (legacy key-based auth)
+        if: inputs.wif_provider == ''
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.service_account }}
         run: |

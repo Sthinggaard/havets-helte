@@ -57,5 +57,6 @@ jobs:
       environment: production
       firebase_alias: prod
       build_script: build:prod
-    secrets:
-      service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE }}
+      # Keyless auth via Workload Identity Federation — see ENVIRONMENTS.md.
+      wif_provider: projects/148727737530/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+      wif_service_account: github-action-1266570338@havets-helte.iam.gserviceaccount.com
