@@ -147,6 +147,10 @@
           </article>
         </div>
       </div>
+      <div v-else-if="!loading" class="empty-state">
+        <div class="empty-state-title">Ingen {{ sectionMeta.title.toLowerCase() }} lige nu</div>
+        <div class="empty-state-copy">Der er ikke oprettet noget endnu. Kig forbi igen senere.</div>
+      </div>
     </template>
 
     <template #modal>
@@ -221,7 +225,6 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { eventItems } from '@/features/events/events.data';
-import type { EventItem } from '@/features/events/events.types';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
@@ -249,7 +252,6 @@ type PublicEvent = {
   slots: EventSlot[];
   title: string;
   type: LandingSection;
-  source: 'live' | 'fallback';
   createdAt?: number;
   updatedAt?: number;
 };
@@ -346,10 +348,6 @@ function fallbackImage(section: LandingSection) {
   return fallback?.image || '/og-sankthans.png';
 }
 
-function toLandingType(type: EventItem['type']): LandingSection {
-  return type === 'shift' ? 'timed' : type;
-}
-
 function normalizeLiveEvent(event: AdminEvent): PublicEvent {
   return {
     id: event.id,
@@ -362,27 +360,8 @@ function normalizeLiveEvent(event: AdminEvent): PublicEvent {
     imageUrl: event.imageUrl || '/og-sankthans.png',
     slots: event.slots,
     active: event.active,
-    source: 'live',
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,
-  };
-}
-
-function fallbackEvent(section: LandingSection): PublicEvent | null {
-  const item = eventItems.find(candidate => candidate.type === section);
-  if (!item) return null;
-  return {
-    id: item.id,
-    type: toLandingType(item.type),
-    title: item.title,
-    dateText: item.dateText,
-    location: item.location,
-    description: item.summary,
-    paymentUrl: '',
-    imageUrl: item.image,
-    slots: [],
-    active: true,
-    source: 'fallback',
   };
 }
 
@@ -390,13 +369,10 @@ async function loadEvents() {
   loading.value = true;
   try {
     const live = (await fetchAllAdminEvents()).map(normalizeLiveEvent);
-    const filteredLive = live.filter(event => event.type === props.section && event.active);
-    const fallback = fallbackEvent(props.section);
-    allEvents.value = filteredLive.length ? filteredLive : fallback ? [fallback] : [];
+    allEvents.value = live.filter(event => event.type === props.section && event.active);
   } catch (error) {
     console.error('[signup-landing] failed to load live events', error);
-    const fallback = fallbackEvent(props.section);
-    allEvents.value = fallback ? [fallback] : [];
+    allEvents.value = [];
   } finally {
     loading.value = false;
   }
