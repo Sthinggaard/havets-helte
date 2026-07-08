@@ -16,13 +16,17 @@
     "rewrites": [
       {
         "source": "/api/submitSignup",
-        "function": "submitSignup",
-        "region": "europe-west1"
+        "run": {
+          "serviceId": "submitsignup",
+          "region": "europe-west1"
+        }
       },
       {
         "source": "/share",
-        "function": "shareEvent",
-        "region": "europe-west1"
+        "run": {
+          "serviceId": "shareevent",
+          "region": "europe-west1"
+        }
       },
       {
         "source": "**",
