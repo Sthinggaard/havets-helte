@@ -2,8 +2,8 @@ name: Firebase Deploy (reusable)
 
 # Reusable deploy job shared by every environment. The caller (deploy.yml)
 # supplies the GitHub environment, the .firebaserc alias, the Vue build script,
-# and either a Workload Identity Federation provider (preferred — no stored
-# key) or a legacy service-account JSON secret.
+# and the Workload Identity Federation provider + service account (keyless
+# auth — org policy forbids service-account JSON keys).
 on:
   workflow_call:
     inputs:
@@ -20,19 +20,13 @@ on:
         required: true
         type: string
       wif_provider:
-        description: Workload Identity provider resource name (leave empty to fall back to the JSON secret)
-        required: false
+        description: Workload Identity provider resource name
+        required: true
         type: string
-        default: ''
       wif_service_account:
         description: Service account email to impersonate via Workload Identity Federation
-        required: false
+        required: true
         type: string
-        default: ''
-    secrets:
-      service_account:
-        description: Firebase service-account JSON for the target project (only needed when wif_provider is empty)
-        required: false
 
 jobs:
   deploy:
@@ -40,6 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
+    # Serialize deploys per environment so a newer run never races an in-flight
+    # deploy of the same env; different envs still deploy independently.
+    concurrency:
+      group: firebase-deploy-${{ inputs.firebase_alias }}
+      cancel-in-progress: false
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -67,23 +66,10 @@ jobs:
         run: npm ci
 
       - name: Authenticate to Google Cloud (Workload Identity Federation)
-        if: inputs.wif_provider != ''
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ inputs.wif_provider }}
           service_account: ${{ inputs.wif_service_account }}
-
-      - name: Write service account credentials (legacy key-based auth)
-        if: inputs.wif_provider == ''
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.service_account }}
-        run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "Missing service account secret for environment '${{ inputs.environment }}'"
-            exit 1
-          fi
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$HOME/firebase-service-account.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-service-account.json" >> "$GITHUB_ENV"
 
       - name: Deploy to Firebase
         env:

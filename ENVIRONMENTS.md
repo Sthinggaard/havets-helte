@@ -1,65 +1,65 @@
 # Environments (dev / stage / prod)
 
-Three isolated Firebase projects, promoted by branch:
+Three isolated Firebase projects with a promotion pipeline:
 
-| Env   | Branch    | `.firebaserc` alias | Firebase project (default names) | GitHub environment | Service-account secret |
-|-------|-----------|---------------------|----------------------------------|--------------------|------------------------|
-| dev   | `dev`     | `dev`               | `havets-helte-dev`               | `dev`              | `FIREBASE_SERVICE_ACCOUNT_DEV` |
-| stage | `stage`   | `stage`             | `havets-helte-stage`             | `stage`            | `FIREBASE_SERVICE_ACCOUNT_STAGE` |
-| prod  | `main`    | `prod`              | `havets-helte`                   | `production`       | `FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE` |
+| Env   | `.firebaserc` alias | Firebase project     | GitHub environment | When it deploys |
+|-------|---------------------|----------------------|--------------------|-----------------|
+| dev   | `dev`               | `havets-helte-dev`   | `dev`              | automatically on every push to `main` |
+| stage | `stage`             | `havets-helte-stage` | `stage`            | automatically after dev succeeds |
+| prod  | `prod`              | `havets-helte`       | `production`       | **manual only** — Actions tab → Deploy → Run workflow → `prod` |
 
-Pushing to a branch auto-deploys that environment (`.github/workflows/deploy.yml` →
-reusable `_firebase-deploy.yml`), deploying `hosting,functions,firestore:rules,storage`.
-You can also deploy on demand from the Actions tab (**Deploy** → Run workflow → pick env).
+Prod is never deployed automatically. The manual `workflow_dispatch` trigger is
+the approval step (GitHub's built-in environment approval gates require a paid
+plan on private repos). Individual envs can also be deployed on demand from the
+Actions tab.
+
+## Authentication: Workload Identity Federation (no keys)
+
+The org (`havetshelte.dk`) enforces `iam.managed.disableServiceAccountKeyCreation`,
+so CI cannot use service-account JSON secrets. Instead each project has a
+Workload Identity pool `github-actions-pool` with OIDC provider `github-provider`
+that trusts GitHub Actions tokens from the `Sthinggaard/foraeldrehelte` repo, and
+a CI service account the workflow impersonates:
+
+| Env   | Project number | Service account |
+|-------|----------------|-----------------|
+| dev   | 986076619978   | `github-action@havets-helte-dev.iam.gserviceaccount.com` |
+| stage | 658395766805   | `github-action@havets-helte-stage.iam.gserviceaccount.com` |
+| prod  | 148727737530   | `github-action-1266570338@havets-helte.iam.gserviceaccount.com` |
+
+Each CI service account holds: `firebasehosting.admin`, `cloudfunctions.developer`,
+`firebase.admin`, `firebasestorage.admin`, `firebaseauth.admin`,
+`serviceusage.serviceUsageConsumer`, `run.viewer`, plus `iam.serviceAccountUser`
+on the project's compute default service account (2nd-gen functions runtime).
+The compute default service account holds `cloudbuild.builds.builder` (functions
+builds run under it). The caller job in `deploy.yml` must set
+`permissions: {contents: read, id-token: write}` — putting the permissions block
+inside the reusable workflow causes a silent `startup_failure`.
 
 How the app picks a project: each env has an `apps/www/.env.<mode>` file with the
-project's public web config. CI deploys set `FIREBASE_HOSTING_BUILD_SCRIPT` to
-`build:dev|build:stage|build:prod`; Firebase's hosting predeploy then runs that
-matching script (`vite build --mode …`). The predeploy wrapper rejects env files
-that still contain `REPLACE_WITH_*` placeholders so a branch cannot deploy a broken
-client config by accident. `firebase.ts` reads `VITE_FIREBASE_*` and falls back to
-the prod values when no env file is present. A local `npm run dev` is unaffected —
-it still uses Vite's default `development` mode and the gitignored local `.env`
-(emulators).
+project's public web config. The deploy sets `FIREBASE_HOSTING_BUILD_SCRIPT` to
+`build:dev|build:stage|build:prod`; the hosting predeploy runs that script
+(`vite build --mode …`). **Never run a bare `firebase deploy --only hosting`
+locally** — the default `build` script picks up the gitignored `apps/www/.env`
+(emulator config) and ships localhost URLs to the target project. Always set
+`FIREBASE_HOSTING_BUILD_SCRIPT` explicitly, or let CI deploy.
 
-## One-time setup
+## Setup status (completed 2026-07-08)
 
-1. **Create the two new Firebase projects.** Done 2026-06-26 via Firebase CLI:
-   `havets-helte-dev` and `havets-helte-stage`.
-
-2. **Fill in the web config** for dev + stage in `apps/www/.env.dev` and
-   `apps/www/.env.stage`. Done 2026-06-26 via Firebase CLI web app registration.
-
-3. **Enable required Firebase products in dev + stage.**
-   - Done 2026-06-26: core APIs enabled for Firestore, Auth, Storage, and Hosting.
-   - Done 2026-06-26: Firestore default databases created in `eur3` to match prod.
-   - Done 2026-06-26: `firestore.rules` deployed to dev and stage.
-   - Done 2026-06-26: Authentication Email/Password provider enabled in dev and
-     stage, verified with Identity Toolkit config (`passwordRequired: true`).
-   - Still manual: attach billing/Blaze before deploying Storage + Functions. The
-     billing-gated APIs are `artifactregistry.googleapis.com`,
-     `cloudbuild.googleapis.com`, `run.googleapis.com`, and the related Functions
-     runtime services.
-   - Still manual after Blaze: initialize/enable Firebase Storage in each project,
-     then deploy `storage.rules`.
-
-4. **Create service accounts + GitHub secrets.** For each project: Console → Project
-   settings → Service accounts → Generate new private key. Add the JSON as a repo
-   secret named per the table above (Settings → Secrets and variables → Actions).
-   Prod's secret (`FIREBASE_SERVICE_ACCOUNT_HAVETS_HELTE`) already exists.
-
-5. **Create the long-lived branches** `dev` and `stage`, and push them so
-   the deploy workflow has something to track. Both branches exist locally as of
-   2026-06-26; both still need to be pushed.
-
-6. *(Optional)* Add GitHub **Environments** named `dev`, `stage`, `production`
-   (Settings → Environments) to attach protection rules — e.g. a required reviewer
-   before `production` deploys.
+- All three projects are on the Blaze plan (billing account `016475-CCDB70-A0F5F0`);
+  free-tier allowances keep real cost ~€0 for this app.
+- Firebase Storage default buckets exist in all three projects (location `EU`).
+- Firestore databases in `eur3`, Auth Email/Password enabled in dev + stage.
+- WIF pools/providers/service accounts and IAM roles configured in all three
+  projects (see table above).
+- The legacy `FIREBASE_SERVICE_ACCOUNT_*` GitHub secrets are no longer used and
+  were never populated.
 
 ## Notes
 
-- **Blaze required:** deploying `storage` and `functions` needs each project on the
-  Blaze (pay-as-you-go) plan; on the free Spark plan those `--only` targets fail.
-  The free-tier allowances still apply under Blaze, so real cost is ~€0 for this app.
-- Rules (`firestore.rules`, `storage.rules`) are shared across all environments — the
-  same files deploy to every project.
+- Rules (`firestore.rules`, `storage.rules`) are shared across all environments —
+  the same files deploy to every project.
+- Deploys pass `--force` so functions removed from source are deleted without an
+  interactive prompt.
+- Deploys are serialized per environment (job-level concurrency group
+  `firebase-deploy-<alias>`); different environments deploy independently.

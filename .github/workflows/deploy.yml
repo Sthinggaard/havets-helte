@@ -1,15 +1,13 @@
 name: Deploy
 
-# Branch -> environment promotion:
-#   dev     -> dev    (havets-helte-dev)
-#   stage   -> stage  (havets-helte-stage)
-#   main    -> prod   (havets-helte)
-# Also deployable on demand via the Actions tab (pick the environment).
+# Promotion pipeline: every push to main deploys dev, then stage. Prod is
+# NEVER deployed automatically — deploying to the live site requires manually
+# running this workflow from the Actions tab with environment "prod"
+# (that manual trigger is the approval step; GitHub's built-in environment
+# approval gates need a paid plan on private repos).
 on:
   push:
     branches:
-      - dev
-      - stage
       - main
   workflow_dispatch:
     inputs:
@@ -23,35 +21,40 @@ on:
           - stage
           - prod
 
-# Serialize deploys per ref so a newer push to the same branch never races an
-# in-flight deploy. Different branches/envs still deploy in parallel.
-concurrency:
-  group: firebase-deploy-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   dev:
-    if: github.ref == 'refs/heads/dev' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
     uses: ./.github/workflows/_firebase-deploy.yml
+    permissions:
+      contents: read
+      id-token: write
     with:
       environment: dev
       firebase_alias: dev
       build_script: build:dev
-    secrets:
-      service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
+      wif_provider: projects/986076619978/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+      wif_service_account: github-action@havets-helte-dev.iam.gserviceaccount.com
 
   stage:
-    if: github.ref == 'refs/heads/stage' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'stage')
+    needs: [dev]
+    if: >-
+      !cancelled() && (
+        (github.event_name == 'push' && needs.dev.result == 'success') ||
+        (github.event_name == 'workflow_dispatch' && inputs.environment == 'stage')
+      )
     uses: ./.github/workflows/_firebase-deploy.yml
+    permissions:
+      contents: read
+      id-token: write
     with:
       environment: stage
       firebase_alias: stage
       build_script: build:stage
-    secrets:
-      service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGE }}
+      wif_provider: projects/658395766805/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+      wif_service_account: github-action@havets-helte-stage.iam.gserviceaccount.com
 
   prod:
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'prod'
     uses: ./.github/workflows/_firebase-deploy.yml
     permissions:
       contents: read
@@ -60,6 +63,5 @@ jobs:
       environment: production
       firebase_alias: prod
       build_script: build:prod
-      # Keyless auth via Workload Identity Federation — see ENVIRONMENTS.md.
       wif_provider: projects/148727737530/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
       wif_service_account: github-action-1266570338@havets-helte.iam.gserviceaccount.com
