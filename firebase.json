@@ -15,13 +15,6 @@
     ],
     "rewrites": [
       {
-        "source": "/api/submitSignup",
-        "run": {
-          "serviceId": "submitsignup",
-          "region": "europe-west1"
-        }
-      },
-      {
         "source": "/share",
         "run": {
           "serviceId": "shareevent",

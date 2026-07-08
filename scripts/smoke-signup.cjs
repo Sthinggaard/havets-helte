@@ -1,17 +1,30 @@
 const admin = require('../functions/node_modules/firebase-admin');
+const { initializeApp } = require('../apps/www/node_modules/firebase/app');
+const {
+  getFirestore,
+  connectFirestoreEmulator,
+  doc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
+} = require('../apps/www/node_modules/firebase/firestore');
 
 const projectId = 'havets-helte';
 
 admin.initializeApp({ projectId });
-const db = admin.firestore();
-db.settings({ ignoreUndefinedProperties: true });
+const adminDb = admin.firestore();
+adminDb.settings({ ignoreUndefinedProperties: true });
+
+const clientApp = initializeApp({ projectId, apiKey: 'demo' }, 'smoke-signup-client');
+const clientDb = getFirestore(clientApp);
+connectFirestoreEmulator(clientDb, '127.0.0.1', 8081);
 
 async function main() {
   const eventId = `smoke-${Date.now()}`;
   const signupName = 'Smoke Test Parent';
   const signupEmail = 'smoke@example.com';
 
-  await db.collection('events').doc(eventId).set({
+  await adminDb.collection('events').doc(eventId).set({
     title: 'Smoke test event',
     dateText: '2026-06-19',
     location: 'Test location',
@@ -28,39 +41,38 @@ async function main() {
     ],
   });
 
-  const response = await fetch('http://127.0.0.1:5003/api/submitSignup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      eventId,
-      slotId: 'slot-a',
-      name: signupName,
-      email: signupEmail,
-      adult: true,
-      childMode: false,
-      groupSize: 1,
-      waitlistPreferred: false,
-    }),
+  // Simulates the unauthenticated browser write from apps/www/src/lib/signupApi.ts.
+  const signupId = 'smoke-signup-id';
+  await setDoc(doc(clientDb, 'signups', signupId), {
+    eventId,
+    slotId: 'slot-a',
+    name: signupName,
+    adult: true,
+    groupSize: 1,
+    created: serverTimestamp(),
+  });
+  await setDoc(doc(clientDb, 'signupContacts', signupId), {
+    eventId,
+    eventTitle: 'Smoke test event',
+    name: signupName,
+    email: signupEmail,
+    cancelToken: 'smoke-cancel-token',
+    created: serverTimestamp(),
   });
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Expected 200 from submitSignup, got ${response.status}: ${body}`);
-  }
-
-  const result = await response.json();
-  if (!result.signupId) {
-    throw new Error('submitSignup did not return signupId');
-  }
-
-  const signupSnap = await db.collection('signups').doc(result.signupId).get();
-  if (!signupSnap.exists) {
+  const signupSnap = await getDoc(doc(clientDb, 'signups', signupId));
+  if (!signupSnap.exists()) {
     throw new Error('signup document was not created');
   }
 
   const signup = signupSnap.data() || {};
   if (signup.eventId !== eventId || signup.slotId !== 'slot-a' || signup.name !== signupName) {
     throw new Error('signup document content does not match the submitted payload');
+  }
+
+  const contactSnap = await adminDb.collection('signupContacts').doc(signupId).get();
+  if (!contactSnap.exists || contactSnap.data().email !== signupEmail) {
+    throw new Error('signupContacts document was not created correctly');
   }
 
   console.log('signup_smoke_ok');

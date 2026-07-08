@@ -40,10 +40,6 @@ jobs:
         working-directory: apps/www
         run: npm ci
 
-      - name: Build Vue app
-        working-directory: apps/www
-        run: npm run build
-
-      - name: Start Firebase emulators and smoke test signup endpoint
+      - name: Start Firestore emulator and smoke test public signup write
         working-directory: ..
-        run: npx -y firebase-tools@latest emulators:exec --project havets-helte --only auth,firestore,functions,hosting "node scripts/smoke-signup.cjs"
+        run: npx -y firebase-tools@latest emulators:exec --project havets-helte --only firestore "node scripts/smoke-signup.cjs"

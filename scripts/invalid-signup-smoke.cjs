@@ -1,54 +1,72 @@
-async function postSignup(payload) {
-  return fetch('http://127.0.0.1:5003/api/submitSignup', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-}
+const { initializeApp } = require('../apps/www/node_modules/firebase/app');
+const {
+  getFirestore,
+  connectFirestoreEmulator,
+  collection,
+  doc,
+  setDoc,
+  serverTimestamp,
+} = require('../apps/www/node_modules/firebase/firestore');
 
-async function expectBadRequest(label, payload) {
-  const response = await postSignup(payload);
-  const body = await response.json().catch(() => ({}));
+const projectId = 'havets-helte';
 
-  if (response.status !== 400) {
-    throw new Error(`${label}: expected HTTP 400, got ${response.status} with body ${JSON.stringify(body)}`);
+const clientApp = initializeApp({ projectId, apiKey: 'demo' }, 'invalid-signup-smoke-client');
+const clientDb = getFirestore(clientApp);
+connectFirestoreEmulator(clientDb, '127.0.0.1', 8081);
+
+async function expectRejected(label, data) {
+  try {
+    await setDoc(doc(collection(clientDb, 'signups')), data);
+  } catch (error) {
+    if (error.code === 'permission-denied') return;
+    throw new Error(`${label}: expected permission-denied, got ${error.code || error.message}`);
   }
-
-  if (!body.status || body.status === 'confirmed' || body.status === 'waitlist') {
-    throw new Error(`${label}: expected validation error status, got ${JSON.stringify(body)}`);
-  }
+  throw new Error(`${label}: expected the write to be rejected, but it succeeded`);
 }
 
 async function main() {
-  await expectBadRequest('missing eventId', {
+  await expectRejected('missing eventId', {
     slotId: 'slot-a',
     name: 'Invalid Test',
-    email: 'invalid@example.com',
     adult: true,
-    childMode: false,
     groupSize: 1,
-    waitlistPreferred: false,
+    created: serverTimestamp(),
   });
 
-  await expectBadRequest('missing slotId', {
+  await expectRejected('missing slotId', {
     eventId: 'event-a',
     name: 'Invalid Test',
-    email: 'invalid@example.com',
     adult: true,
-    childMode: false,
     groupSize: 1,
-    waitlistPreferred: false,
+    created: serverTimestamp(),
   });
 
-  await expectBadRequest('invalid email', {
+  await expectRejected('empty name', {
+    eventId: 'event-a',
+    slotId: 'slot-a',
+    name: '',
+    adult: true,
+    groupSize: 1,
+    created: serverTimestamp(),
+  });
+
+  await expectRejected('groupSize out of range', {
     eventId: 'event-a',
     slotId: 'slot-a',
     name: 'Invalid Test',
-    email: 'not-an-email',
     adult: true,
-    childMode: false,
+    groupSize: 999,
+    created: serverTimestamp(),
+  });
+
+  await expectRejected('extra unexpected field', {
+    eventId: 'event-a',
+    slotId: 'slot-a',
+    name: 'Invalid Test',
+    adult: true,
     groupSize: 1,
-    waitlistPreferred: false,
+    created: serverTimestamp(),
+    isAdmin: true,
   });
 
   console.log('signup_validation_smoke_ok');
