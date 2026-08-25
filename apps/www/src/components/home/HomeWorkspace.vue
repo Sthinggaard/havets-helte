@@ -108,14 +108,19 @@ const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
   min-height: 44px;
   margin-top: 16px;
   padding: 10px 14px;
-  border: 1px solid rgba(44, 152, 183, 0.52);
+  border: 1px solid var(--teal-light);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--teal-deep);
   color: #fff;
   font-weight: 800;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16);
 }
 
 .home-volunteer-link:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: #0b5870;
+}
+
+.home-volunteer-link:focus-visible {
+  outline-color: #fff;
 }
 </style>
