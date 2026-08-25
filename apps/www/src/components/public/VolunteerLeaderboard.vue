@@ -28,8 +28,17 @@
         Kunne ikke hente leaderboardet. Prøv igen senere.
       </div>
 
-      <div v-else-if="!topEntries.length" class="leaderboard-status">
-        Ingen frivilligtilmeldinger endnu.
+      <div
+        v-else-if="!topEntries.length"
+        class="leaderboard-empty"
+        role="status"
+        aria-label="Leaderboardet er klar. Guld, sølv og bronze er endnu ikke tildelt."
+      >
+        <div class="leaderboard-empty-medals" aria-hidden="true">
+          <span class="leaderboard-rank leaderboard-rank--medal leaderboard-rank--gold"><i class="ti ti-medal"></i></span>
+          <span class="leaderboard-rank leaderboard-rank--medal leaderboard-rank--silver"><i class="ti ti-medal"></i></span>
+          <span class="leaderboard-rank leaderboard-rank--medal leaderboard-rank--bronze"><i class="ti ti-medal"></i></span>
+        </div>
       </div>
 
       <ol v-else class="leaderboard-list" aria-label="Top 10 frivillighelte">
@@ -205,6 +214,24 @@ onMounted(async () => {
   color: var(--muted);
   font-weight: 700;
   text-align: center;
+}
+
+.leaderboard-empty {
+  display: grid;
+  min-height: 160px;
+  place-items: center;
+}
+
+.leaderboard-empty-medals {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.leaderboard-empty .leaderboard-rank--medal {
+  width: 48px;
+  height: 48px;
+  font-size: 1.65rem;
 }
 
 .leaderboard-status--error {
