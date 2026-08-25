@@ -34,7 +34,16 @@
 
       <ol v-else class="leaderboard-list" aria-label="Top 10 frivillighelte">
         <li v-for="(entry, index) in topEntries" :key="entry.name" class="leaderboard-row" :class="{ 'leaderboard-row--first': index === 0 }">
-          <span class="leaderboard-rank" :aria-label="`Plads ${index + 1}`">{{ index + 1 }}</span>
+          <span
+            v-if="index < 3"
+            class="leaderboard-rank leaderboard-rank--medal"
+            :class="`leaderboard-rank--${medalTone(index)}`"
+            :aria-label="`${medalLabel(index)} · plads ${index + 1}`"
+            role="img"
+          >
+            <i class="ti ti-medal" aria-hidden="true"></i>
+          </span>
+          <span v-else class="leaderboard-rank">{{ index + 1 }}</span>
           <span class="leaderboard-avatar" aria-hidden="true">{{ initials(entry.name) }}</span>
           <span class="leaderboard-name">{{ entry.name }}</span>
           <span class="leaderboard-count">{{ signupLabel(entry.signups) }}</span>
@@ -68,6 +77,14 @@ function initials(name: string): string {
 
 function signupLabel(signups: number): string {
   return `${signups} ${signups === 1 ? 'tilmelding' : 'tilmeldinger'}`;
+}
+
+function medalTone(index: number): 'gold' | 'silver' | 'bronze' {
+  return index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+}
+
+function medalLabel(index: number): string {
+  return index === 0 ? 'Guld' : index === 1 ? 'Sølv' : 'Bronze';
 }
 
 onMounted(async () => {
@@ -118,6 +135,32 @@ onMounted(async () => {
 
 .leaderboard-row--first .leaderboard-rank {
   color: var(--teal-deep);
+}
+
+.leaderboard-rank--medal {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--navy-dark);
+  font-size: 1.15rem;
+}
+
+.leaderboard-row--first .leaderboard-rank--medal {
+  color: var(--navy-dark);
+}
+
+.leaderboard-rank--gold {
+  background: var(--medal-gold);
+}
+
+.leaderboard-rank--silver {
+  background: var(--medal-silver);
+}
+
+.leaderboard-rank--bronze {
+  background: var(--medal-bronze);
 }
 
 .leaderboard-avatar {

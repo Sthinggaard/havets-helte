@@ -28,6 +28,11 @@
   --teal-deep: #146e88;
   --teal-light: #6ebccd; /* on-navy only; fails contrast on white */
 
+  /* Leaderboard ranking */
+  --medal-gold: #d9a62e;
+  --medal-silver: #a9b5c1;
+  --medal-bronze: #c77842;
+
   /* Status */
   --success: #c9e1bd;
   --success-bg: #c9e1bd;
