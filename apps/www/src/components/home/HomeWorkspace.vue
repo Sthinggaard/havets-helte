@@ -12,10 +12,6 @@
         </div>
         <h1 class="hero-title">{{ homeHero.title }}</h1>
         <div class="hero-desc">{{ homeHero.description }}</div>
-        <RouterLink class="home-volunteer-link" to="/frivillighelte">
-          <i class="ti ti-heart-handshake" aria-hidden="true" />
-          Se Frivillighelte
-        </RouterLink>
       </div>
     </section>
 
@@ -85,27 +81,4 @@ const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
   align-items: flex-start;
 }
 
-.home-volunteer-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  min-height: 44px;
-  margin-top: 16px;
-  padding: 10px 14px;
-  border: 1px solid var(--teal-light);
-  border-radius: 12px;
-  background: var(--teal-deep);
-  color: #fff;
-  font-weight: 800;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.16);
-}
-
-.home-volunteer-link:hover {
-  background: #0b5870;
-}
-
-.home-volunteer-link:focus-visible {
-  outline-color: #fff;
-}
 </style>
