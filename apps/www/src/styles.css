@@ -1356,30 +1356,6 @@ a {
     linear-gradient(180deg, rgba(0, 51, 102, 0.02) 0%, rgba(0, 51, 102, 0.08) 42%, rgba(0, 51, 102, 0.82) 100%);
 }
 
-.hero-waves {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.hero-waves svg {
-  width: 249px;
-  height: 60px;
-  display: block;
-}
-
-.home-wave {
-  fill: none;
-  stroke: #7fa3cc;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 9px;
-}
-
 .home-shell {
   width: min(70vw, calc(100% - 36px));
   max-width: none;
