@@ -16,9 +16,6 @@
           <use href="#homeWaveLine" y="60" />
         </svg>
       </div>
-    </section>
-
-    <div class="page-shell home-shell">
       <div class="hero-content">
         <div class="hero-brand">
           <img class="hero-logo" src="/havets-helte-logo.svg" alt="Havets Helte logo" />
@@ -34,13 +31,15 @@
           Se Frivillighelte
         </RouterLink>
       </div>
+    </section>
 
-        <div class="content home-content">
-          <div class="section-head section-head--compact">
-            <div>
-              <h2 class="section-title">Arrangementer, opgaver og vagter</h2>
-            </div>
+    <div class="page-shell home-shell">
+      <div class="content home-content">
+        <div class="section-head section-head--compact">
+          <div>
+            <h2 class="section-title">Arrangementer, opgaver og vagter</h2>
           </div>
+        </div>
 
         <div class="events-grid home-events-grid">
           <RouterLink
