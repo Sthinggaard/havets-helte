@@ -46,6 +46,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // The public volunteer leaderboard is derived by trusted backend code.
+    // Clients can read it, but cannot change rankings or scores themselves.
+    match /leaderboards/{id} {
+      allow read: if id == 'volunteers';
+      allow write: if false;
+    }
+
     // SignupContacts: kun ledere læser (GDPR). Anyone can create alongside a
     // signup (no login required); shape-only validation, never readable back.
     match /signupContacts/{id} {

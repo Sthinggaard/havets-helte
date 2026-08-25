@@ -29,6 +29,10 @@
         </div>
         <h1 class="hero-title">{{ homeHero.title }}</h1>
         <div class="hero-desc">{{ homeHero.description }}</div>
+        <RouterLink class="home-volunteer-link" to="/frivillighelte">
+          <i class="ti ti-heart-handshake" aria-hidden="true" />
+          Se Frivillighelte
+        </RouterLink>
       </div>
 
         <div class="content home-content">
@@ -94,5 +98,24 @@ const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
 .home-event-card .event-card-head {
   width: 100%;
   align-items: flex-start;
+}
+
+.home-volunteer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(44, 152, 183, 0.52);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 800;
+}
+
+.home-volunteer-link:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 </style>

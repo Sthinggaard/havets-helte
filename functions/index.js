@@ -1,10 +1,132 @@
 const admin = require('firebase-admin');
 const logger = require('firebase-functions/logger');
 const { onRequest } = require('firebase-functions/v2/https');
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 
 admin.initializeApp();
 
 const db = admin.firestore();
+const leaderboardRef = db.collection('leaderboards').doc('volunteers');
+
+function normalizeName(name) {
+  return String(name ?? '').trim().replace(/\s+/g, ' ');
+}
+
+function leaderboardNameKey(name) {
+  return normalizeName(name).toLocaleLowerCase('da-DK');
+}
+
+function sortedEntries(entries) {
+  return [...entries.values()]
+    .filter(entry => entry.signups > 0)
+    .sort((a, b) => b.signups - a.signups || a.name.localeCompare(b.name, 'da-DK'));
+}
+
+async function volunteerContribution(signup, eventCache) {
+  if (!signup || signup.waitlist === true || !signup.eventId || !signup.slotId) return null;
+
+  const name = normalizeName(signup.name);
+  if (!name) return null;
+
+  let event = eventCache.get(signup.eventId);
+  if (event === undefined) {
+    const eventSnap = await db.collection('events').doc(signup.eventId).get();
+    event = eventSnap.exists ? eventSnap.data() : null;
+    eventCache.set(signup.eventId, event);
+  }
+  if (!event || !Array.isArray(event.slots)) return null;
+
+  const slot = event.slots.find(candidate => candidate && candidate.id === signup.slotId);
+  if (!slot || (slot.kind ?? 'volunteer') !== 'volunteer') return null;
+
+  return { key: leaderboardNameKey(name), name };
+}
+
+async function rebuildVolunteerLeaderboard() {
+  const [eventsSnap, signupsSnap] = await Promise.all([
+    db.collection('events').get(),
+    db.collection('signups').get(),
+  ]);
+  const events = new Map(eventsSnap.docs.map(eventDoc => [eventDoc.id, eventDoc.data()]));
+  const entries = new Map();
+
+  for (const signupDoc of signupsSnap.docs) {
+    const contribution = await volunteerContribution(signupDoc.data(), events);
+    if (!contribution) continue;
+    const current = entries.get(contribution.key) || { name: contribution.name, signups: 0 };
+    current.signups += 1;
+    entries.set(contribution.key, current);
+  }
+
+  const leaderboard = sortedEntries(entries);
+  await leaderboardRef.set({
+    entries: leaderboard,
+    initialized: true,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  return leaderboard;
+}
+
+exports.volunteerLeaderboard = onRequest({ region: 'europe-west1', cors: true }, async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'GET') {
+    res.status(405).send('Kun GET er tilladt.');
+    return;
+  }
+
+  try {
+    const cached = await leaderboardRef.get();
+    const cachedData = cached.data();
+    const entries = cachedData?.initialized === true
+      ? cachedData.entries || []
+      : await rebuildVolunteerLeaderboard();
+    res.status(200).json({ entries });
+  } catch (error) {
+    logger.error('volunteerLeaderboard failed', error);
+    res.status(500).send('Kunne ikke hente frivillighelte.');
+  }
+});
+
+exports.updateVolunteerLeaderboard = onDocumentWritten({
+  document: 'signups/{signupId}',
+  region: 'europe-west1',
+}, async event => {
+  const eventCache = new Map();
+  const [before, after] = await Promise.all([
+    volunteerContribution(event.data.before.exists ? event.data.before.data() : null, eventCache),
+    volunteerContribution(event.data.after.exists ? event.data.after.data() : null, eventCache),
+  ]);
+  if (before?.key === after?.key) return;
+
+  await db.runTransaction(async transaction => {
+    const leaderboardSnap = await transaction.get(leaderboardRef);
+    const stored = leaderboardSnap.data();
+    const entries = new Map(
+      Array.isArray(stored?.entries)
+        ? stored.entries
+          .filter(entry => entry && typeof entry.name === 'string' && typeof entry.signups === 'number')
+          .map(entry => [leaderboardNameKey(entry.name), { name: entry.name, signups: entry.signups }])
+        : [],
+    );
+
+    for (const contribution of [before, after]) {
+      if (!contribution) continue;
+      const current = entries.get(contribution.key) || { name: contribution.name, signups: 0 };
+      current.signups += contribution === before ? -1 : 1;
+      if (current.signups > 0) entries.set(contribution.key, current);
+      else entries.delete(contribution.key);
+    }
+
+    transaction.set(leaderboardRef, {
+      entries: sortedEntries(entries),
+      initialized: stored?.initialized === true,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+});
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({

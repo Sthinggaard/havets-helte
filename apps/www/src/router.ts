@@ -9,6 +9,7 @@ const ShiftsPage = () => import('./pages/ShiftsPage.vue');
 const AttendancePage = () => import('./pages/AttendancePage.vue');
 const AdminAttendancePage = () => import('./pages/AdminAttendancePage.vue');
 const SignupsPage = () => import('./pages/SignupsPage.vue');
+const VolunteerLeaderboardPage = () => import('./pages/VolunteerLeaderboardPage.vue');
 const MembersPage = () => import('./pages/MembersPage.vue');
 const BranchesPage = () => import('./pages/BranchesPage.vue');
 const AdminLibraryPage = () => import('./pages/AdminLibraryPage.vue');
@@ -76,6 +77,12 @@ const routes = [
     name: 'signups',
     component: SignupsPage,
     alias: ['/mine-tilmeldinger.html'],
+  },
+  {
+    path: '/frivillighelte',
+    name: 'volunteer-leaderboard',
+    component: VolunteerLeaderboardPage,
+    meta: { shell: 'landing' },
   },
   {
     path: '/admin/billedbibliotek',
