@@ -5,10 +5,6 @@
       <div class="hero-content">
         <div class="hero-brand">
           <img class="hero-logo" src="/havets-helte-logo.svg" alt="Havets Helte logo" />
-          <div class="hero-badge">
-            <i class="ti ti-anchor" aria-hidden="true" />
-            {{ homeHero.badge }}
-          </div>
         </div>
         <h1 class="hero-title">{{ homeHero.title }}</h1>
         <div class="hero-desc">{{ homeHero.description }}</div>
