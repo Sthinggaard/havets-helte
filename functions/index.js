@@ -2,11 +2,216 @@ const admin = require('firebase-admin');
 const logger = require('firebase-functions/logger');
 const { onRequest } = require('firebase-functions/v2/https');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { defineSecret, defineString } = require('firebase-functions/params');
+
+const {
+  hashValue,
+  isAdminEmail,
+  isValidEmail,
+  normalizeEmail,
+  requestIp,
+  safeReturnTo,
+  slotUsageId,
+} = require('./parentAccess');
 
 admin.initializeApp();
 
 const db = admin.firestore();
 const leaderboardRef = db.collection('leaderboards').doc('volunteers');
+const parentAccessAppsScriptSecret = defineSecret('PARENT_ACCESS_APPS_SCRIPT_SECRET');
+const parentAccessAppsScriptUrl = defineString('PARENT_ACCESS_APPS_SCRIPT_URL');
+const parentAccessSiteUrl = defineString('PARENT_ACCESS_SITE_URL', {
+  default: 'https://havets-helte.web.app',
+});
+
+const PARENT_ACCESS_WINDOW_MS = 20 * 60 * 1000;
+const PARENT_ACCESS_EMAIL_LIMIT = 3;
+const PARENT_ACCESS_IP_LIMIT = 10;
+
+class ApiError extends Error {
+  constructor(status, code, message) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
+function apiError(status, code, message) {
+  return new ApiError(status, code, message);
+}
+
+function requestBody(req) {
+  return req.body && typeof req.body === 'object' ? req.body : {};
+}
+
+function sendApiError(res, error, fallbackMessage) {
+  if (error instanceof ApiError) {
+    res.status(error.status).json({ status: error.code, message: error.message });
+    return;
+  }
+
+  logger.error('parent access request failed', { message: error?.message || 'unknown error' });
+  res.status(500).json({ status: 'error', message: fallbackMessage });
+}
+
+function getConfiguredSiteUrl() {
+  const configured = parentAccessSiteUrl.value();
+  const url = new URL(configured);
+  if (url.protocol !== 'https:') {
+    throw new Error('PARENT_ACCESS_SITE_URL must use HTTPS.');
+  }
+  return url.origin;
+}
+
+function emailLinkSettings(returnTo) {
+  const siteUrl = getConfiguredSiteUrl();
+  const destination = new URL(safeReturnTo(returnTo), siteUrl);
+  return {
+    url: destination.toString(),
+    handleCodeInApp: true,
+  };
+}
+
+async function sendAppsScriptMail(payload) {
+  const endpoint = parentAccessAppsScriptUrl.value();
+  const secret = parentAccessAppsScriptSecret.value();
+  const url = new URL(endpoint);
+  if (url.protocol !== 'https:' || !secret) {
+    throw new Error('Parent access mail delivery is not configured securely.');
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...payload, secret }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) {
+    throw new Error(`Apps Script responded with ${response.status}.`);
+  }
+}
+
+async function consumeParentAccessRateLimit(email, ip) {
+  const now = Date.now();
+  const emailRef = db.collection('parentAccessRateLimits').doc(`email-${hashValue(email)}`);
+  const ipRef = db.collection('parentAccessRateLimits').doc(`ip-${hashValue(ip)}`);
+
+  return db.runTransaction(async transaction => {
+    const [emailSnap, ipSnap] = await Promise.all([
+      transaction.get(emailRef),
+      transaction.get(ipRef),
+    ]);
+
+    const next = (snap, limit) => {
+      const current = snap.data() || {};
+      const startedAt = current.windowStartedAt?.toMillis?.() || 0;
+      const inWindow = now - startedAt < PARENT_ACCESS_WINDOW_MS;
+      const count = inWindow ? Number(current.count || 0) : 0;
+      return { allowed: count < limit, count: count + 1, windowStartedAt: inWindow ? startedAt : now };
+    };
+
+    const email = next(emailSnap, PARENT_ACCESS_EMAIL_LIMIT);
+    const address = next(ipSnap, PARENT_ACCESS_IP_LIMIT);
+    if (!email.allowed || !address.allowed) return false;
+
+    transaction.set(emailRef, {
+      count: email.count,
+      windowStartedAt: admin.firestore.Timestamp.fromMillis(email.windowStartedAt),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    transaction.set(ipRef, {
+      count: address.count,
+      windowStartedAt: admin.firestore.Timestamp.fromMillis(address.windowStartedAt),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
+}
+
+async function verifyParentIdentity(req) {
+  const authorization = String(req.get('authorization') || '');
+  const token = authorization.startsWith('Bearer ') ? authorization.slice('Bearer '.length).trim() : '';
+  if (!token) throw apiError(401, 'unauthenticated', 'Åbn dit link fra e-mailen for at fortsætte.');
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    const email = normalizeEmail(decoded.email);
+    if (!isValidEmail(email) || isAdminEmail(email)) {
+      throw apiError(403, 'forbidden', 'Denne adgang er kun for forældre.');
+    }
+    return { email, uid: decoded.uid };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw apiError(401, 'unauthenticated', 'Åbn dit link fra e-mailen for at fortsætte.');
+  }
+}
+
+function requiredString(value, field, maxLength = 200) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized || normalized.length > maxLength) {
+    throw apiError(400, 'invalid', `${field} er ugyldigt.`);
+  }
+  return normalized;
+}
+
+function slotLabel(slot) {
+  return slot.sublabel ? `${slot.label || ''} · ${slot.sublabel}`.trim() : String(slot.label || '');
+}
+
+function eventSlotUsageRef(eventId, slotId) {
+  return db.collection('eventSlotUsage').doc(slotUsageId(eventId, slotId));
+}
+
+async function signupCountForSlot(transaction, eventId, slotId) {
+  const snapshot = await transaction.get(
+    db.collection('signups').where('eventId', '==', eventId).where('slotId', '==', slotId),
+  );
+  return snapshot.docs.reduce((total, signup) => {
+    const data = signup.data();
+    return data.waitlist === true ? total : total + Math.max(1, Number(data.groupSize) || 1);
+  }, 0);
+}
+
+async function loadParentSignups(email) {
+  const contacts = new Map();
+  const [normalizedSnap, legacySnap] = await Promise.all([
+    db.collection('signupContacts').where('emailNormalized', '==', email).get(),
+    db.collection('signupContacts').where('email', '==', email).get(),
+  ]);
+  for (const snap of [normalizedSnap, legacySnap]) {
+    for (const doc of snap.docs) contacts.set(doc.id, doc);
+  }
+
+  const contactDocs = [...contacts.values()];
+  const signupDocs = contactDocs.length
+    ? await db.getAll(...contactDocs.map(contact => db.collection('signups').doc(contact.id)))
+    : [];
+  const signupById = new Map(signupDocs.filter(doc => doc.exists).map(doc => [doc.id, doc.data()]));
+  const eventIds = [...new Set(signupDocs.filter(doc => doc.exists).map(doc => String(doc.get('eventId') || ''))).values()].filter(Boolean);
+  const eventDocs = eventIds.length ? await db.getAll(...eventIds.map(id => db.collection('events').doc(id))) : [];
+  const events = new Map(eventDocs.filter(doc => doc.exists).map(doc => [doc.id, doc.data()]));
+
+  return contactDocs
+    .map(contact => {
+      const signup = signupById.get(contact.id);
+      if (!signup) return null;
+      const event = events.get(signup.eventId) || {};
+      const slot = Array.isArray(event.slots) ? event.slots.find(item => item?.id === signup.slotId) : null;
+      return {
+        id: contact.id,
+        eventId: signup.eventId,
+        eventTitle: event.title || contact.get('eventTitle') || 'Arrangement',
+        dateText: event.dateText || '',
+        location: event.location || '',
+        slotLabel: slotLabel(slot || {}),
+        waitlist: signup.waitlist === true,
+        groupSize: Math.max(1, Number(signup.groupSize) || 1),
+        createdAt: contact.get('created')?.toMillis?.() || 0,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
 
 function normalizeName(name) {
   return String(name ?? '').trim().replace(/\s+/g, ' ');
@@ -126,6 +331,264 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   });
+});
+
+// Passwordless parent access. Firebase Auth owns the short-lived, single-use
+// e-mail action code; this function owns delivery, abuse protection and the
+// domain boundary that keeps leader identities on the admin path.
+exports.requestParentAccessLink = onRequest({
+  region: 'europe-west1',
+  cors: true,
+  secrets: [parentAccessAppsScriptSecret],
+}, async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ status: 'method_not_allowed', message: 'Kun POST er tilladt.' });
+    return;
+  }
+
+  // Always return the same successful response for accepted, unknown, invalid
+  // and rate-limited e-mail addresses. No account lookup is performed here.
+  const genericResponse = () => res.status(200).json({
+    status: 'sent',
+    message: 'Hvis e-mailadressen kan bruges her, har vi sendt et adgangslink.',
+  });
+
+  const data = requestBody(req);
+  const email = normalizeEmail(data.email);
+  if (!isValidEmail(email) || isAdminEmail(email)) {
+    genericResponse();
+    return;
+  }
+
+  try {
+    const allowed = await consumeParentAccessRateLimit(email, requestIp(req));
+    if (!allowed) {
+      logger.warn('parent access request rate limited', { emailHash: hashValue(email) });
+      genericResponse();
+      return;
+    }
+
+    const link = await admin.auth().generateSignInWithEmailLink(email, emailLinkSettings(data.returnTo));
+    await sendAppsScriptMail({ type: 'parentAccess', email, magicLink: link });
+    logger.info('parent access link requested', { emailHash: hashValue(email) });
+    genericResponse();
+  } catch (error) {
+    logger.error('parent access mail delivery failed', { message: error?.message || 'unknown error' });
+    // This remains generic so operational errors cannot be used to enumerate
+    // identities. A parent can safely retry after the issue is resolved.
+    genericResponse();
+  }
+});
+
+exports.submitSignup = onRequest({
+  region: 'europe-west1',
+  cors: true,
+  secrets: [parentAccessAppsScriptSecret],
+}, async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ status: 'method_not_allowed', message: 'Kun POST er tilladt.' });
+    return;
+  }
+
+  try {
+    const data = requestBody(req);
+    const eventId = requiredString(data.eventId, 'Arrangementet', 160);
+    const slotId = requiredString(data.slotId, 'Opgaven', 160);
+    const name = requiredString(data.name, 'Navnet');
+    const childMode = data.childMode === true;
+    const email = childMode ? '' : normalizeEmail(data.email);
+    if (!childMode && !isValidEmail(email)) {
+      throw apiError(400, 'invalid', 'Mailadressen er ugyldig.');
+    }
+    if (!childMode && isAdminEmail(email)) {
+      throw apiError(400, 'invalid', 'Ledere tilmelder sig via lederportalen.');
+    }
+    const groupSize = Number(data.groupSize);
+    if (!Number.isInteger(groupSize) || groupSize < 1 || groupSize > 20) {
+      throw apiError(400, 'invalid', 'Antal deltagere er ugyldigt.');
+    }
+    const waitlistPreferred = data.waitlistPreferred === true;
+    const signupRef = db.collection('signups').doc();
+    const contactRef = db.collection('signupContacts').doc(signupRef.id);
+
+    const outcome = await db.runTransaction(async transaction => {
+      const eventRef = db.collection('events').doc(eventId);
+      const eventSnap = await transaction.get(eventRef);
+      if (!eventSnap.exists || eventSnap.get('active') === false) {
+        throw apiError(404, 'not_found', 'Opgaven findes ikke længere.');
+      }
+
+      const event = eventSnap.data() || {};
+      const slot = Array.isArray(event.slots) ? event.slots.find(candidate => candidate?.id === slotId) : null;
+      if (!slot) throw apiError(404, 'not_found', 'Pladsen findes ikke længere.');
+
+      const groupMin = Number.isInteger(slot.groupMin) ? slot.groupMin : 1;
+      const groupMax = Number.isInteger(slot.groupMax) ? slot.groupMax : 1;
+      if (groupSize < groupMin || groupSize > groupMax) {
+        throw apiError(400, 'invalid', `Vælg et tal mellem ${groupMin} og ${groupMax}.`);
+      }
+      const adult = !childMode && data.adult === true;
+      if (slot.requiresAdult === true && !adult) {
+        throw apiError(400, 'invalid', 'Bekræft at du er over 18 år.');
+      }
+
+      const usageRef = eventSlotUsageRef(eventId, slotId);
+      // Read the usage document as a transaction lock, but recalculate from
+      // signups so legacy records and an admin's waitlist toggle cannot leave
+      // the counter stale.
+      await transaction.get(usageRef);
+      const confirmed = await signupCountForSlot(transaction, eventId, slotId);
+      const capacity = Number(slot.capacity) || 0;
+      const wouldOverflow = capacity !== 0 && confirmed + groupSize > capacity;
+      if (wouldOverflow && !waitlistPreferred) {
+        throw apiError(409, 'full', 'Pladsen er fyldt.');
+      }
+      const waitlist = wouldOverflow;
+
+      transaction.create(signupRef, {
+        eventId,
+        slotId,
+        name,
+        adult,
+        groupSize,
+        created: admin.firestore.FieldValue.serverTimestamp(),
+        ...(waitlist ? { waitlist: true } : {}),
+      });
+      transaction.create(contactRef, {
+        eventId,
+        eventTitle: event.title || '',
+        name,
+        email,
+        ...(email ? { emailNormalized: email } : {}),
+        created: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      transaction.set(usageRef, {
+        eventId,
+        slotId,
+        confirmed: waitlist ? confirmed : confirmed + groupSize,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {
+        event,
+        slot,
+        waitlist,
+      };
+    });
+
+    let emailSent = false;
+    if (email) {
+      try {
+        const manageLink = await admin.auth().generateSignInWithEmailLink(email, emailLinkSettings('/mine'));
+        await sendAppsScriptMail({
+          eventTitle: outcome.event.title || '',
+          slotLabel: slotLabel(outcome.slot),
+          name,
+          email,
+          adult: !childMode && data.adult === true,
+          groupSize,
+          location: outcome.event.location || '',
+          dateText: outcome.event.dateText || '',
+          manageUrl: manageLink,
+          waitlist: outcome.waitlist,
+        });
+        emailSent = true;
+      } catch (error) {
+        logger.error('signup confirmation delivery failed', { signupId: signupRef.id, message: error?.message || 'unknown error' });
+      }
+    }
+
+    res.status(200).json({
+      status: outcome.waitlist ? 'waitlist' : 'confirmed',
+      signupId: signupRef.id,
+      waitlist: outcome.waitlist,
+      emailSent,
+      message: slotLabel(outcome.slot),
+    });
+  } catch (error) {
+    sendApiError(res, error, 'Tilmeldingen kunne ikke sendes. Prøv igen.');
+  }
+});
+
+exports.getParentSignups = onRequest({ region: 'europe-west1', cors: true }, async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'GET') {
+    res.status(405).json({ status: 'method_not_allowed', message: 'Kun GET er tilladt.' });
+    return;
+  }
+
+  try {
+    const parent = await verifyParentIdentity(req);
+    const signups = await loadParentSignups(parent.email);
+    res.status(200).json({ signups });
+  } catch (error) {
+    sendApiError(res, error, 'Kunne ikke hente dine tilmeldinger.');
+  }
+});
+
+exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true }, async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ status: 'method_not_allowed', message: 'Kun POST er tilladt.' });
+    return;
+  }
+
+  try {
+    const parent = await verifyParentIdentity(req);
+    const signupId = requiredString(requestBody(req).signupId, 'Tilmeldingen', 160);
+    const contactRef = db.collection('signupContacts').doc(signupId);
+    const signupRef = db.collection('signups').doc(signupId);
+
+    await db.runTransaction(async transaction => {
+      const [contactSnap, signupSnap] = await Promise.all([
+        transaction.get(contactRef),
+        transaction.get(signupRef),
+      ]);
+      if (!contactSnap.exists || !signupSnap.exists) {
+        throw apiError(404, 'not_found', 'Tilmeldingen findes ikke længere.');
+      }
+
+      const owner = normalizeEmail(contactSnap.get('emailNormalized') || contactSnap.get('email'));
+      if (!owner || owner !== parent.email) {
+        throw apiError(404, 'not_found', 'Tilmeldingen findes ikke længere.');
+      }
+
+      const usageRef = eventSlotUsageRef(signupSnap.get('eventId'), signupSnap.get('slotId'));
+      await transaction.get(usageRef);
+      const remainingConfirmed = await signupCountForSlot(
+        transaction,
+        signupSnap.get('eventId'),
+        signupSnap.get('slotId'),
+      ) - (signupSnap.get('waitlist') === true ? 0 : Math.max(1, Number(signupSnap.get('groupSize')) || 1));
+      if (remainingConfirmed >= 0) {
+        transaction.set(usageRef, {
+          confirmed: remainingConfirmed,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+      transaction.delete(signupRef);
+      transaction.delete(contactRef);
+    });
+
+    logger.info('parent signup cancelled', { signupId, uid: parent.uid });
+    res.status(200).json({ status: 'cancelled' });
+  } catch (error) {
+    sendApiError(res, error, 'Kunne ikke afmelde tilmeldingen. Prøv igen.');
+  }
 });
 
 function escapeHtml(value) {

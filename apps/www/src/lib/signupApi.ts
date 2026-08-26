@@ -1,6 +1,4 @@
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
-
-import { getAppFirestore } from './firebase';
+import { postFunction } from './functionApi';
 
 export type SignupRequestPayload = {
   eventId: string;
@@ -29,13 +27,6 @@ function signupError(code: string, message: string): SignupError {
   return error;
 }
 
-function newId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
 export async function submitSignupRequest(payload: SignupRequestPayload): Promise<SignupResponsePayload> {
   const eventId = payload.eventId.trim();
   const slotId = payload.slotId.trim();
@@ -52,72 +43,19 @@ export async function submitSignupRequest(payload: SignupRequestPayload): Promis
   }
   if (groupSize < 1) throw signupError('invalid', 'Antal deltagere er ugyldigt.');
 
-  const db = await getAppFirestore();
-
-  const eventRef = doc(db, 'events', eventId);
-  const eventSnap = await getDoc(eventRef);
-  if (!eventSnap.exists() || eventSnap.get('active') === false) {
-    throw signupError('not_found', 'Opgaven findes ikke længere.');
+  try {
+    return await postFunction<SignupResponsePayload>('submitSignup', '/api/submit-signup', {
+      eventId,
+      slotId,
+      name,
+      email,
+      adult: payload.childMode ? false : payload.adult,
+      childMode: payload.childMode,
+      groupSize,
+      waitlistPreferred: payload.waitlistPreferred,
+    });
+  } catch (error) {
+    const typed = error as { code?: string; message?: string };
+    throw signupError(typed.code || 'error', typed.message || 'Tilmeldingen kunne ikke sendes.');
   }
-
-  const event = eventSnap.data() as { title?: string; slots?: any[] };
-  const slot = (event.slots || []).find(item => item.id === slotId);
-  if (!slot) {
-    throw signupError('not_found', 'Pladsen findes ikke længere.');
-  }
-
-  const groupMin = Number.isInteger(slot.groupMin) ? slot.groupMin : 1;
-  const groupMax = Number.isInteger(slot.groupMax) ? slot.groupMax : 1;
-  if (groupSize < groupMin || groupSize > groupMax) {
-    throw signupError('invalid', 'Antal deltagere er uden for tilladt interval.');
-  }
-
-  const slotSignupSnap = await getDocs(
-    query(collection(db, 'signups'), where('eventId', '==', eventId), where('slotId', '==', slotId)),
-  );
-  const taken = slotSignupSnap.docs.reduce((sum, docSnap) => {
-    const data = docSnap.data();
-    return data.waitlist ? sum : sum + (data.groupSize || 1);
-  }, 0);
-
-  const wouldOverflow = slot.capacity !== 0 && taken + groupSize > slot.capacity;
-  if (wouldOverflow && !payload.waitlistPreferred) {
-    throw signupError('full', 'Pladsen er fyldt.');
-  }
-
-  const waitlist = wouldOverflow;
-  const signupId = newId();
-  const cancelToken = payload.childMode || !email ? '' : newId();
-
-  const signupData: Record<string, unknown> = {
-    eventId,
-    slotId,
-    name,
-    adult: payload.childMode ? false : payload.adult,
-    groupSize,
-    created: serverTimestamp(),
-    ...(waitlist ? { waitlist: true } : {}),
-  };
-
-  const contactData: Record<string, unknown> = {
-    eventId,
-    eventTitle: event.title || '',
-    name,
-    email,
-    cancelToken,
-    created: serverTimestamp(),
-  };
-
-  await setDoc(doc(db, 'signups', signupId), signupData);
-  await setDoc(doc(db, 'signupContacts', signupId), contactData);
-
-  const slotLabel = slot.sublabel ? `${slot.label} · ${slot.sublabel}` : slot.label || '';
-
-  return {
-    status: waitlist ? 'waitlist' : 'confirmed',
-    signupId,
-    waitlist,
-    cancelToken,
-    message: slotLabel,
-  };
 }

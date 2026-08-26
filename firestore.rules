@@ -27,19 +27,10 @@ service cloud.firestore {
     }
 
     // Signups: public names visible (forældre kan se hvem der er tilmeldt).
-    // Anyone can create a signup (no login required) — the write is validated
-    // shape-only here; capacity/waitlist decisions happen client-side.
+    // Public creation is disabled: submitSignup is the trusted capacity authority.
     match /signups/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['eventId', 'slotId', 'name', 'adult', 'groupSize', 'waitlist', 'created'])
-        && request.resource.data.keys().hasAll(['eventId', 'slotId', 'name', 'adult', 'groupSize', 'created'])
-        && request.resource.data.eventId is string && request.resource.data.eventId.size() > 0
-        && request.resource.data.slotId is string && request.resource.data.slotId.size() > 0
-        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
-        && request.resource.data.adult is bool
-        && request.resource.data.groupSize is int && request.resource.data.groupSize >= 1 && request.resource.data.groupSize <= 20
-        && (!('waitlist' in request.resource.data) || request.resource.data.waitlist is bool)
-        && request.resource.data.created == request.time;
+      allow create: if false;
       // Ledere kan toggle paid-status og rykke venteliste til/fra
       allow update: if isAdmin() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid', 'waitlist']);
@@ -53,17 +44,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // SignupContacts: kun ledere læser (GDPR). Anyone can create alongside a
-    // signup (no login required); shape-only validation, never readable back.
+    // SignupContacts: kun ledere læser (GDPR). Writes come only from Functions.
     match /signupContacts/{id} {
       allow read: if isAdmin();
-      allow create: if request.resource.data.keys().hasOnly(['eventId', 'eventTitle', 'name', 'email', 'cancelToken', 'created'])
-        && request.resource.data.keys().hasAll(['eventId', 'name', 'email', 'cancelToken', 'created'])
-        && request.resource.data.eventId is string && request.resource.data.eventId.size() > 0
-        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 200
-        && request.resource.data.email is string && request.resource.data.email.size() <= 320
-        && request.resource.data.cancelToken is string
-        && request.resource.data.created == request.time;
+      allow create: if false;
       allow delete: if isAdmin();
       allow update: if false;
     }

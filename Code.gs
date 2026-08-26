@@ -31,6 +31,25 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     if (data.secret !== SHARED_SECRET) return text('unauthorized');
 
+    // Functions asks Apps Script to deliver the passwordless parent link.
+    // The Firebase action code is generated server-side; Apps Script only
+    // delivers it and never stores or logs the token.
+    if (data.type === 'parentAccess') {
+      if (!data.email || !data.magicLink) return text('invalid');
+      MailApp.sendEmail({
+        to: data.email, name: FROM_NAME,
+        subject: 'Din adgang til Havets Helte',
+        htmlBody:
+          '<div style="font-family:Arial,sans-serif;color:#1a2535;line-height:1.6">' +
+          '<p>Hej,</p>' +
+          '<p>Brug linket nedenfor for at se og administrere dine tilmeldinger.</p>' +
+          '<p><a href="' + esc(data.magicLink) + '" style="display:inline-block;background:#146e88;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:700">Se mine tilmeldinger</a></p>' +
+          '<p style="color:#6b7a8d;font-size:12px">Linket er til engangsbrug og udløber snart. Hvis du ikke har bedt om denne mail, kan du ignorere den.</p>' +
+          '</div>'
+      });
+      return text('ok');
+    }
+
     // 1) Log til Google Sheet
     if (SHEET_ID) {
       try {
@@ -69,6 +88,7 @@ function doPost(e) {
       const cancelUrl = data.cancelToken
         ? ScriptApp.getService().getUrl() + '?cancel=' + encodeURIComponent(data.cancelToken)
         : null;
+      const manageUrl = data.manageUrl ? String(data.manageUrl) : null;
 
       MailApp.sendEmail({
         to: data.email, name: FROM_NAME,
@@ -85,7 +105,9 @@ function doPost(e) {
           (data.dateText        ? row('Dato', data.dateText)        : '') +
           (data.location        ? row('Sted', data.location)        : '') +
           '</table>' +
-          (cancelUrl
+          (manageUrl
+            ? '<p><a href="' + esc(manageUrl) + '" style="color:#146e88;font-weight:700">Se eller administrer dine tilmeldinger</a></p>'
+            : cancelUrl
             ? '<p><a href="' + cancelUrl + '" style="color:#c0392b">Kan du alligevel ikke? Klik her for at afmelde dig.</a></p>'
             : '<p>Kan du alligevel ikke? Skriv til <a href="mailto:' + NOTIFY_EMAIL + '">' + NOTIFY_EMAIL + '</a>.</p>') +
           '<p>Mange spejderhilsner,<br>Havets Helte</p>' +
