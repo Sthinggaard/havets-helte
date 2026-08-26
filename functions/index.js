@@ -272,7 +272,7 @@ async function rebuildVolunteerLeaderboard() {
   return leaderboard;
 }
 
-exports.volunteerLeaderboard = onRequest({ region: 'europe-west1', cors: true }, async (req, res) => {
+exports.volunteerLeaderboard = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
@@ -339,6 +339,7 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
 exports.requestParentAccessLink = onRequest({
   region: 'europe-west1',
   cors: true,
+  invoker: 'public',
   secrets: [parentAccessAppsScriptSecret],
 }, async (req, res) => {
   if (req.method === 'OPTIONS') {
@@ -387,6 +388,7 @@ exports.requestParentAccessLink = onRequest({
 exports.submitSignup = onRequest({
   region: 'europe-west1',
   cors: true,
+  invoker: 'public',
   secrets: [parentAccessAppsScriptSecret],
 }, async (req, res) => {
   if (req.method === 'OPTIONS') {
@@ -518,7 +520,7 @@ exports.submitSignup = onRequest({
   }
 });
 
-exports.getParentSignups = onRequest({ region: 'europe-west1', cors: true }, async (req, res) => {
+exports.getParentSignups = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
@@ -537,7 +539,7 @@ exports.getParentSignups = onRequest({ region: 'europe-west1', cors: true }, asy
   }
 });
 
-exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true }, async (req, res) => {
+exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
@@ -665,7 +667,7 @@ function renderShareHtml({ title, description, imageUrl, shareUrl, redirectUrl }
 </html>`;
 }
 
-exports.shareEvent = onRequest({ region: 'europe-west1', cors: true }, async (req, res) => {
+exports.shareEvent = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
