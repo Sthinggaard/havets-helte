@@ -1,0 +1,24 @@
+{
+  "id": "/",
+  "name": "Havets Helte",
+  "short_name": "Havets Helte",
+  "description": "Events, opgaver og vagter for Havets Helte.",
+  "lang": "da-DK",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f6f6",
+  "theme_color": "#003366",
+  "icons": [
+    {
+      "src": "/icons/havets-helte-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/havets-helte-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
