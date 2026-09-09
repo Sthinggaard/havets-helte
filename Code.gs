@@ -19,8 +19,9 @@
 
 // ===== KONFIG =====
 const NOTIFY_EMAIL  = 'laerke@havetshelte.dk';
-const SHARED_SECRET = 'SKIFT-MIG-til-en-laang-tilfaeldig-streng'; // matcher index.html
-const PROJECT_ID    = 'SKIFT-MIG-til-firebase-project-id';         // fx 'havets-helte-abc12'
+const SHARED_SECRET = PropertiesService.getScriptProperties()
+  .getProperty('PARENT_ACCESS_APPS_SCRIPT_SECRET') || '';
+const PROJECT_ID    = 'havets-helte';
 const SHEET_ID      = '';   // valgfri Google Sheet-log — tom = spring over
 const FROM_NAME     = 'Havets Helte';
 const SITE_URL      = 'https://havets-helte.web.app';

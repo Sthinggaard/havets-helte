@@ -19,7 +19,9 @@ admin.initializeApp();
 const db = admin.firestore();
 const leaderboardRef = db.collection('leaderboards').doc('volunteers');
 const parentAccessAppsScriptSecret = defineSecret('PARENT_ACCESS_APPS_SCRIPT_SECRET');
-const parentAccessAppsScriptUrl = defineString('PARENT_ACCESS_APPS_SCRIPT_URL');
+const parentAccessAppsScriptUrl = defineString('PARENT_ACCESS_APPS_SCRIPT_URL', {
+  default: 'https://script.google.com/macros/s/AKfycbyfTjLyaY9sdOmJAtw6ntIu8KrdLB2NYBqfMbICCjslDK3CLJFKpTZTYR_KTiRy4vd1CA/exec',
+});
 const parentAccessSiteUrl = defineString('PARENT_ACCESS_SITE_URL', {
   default: 'https://havets-helte.web.app',
 });

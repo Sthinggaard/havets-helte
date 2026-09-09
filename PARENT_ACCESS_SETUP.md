@@ -16,8 +16,9 @@ password-flow, og Functions viser aldrig om en mail allerede findes.
 4. Ved Functions-deploy sættes `PARENT_ACCESS_APPS_SCRIPT_URL` til den eksisterende Apps Script
    Web App-URL. `PARENT_ACCESS_SITE_URL` har som standard `https://havets-helte.web.app`, men kan
    sættes til den faktiske Hosting/custom-domain URL.
-5. Indsæt den opdaterede `Code.gs` i Apps Script og sæt samme værdi som
-   `PARENT_ACCESS_APPS_SCRIPT_SECRET` i `SHARED_SECRET`.
+5. Indsæt den opdaterede `Code.gs` i Apps Script. Åbn **Project Settings** →
+   **Script properties** og opret `PARENT_ACCESS_APPS_SCRIPT_SECRET` med samme
+   værdi som Firebase-hemmeligheden. Hemmeligheden må ikke stå i `Code.gs`.
 
 Deploy derefter Functions og Firestore-regler sammen. Der sendes ikke en mail direkte fra Firebase;
 Functions sender den genererede Firebase-link videre til Apps Script, som fortsat bruger den
