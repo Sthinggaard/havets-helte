@@ -134,6 +134,9 @@
             </div>
 
             <div class="slot-card-actions">
+              <RouterLink class="manage-signup-link" :to="{ path: '/mine', query: { event: selectedEvent.id } }">
+                Har du allerede tilmeldt dig? Se eller afmeld din tilmelding
+              </RouterLink>
               <button
                 type="button"
                 class="slot-button"
@@ -1054,7 +1057,17 @@ onMounted(loadEvents);
 
 .slot-card-actions {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.manage-signup-link {
+  align-self: flex-start;
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .slot-button {
