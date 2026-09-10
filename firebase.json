@@ -13,13 +13,56 @@
     "predeploy": [
       "node scripts/build-firebase-hosting.cjs"
     ],
+    "headers": [
+      {
+        "source": "/sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/manifest.webmanifest",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ],
     "rewrites": [
+      {
+        "source": "/api/volunteer-leaderboard",
+        "run": {
+          "serviceId": "volunteerleaderboard",
+          "region": "europe-west1"
+        }
+      },
       {
         "source": "/share",
         "run": {
           "serviceId": "shareevent",
           "region": "europe-west1"
         }
+      },
+      {
+        "source": "/api/parent-access-link",
+        "run": { "serviceId": "requestparentaccesslink", "region": "europe-west1" }
+      },
+      {
+        "source": "/api/submit-signup",
+        "run": { "serviceId": "submitsignup", "region": "europe-west1" }
+      },
+      {
+        "source": "/api/my-signups",
+        "run": { "serviceId": "getparentsignups", "region": "europe-west1" }
+      },
+      {
+        "source": "/api/cancel-signup",
+        "run": { "serviceId": "cancelparentsignup", "region": "europe-west1" }
       },
       {
         "source": "**",

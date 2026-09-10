@@ -1,3 +1,12 @@
+export const publicNavigationItems = [
+  { path: '/', label: 'Forside' },
+  { path: '/events', label: 'Arrangementer' },
+  { path: '/opgaver', label: 'Opgaver' },
+  { path: '/vagter', label: 'Vagter' },
+  { path: '/frivillighelte', label: 'Frivillighelte' },
+  { path: '/mine', label: 'Mine tilmeldinger' },
+] as const;
+
 export const navigationItems = [
   { path: '/', label: 'Overblik' },
   { path: '/events', label: 'Arrangementer' },

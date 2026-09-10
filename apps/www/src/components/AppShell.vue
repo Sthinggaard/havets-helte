@@ -39,7 +39,10 @@
       </main>
     </template>
 
-    <slot v-else />
+    <template v-else>
+      <PublicNavigation v-if="isLanding" />
+      <slot />
+    </template>
   </div>
 </template>
 
@@ -50,6 +53,8 @@ import { useRoute } from 'vue-router';
 
 import { adminNavigationItems, navigationItems } from '@/content/navigation';
 import { useAdminAuth } from '@/features/admin/useAdminAuth';
+
+import PublicNavigation from './public/PublicNavigation.vue';
 
 const route = useRoute();
 const { isAdmin } = useAdminAuth();

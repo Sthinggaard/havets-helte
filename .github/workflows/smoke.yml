@@ -19,10 +19,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Java for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
@@ -40,6 +46,9 @@ jobs:
         working-directory: apps/www
         run: npm ci
 
-      - name: Start Firestore emulator and smoke test public signup write
-        working-directory: ..
-        run: npx -y firebase-tools@latest emulators:exec --project havets-helte --only firestore "node scripts/smoke-signup.cjs"
+      - name: Configure a test-only Functions secret
+        run: printf '%s\n' 'PARENT_ACCESS_APPS_SCRIPT_SECRET=ci-smoke-test-secret' > .secret.local
+
+      - name: Start Firestore and Functions emulators for the public signup smoke test
+        working-directory: .
+        run: npx -y firebase-tools@latest emulators:exec --project havets-helte --only firestore,functions "node scripts/smoke-signup.cjs"

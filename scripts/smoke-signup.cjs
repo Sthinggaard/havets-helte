@@ -3,10 +3,8 @@ const { initializeApp } = require('../apps/www/node_modules/firebase/app');
 const {
   getFirestore,
   connectFirestoreEmulator,
-  doc,
-  setDoc,
   getDoc,
-  serverTimestamp,
+  doc,
 } = require('../apps/www/node_modules/firebase/firestore');
 
 const projectId = 'havets-helte';
@@ -41,24 +39,25 @@ async function main() {
     ],
   });
 
-  // Simulates the unauthenticated browser write from apps/www/src/lib/signupApi.ts.
-  const signupId = 'smoke-signup-id';
-  await setDoc(doc(clientDb, 'signups', signupId), {
-    eventId,
-    slotId: 'slot-a',
-    name: signupName,
-    adult: true,
-    groupSize: 1,
-    created: serverTimestamp(),
+  const response = await fetch('http://127.0.0.1:5004/havets-helte/europe-west1/submitSignup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventId,
+      slotId: 'slot-a',
+      name: signupName,
+      email: signupEmail,
+      adult: true,
+      childMode: false,
+      groupSize: 1,
+      waitlistPreferred: false,
+    }),
   });
-  await setDoc(doc(clientDb, 'signupContacts', signupId), {
-    eventId,
-    eventTitle: 'Smoke test event',
-    name: signupName,
-    email: signupEmail,
-    cancelToken: 'smoke-cancel-token',
-    created: serverTimestamp(),
-  });
+  const result = await response.json();
+  if (!response.ok || result.status !== 'confirmed') {
+    throw new Error(`trusted signup failed: ${JSON.stringify(result)}`);
+  }
+  const signupId = result.signupId;
 
   const signupSnap = await getDoc(doc(clientDb, 'signups', signupId));
   if (!signupSnap.exists()) {
@@ -71,7 +70,7 @@ async function main() {
   }
 
   const contactSnap = await adminDb.collection('signupContacts').doc(signupId).get();
-  if (!contactSnap.exists || contactSnap.data().email !== signupEmail) {
+  if (!contactSnap.exists || contactSnap.data().email !== signupEmail || contactSnap.data().emailNormalized !== signupEmail) {
     throw new Error('signupContacts document was not created correctly');
   }
 

@@ -8,7 +8,8 @@ const TasksPage = () => import('./pages/TasksPage.vue');
 const ShiftsPage = () => import('./pages/ShiftsPage.vue');
 const AttendancePage = () => import('./pages/AttendancePage.vue');
 const AdminAttendancePage = () => import('./pages/AdminAttendancePage.vue');
-const SignupsPage = () => import('./pages/SignupsPage.vue');
+const VolunteerLeaderboardPage = () => import('./pages/VolunteerLeaderboardPage.vue');
+const ParentAccessPage = () => import('./pages/ParentAccessPage.vue');
 const MembersPage = () => import('./pages/MembersPage.vue');
 const BranchesPage = () => import('./pages/BranchesPage.vue');
 const AdminLibraryPage = () => import('./pages/AdminLibraryPage.vue');
@@ -74,8 +75,21 @@ const routes = [
   {
     path: '/mine-tilmeldinger',
     name: 'signups',
-    component: SignupsPage,
+    component: ParentAccessPage,
     alias: ['/mine-tilmeldinger.html'],
+    meta: { shell: 'landing' },
+  },
+  {
+    path: '/mine',
+    name: 'parent-access',
+    component: ParentAccessPage,
+    meta: { shell: 'landing' },
+  },
+  {
+    path: '/frivillighelte',
+    name: 'volunteer-leaderboard',
+    component: VolunteerLeaderboardPage,
+    meta: { shell: 'landing' },
   },
   {
     path: '/admin/billedbibliotek',

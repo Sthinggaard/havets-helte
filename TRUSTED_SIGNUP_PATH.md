@@ -1,5 +1,8 @@
 # Trusted Signup Path
 
+> **Status (2026-08-26):** Implemented in `functions/index.js` as `submitSignup`. Public browser
+> creates are denied by `firestore.rules`; the parent-access flow also uses this trusted boundary.
+
 ## Goal
 
 Move public signup writes out of direct browser-to-Firestore writes and behind a trusted backend
