@@ -224,7 +224,6 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
-import { eventItems } from '@/features/events/events.data';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
@@ -330,7 +329,7 @@ const selectedEvent = computed(() => filteredEvents.value.find(event => event.id
 const locationMapUrl = computed(() => buildMapsEmbedUrl(selectedEvent.value?.location));
 
 const heroTitle = computed(() => selectedEvent.value?.title || sectionMeta.value.title);
-const heroImage = computed(() => selectedEvent.value?.imageUrl || fallbackImage(props.section));
+const heroImage = computed(() => selectedEvent.value?.imageUrl || '/og-sankthans.png');
 const backHref = computed(() => {
   const tab = props.section === 'event' ? 'event' : props.section === 'timed' ? 'shift' : 'task';
   return router.resolve({ path: '/', query: { tab } }).href;
@@ -341,12 +340,6 @@ const showAdultToggle = computed(() => !!modalSlot.value && (modalSlot.value.req
 const showGroupSize = computed(() => !!modalSlot.value && (modalSlot.value.groupMax > 1 || modalSlot.value.groupMin > 1));
 const groupMin = computed(() => modalSlot.value?.groupMin || 1);
 const groupMax = computed(() => modalSlot.value?.groupMax || modalSlot.value?.groupSize || 1);
-
-function fallbackImage(section: LandingSection) {
-  const legacyType = section === 'timed' ? 'shift' : section;
-  const fallback = eventItems.find(item => item.type === legacyType);
-  return fallback?.image || '/og-sankthans.png';
-}
 
 function normalizeLiveEvent(event: AdminEvent): PublicEvent {
   return {

@@ -16,6 +16,7 @@ const AdminLibraryPage = () => import('./pages/AdminLibraryPage.vue');
 const AdminArrangementerPage = () => import('./pages/AdminArrangementerPage.vue');
 const AdminOpgaverPage = () => import('./pages/AdminOpgaverPage.vue');
 const AdminVagterPage = () => import('./pages/AdminVagterPage.vue');
+const AdminSignupsPage = () => import('./pages/AdminSignupsPage.vue');
 const AdminShellPage = () => import('./pages/AdminShellPage.vue');
 
 const routes = [
@@ -47,6 +48,9 @@ const routes = [
     alias: ['/vagter.html'],
     meta: { shell: 'landing' },
   },
+  { path: '/vagter/:eventId/tilmeldte', name: 'admin-shift-signups', component: AdminSignupsPage },
+  { path: '/vagter/:eventId/tilmelde', name: 'admin-shift-signups-short', component: AdminSignupsPage },
+  { path: '/vagter/:eventId/rediger', name: 'admin-shift-edit', component: AdminVagterPage },
   {
     path: '/attendance',
     name: 'attendance',
@@ -109,6 +113,7 @@ const routes = [
     component: AdminVagterPage,
     alias: ['/admin-vagter.html', '/admin-vagter-form.html'],
   },
+  { path: '/admin/tilmeldte', name: 'admin-signups', component: AdminSignupsPage },
   {
     path: '/admin/arrangementer',
     name: 'admin-arrangementer',

@@ -68,12 +68,13 @@
         </div>
         <ul v-else class="parent-signup-list">
           <li v-for="signup in signups" :key="signup.id" class="parent-signup">
-            <div>
+            <button type="button" class="parent-signup__details" @click="openEvent(signup)">
               <strong>{{ signup.eventTitle }}</strong>
               <span>{{ signup.dateText }}<template v-if="signup.location"> · {{ signup.location }}</template></span>
               <span>{{ signup.slotLabel }}<template v-if="signup.groupSize > 1"> · {{ signup.groupSize }} deltagere</template></span>
               <span v-if="signup.waitlist" class="parent-signup__status">Venteliste</span>
-            </div>
+              <span class="parent-signup__link">Se arrangementet →</span>
+            </button>
             <button type="button" class="parent-signup__cancel" :disabled="cancelling === signup.id" @click="cancel(signup)">
               {{ cancelling === signup.id ? 'Afmelder…' : 'Afmeld' }}
             </button>
@@ -186,6 +187,11 @@ function cancel(signup: ParentSignup) {
   cancelTarget.value = signup;
 }
 
+function openEvent(signup: ParentSignup) {
+  const path = signup.eventType === 'timed' ? '/vagter' : signup.eventType === 'task' ? '/opgaver' : '/events';
+  router.push({ path, query: { event: signup.eventId } });
+}
+
 async function confirmCancel() {
   const signup = cancelTarget.value;
   if (!signup) return;
@@ -253,6 +259,9 @@ onBeforeUnmount(() => unsubscribe?.());
 .parent-signup-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .parent-signup { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 16px; border: 1px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--row-bg); }
 .parent-signup > div { display: grid; gap: 4px; }
+.parent-signup__details { display: grid; gap: 4px; flex: 1; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.parent-signup__details:focus-visible { outline: 3px solid var(--teal); outline-offset: 4px; border-radius: 4px; }
+.parent-signup__link { color: var(--navy) !important; font-weight: 700; margin-top: 4px; }
 .parent-signup span { color: var(--muted); font-size: .92rem; }
 .parent-signup__status { color: var(--navy) !important; font-weight: 700; }
 .parent-signup__cancel { min-height: 44px; border: 1px solid var(--danger); border-radius: var(--radius-sm); background: transparent; color: var(--danger); font: inherit; font-weight: 700; padding: 8px 12px; cursor: pointer; white-space: nowrap; }

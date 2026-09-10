@@ -19,6 +19,14 @@
     </template>
 
     <template #hero-actions>
+      <RouterLink v-if="props.adminMode && selectedEvent" class="hero-action hero-action--primary" :to="`/vagter/${encodeURIComponent(selectedEvent.id)}/rediger`">
+        <i class="ti ti-edit" aria-hidden="true"></i>
+        Rediger vagt
+      </RouterLink>
+      <RouterLink v-if="props.adminMode && selectedEvent" class="hero-action" :to="{ path: '/vagter', query: { event: selectedEvent.id } }">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i>
+        Tilbage til eventet
+      </RouterLink>
       <button type="button" class="hero-action hero-action--primary" @click="scrollToRoleTabs">
         <i class="ti ti-arrow-down" aria-hidden="true"></i>
         Se vagter
@@ -112,6 +120,8 @@
                 <div class="signup-name">
                   {{ signup.name }}
                   <span v-if="signup.adult"> · 18+</span>
+                  <small v-if="props.adminMode && signup.email">{{ signup.email }}</small>
+                  <button v-if="props.adminMode" type="button" class="admin-cancel-btn" @click="adminCancel(signup)">Afmeld</button>
                 </div>
               </div>
 
@@ -123,7 +133,11 @@
               </div>
             </div>
 
-            <button
+            <RouterLink v-if="!props.adminMode" class="manage-signup-link" :to="{ path: '/mine', query: { event: selectedEvent.id } }">
+              Har du allerede tilmeldt dig? Se eller afmeld din tilmelding
+            </RouterLink>
+
+            <button v-if="!props.adminMode"
               type="button"
               class="join-btn"
               :disabled="slotRemaining(slot) === 0"
@@ -189,12 +203,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
-import { eventItems } from '@/features/events/events.data';
-import type { EventItem } from '@/features/events/events.types';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
@@ -208,6 +220,7 @@ type SignupRow = {
   groupSize: number;
   id: string;
   name: string;
+  email?: string;
   waitlist: boolean;
 };
 
@@ -222,7 +235,6 @@ type PublicEvent = {
   slots: EventSlot[];
   title: string;
   type: LandingSection;
-  source: 'live' | 'fallback';
   createdAt?: number;
   updatedAt?: number;
 };
@@ -238,6 +250,7 @@ type RoleGroup = {
 
 const route = useRoute();
 const router = useRouter();
+const props = defineProps<{ adminMode?: boolean }>();
 
 const loading = ref(true);
 const loadingSignups = ref(false);
@@ -270,7 +283,7 @@ const backHref = computed(() => router.resolve({ path: '/', query: { tab: 'shift
 const selectedEvent = computed(() => timedEvents.value.find(event => event.id === selectedEventId.value) ?? timedEvents.value[0] ?? null);
 const locationMapUrl = computed(() => buildMapsEmbedUrl(selectedEvent.value?.location));
 const heroTitle = computed(() => selectedEvent.value?.title || 'Vagter');
-const heroImage = computed(() => selectedEvent.value?.imageUrl || fallbackImage());
+const heroImage = computed(() => selectedEvent.value?.imageUrl || '/og-sankthans.png');
 const heroCopy = computed(() => selectedEvent.value?.description || 'Vælg den vagt, der passer dig, og meld dig på direkte i den faste vagtplan.');
 
 const timedEvents = computed(() =>
@@ -310,11 +323,6 @@ const shiftSummary = computed(() => {
   return times.length ? times.join(' · ') : selectedEvent.value.dateText;
 });
 
-function fallbackImage() {
-  const fallback = eventItems.find(item => item.type === 'shift');
-  return fallback?.image || '/og-sankthans.png';
-}
-
 function normalizeLiveEvent(event: AdminEvent): PublicEvent {
   return {
     id: event.id,
@@ -327,27 +335,8 @@ function normalizeLiveEvent(event: AdminEvent): PublicEvent {
     imageUrl: event.imageUrl || '/og-sankthans.png',
     slots: event.slots,
     active: event.active,
-    source: 'live',
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,
-  };
-}
-
-function fallbackEvent(): PublicEvent | null {
-  const item = eventItems.find(candidate => candidate.type === 'shift');
-  if (!item) return null;
-  return {
-    id: item.id,
-    type: 'timed',
-    title: item.title,
-    dateText: item.dateText,
-    location: item.location,
-    description: item.summary,
-    paymentUrl: '',
-    imageUrl: item.image,
-    slots: [],
-    active: true,
-    source: 'fallback',
   };
 }
 
@@ -355,20 +344,19 @@ async function loadEvents() {
   loading.value = true;
   try {
     const live = (await fetchAllAdminEvents()).map(normalizeLiveEvent);
-    const filteredLive = live.filter(event => event.type === 'timed' && event.active);
-    const fallback = fallbackEvent();
-    allEvents.value = filteredLive.length ? filteredLive : fallback ? [fallback] : [];
+    allEvents.value = live.filter(event => event.type === 'timed' && event.active);
   } catch (error) {
     console.error('[vagter-legacy] failed to load live events', error);
-    const fallback = fallbackEvent();
-    allEvents.value = fallback ? [fallback] : [];
+    allEvents.value = [];
   } finally {
     loading.value = false;
   }
 }
 
 function initialSelection() {
-  const eventId = typeof route.query.event === 'string' ? route.query.event : '';
+  const eventId = props.adminMode && typeof route.params.eventId === 'string'
+    ? route.params.eventId
+    : typeof route.query.event === 'string' ? route.query.event : '';
   const next = timedEvents.value.find(event => event.id === eventId) ?? timedEvents.value[0];
   if (next && next.id !== selectedEventId.value) {
     selectedEventId.value = next.id;
@@ -552,7 +540,11 @@ async function loadSignups(eventId: string) {
   loadingSignups.value = true;
   try {
     const db = await getAppFirestore();
-    const snap = await getDocs(query(collection(db, 'signups'), where('eventId', '==', eventId)));
+    const [snap, contactSnap] = await Promise.all([
+      getDocs(query(collection(db, 'signups'), where('eventId', '==', eventId))),
+      getDocs(query(collection(db, 'signupContacts'), where('eventId', '==', eventId))),
+    ]);
+    const contacts = new Map(contactSnap.docs.map(item => [item.id, item.data()]));
     const next: Record<string, SignupRow[]> = {};
     snap.forEach(docSnap => {
       const data = docSnap.data() as Partial<SignupRow> & { slotId?: unknown };
@@ -561,6 +553,7 @@ async function loadSignups(eventId: string) {
       const row: SignupRow = {
         id: docSnap.id,
         name: String(data.name ?? ''),
+        email: String(contacts.get(docSnap.id)?.email ?? ''),
         adult: !!data.adult,
         groupSize: Number.isFinite(Number(data.groupSize)) ? Number(data.groupSize) : 1,
         waitlist: !!data.waitlist,
@@ -577,6 +570,20 @@ async function loadSignups(eventId: string) {
     signupMap.value = {};
   } finally {
     loadingSignups.value = false;
+  }
+}
+
+async function adminCancel(signup: SignupRow) {
+  if (!props.adminMode || !window.confirm(`Afmeld ${signup.name}?`)) return;
+  try {
+    const db = await getAppFirestore();
+    await Promise.all([
+      deleteDoc(doc(db, 'signups', signup.id)),
+      deleteDoc(doc(db, 'signupContacts', signup.id)),
+    ]);
+    if (selectedEvent.value) await loadSignups(selectedEvent.value.id);
+  } catch (error) {
+    console.error('[admin-signups] failed to cancel signup', error);
   }
 }
 
@@ -952,6 +959,34 @@ onMounted(loadEvents);
 .signup-name {
   min-width: 0;
   line-height: 1.35;
+}
+
+.signup-name small {
+  display: block;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.admin-cancel-btn {
+  float: right;
+  margin-left: 14px;
+  padding: 7px 12px;
+  border: 1px solid #ff7474;
+  border-radius: 8px;
+  background: #fff;
+  color: #e85d68;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.manage-signup-link {
+  display: inline-block;
+  margin: 12px 0;
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .join-btn {

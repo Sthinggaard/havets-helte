@@ -4,6 +4,7 @@ import { getAppAuth } from '@/lib/firebase';
 export type ParentSignup = {
   id: string;
   eventId: string;
+  eventType: 'timed' | 'task' | 'event' | string;
   eventTitle: string;
   dateText: string;
   location: string;

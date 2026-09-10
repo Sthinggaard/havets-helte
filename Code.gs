@@ -81,7 +81,8 @@ function doPost(e) {
         row('Over 18', data.adult ? 'Ja' : 'Nej') +
         '</table>' +
         '<p style="color:#6b7a8d;font-size:12px">Sendt automatisk fra Forældrehelte.</p>' +
-        '</div>'
+        '</div>',
+      attachments: calendarAttachments(data)
     });
 
     // 3) Bekræftelse til forælderen
@@ -112,7 +113,8 @@ function doPost(e) {
             ? '<p><a href="' + cancelUrl + '" style="color:#c0392b">Kan du alligevel ikke? Klik her for at afmelde dig.</a></p>'
             : '<p>Kan du alligevel ikke? Skriv til <a href="mailto:' + NOTIFY_EMAIL + '">' + NOTIFY_EMAIL + '</a>.</p>') +
           '<p>Mange spejderhilsner,<br>Havets Helte</p>' +
-          '</div>'
+          '</div>',
+        attachments: calendarAttachments(data)
       });
     }
 
@@ -207,6 +209,34 @@ function row(label, val)  {
          '</td><td style="padding:3px 0;font-weight:500">' + esc(val || '') + '</td></tr>';
 }
 function firstName(n) { return (n || '').split(' ')[0]; }
+function calendarAttachments(data) {
+  const ics = buildCalendarInvite(data);
+  return ics ? [Utilities.newBlob(ics, 'text/calendar', 'havets-helte.ics')] : [];
+}
+function buildCalendarInvite(data) {
+  const date = String(data.eventDate || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return '';
+  const times = String(data.timeText || '').match(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/);
+  const compactDate = date.replace(/-/g, '');
+  const start = compactDate + (times ? 'T' + times[1].replace(':', '') + '00' : '');
+  const end = compactDate + (times ? 'T' + times[2].replace(':', '') + '00' : '');
+  const dt = times
+    ? 'DTSTART;TZID=Europe/Copenhagen:' + start + '\r\nDTEND;TZID=Europe/Copenhagen:' + end
+    : 'DTSTART;VALUE=DATE:' + start + '\r\nDTEND;VALUE=DATE:' + compactDate;
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Havets Helte//Forældrehelte//DA',
+    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+    'UID:' + Utilities.getUuid() + '@havets-helte',
+    'DTSTAMP:' + Utilities.formatDate(new Date(), 'UTC', "yyyyMMdd'T'HHmmss'Z'"),
+    dt, 'SUMMARY:' + icsEscape(data.eventTitle || 'Havets Helte'),
+    'DESCRIPTION:' + icsEscape(data.slotLabel || ''),
+    'LOCATION:' + icsEscape(data.location || ''),
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n') + '\r\n';
+}
+function icsEscape(value) {
+  return String(value || '').replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1').replace(/\r?\n/g, '\\n');
+}
 function esc(s) {
   return String(s || '').replace(/[&<>"']/g, function(c) {
     return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];

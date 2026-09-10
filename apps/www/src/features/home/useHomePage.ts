@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent } from '@/features/eventAdmin/eventAdmin.types';
 
-import { homeFeedItems, homeHero, toHomeFeedItem } from './home.data';
+import { homeHero, toHomeFeedItem } from './home.data';
 import type { HomeFeedItem, HomeTabId } from './home.types';
 
 function typeLabel(type: HomeTabId) {
@@ -16,7 +16,7 @@ function typeLabel(type: HomeTabId) {
 
 export function useHomePage() {
   const router = useRouter();
-  const items = ref<HomeFeedItem[]>(homeFeedItems);
+  const items = ref<HomeFeedItem[]>([]);
   const loading = ref(true);
 
   function isLivePublic(event: AdminEvent) {
@@ -26,13 +26,11 @@ export function useHomePage() {
   onMounted(async () => {
     try {
       const live = (await fetchAllAdminEvents()).filter(isLivePublic);
-      if (live.length) {
-        items.value = live
-          .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || a.title.localeCompare(b.title, 'da'))
-          .map(toHomeFeedItem);
-      }
+      items.value = live
+        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || a.title.localeCompare(b.title, 'da'))
+        .map(toHomeFeedItem);
     } catch (error) {
-      console.error('[home] live load failed, using static seed', error);
+      console.error('[home] live load failed', error);
     } finally {
       loading.value = false;
     }

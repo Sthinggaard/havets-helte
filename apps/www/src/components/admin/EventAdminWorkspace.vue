@@ -66,7 +66,7 @@
 
         <ul v-else class="admin-cards">
           <li v-for="event in events" :key="event.id" class="admin-card">
-            <button type="button" class="admin-card-main" @click="startEdit(event.id)">
+            <button type="button" class="admin-card-main" @click="viewSignups(event)">
               <img v-if="event.imageUrl" class="admin-card-thumb" :src="event.imageUrl" :alt="event.title" loading="lazy" decoding="async" />
               <div class="admin-card-body">
                 <div class="admin-card-title-row">
@@ -83,7 +83,8 @@
               </div>
             </button>
             <div class="admin-card-actions">
-              <button type="button" class="btn-action" @click="startEdit(event.id)">Rediger</button>
+              <button type="button" class="btn-action" @click="viewSignups(event)">Se tilmeldte</button>
+              <button type="button" class="btn-action" @click="startEdit(event.id)">Rediger {{ config.type === 'timed' ? 'vagt' : config.type === 'task' ? 'opgave' : 'arrangement' }}</button>
               <button type="button" class="btn-action btn-action--danger" @click="confirmRemove(event)">Slet</button>
             </div>
           </li>
@@ -197,6 +198,19 @@
         </button>
         <div v-if="slotsError" class="field-error" role="alert">Tilføj mindst én plads.</div>
 
+        <section v-if="editingId" class="admin-signups">
+          <div class="divider">Tilmeldte frivillige</div>
+          <p v-if="signupsLoading" class="lead">Henter tilmeldinger…</p>
+          <p v-else-if="signupsError" class="admin-error">{{ signupsError }}</p>
+          <p v-else-if="!eventSignups.length" class="admin-empty">Ingen tilmeldte frivillige endnu.</p>
+          <ul v-else class="admin-signup-list">
+            <li v-for="signup in eventSignups" :key="signup.id" class="admin-signup-row">
+              <div><strong>{{ signup.name }}</strong><span>{{ signup.email }} · {{ signup.slotLabel }}</span></div>
+              <button type="button" class="btn-action btn-action--danger" @click="cancelSignup(signup)">Afmeld</button>
+            </li>
+          </ul>
+        </section>
+
         <template v-if="config.showPayment">
           <div class="divider">Betaling</div>
           <div class="form-row">
@@ -245,13 +259,27 @@
         @confirm="performRemove"
         @cancel="pendingRemove = null"
       />
+
+      <div v-if="eventActionTarget" class="admin-action-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-action-title">
+        <div class="admin-action-dialog__panel">
+          <button type="button" class="admin-action-dialog__close" aria-label="Luk" @click="eventActionTarget = null">×</button>
+          <p class="admin-list-eyebrow">Admin</p>
+          <h2 id="admin-action-title">{{ eventActionTarget.title }}</h2>
+          <p>Hvad vil du gøre?</p>
+          <div class="admin-action-dialog__actions">
+            <button type="button" class="btn-action btn-action--primary" @click="editEventFromActions">Rediger event</button>
+            <button type="button" class="btn-action" @click="viewSignupsFromActions">Se tilmeldte</button>
+          </div>
+        </div>
+      </div>
     </template>
   </PublicLandingPageShell>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EventSlotEditor from '@/components/admin/EventSlotEditor.vue';
@@ -263,6 +291,7 @@ import { eventItems } from '@/features/events/events.data';
 import { IMAGE_LIBRARY_UNCATEGORIZED_ID } from '@/features/library/library.data';
 import { useLibraryPage } from '@/features/library/useLibraryPage';
 import type { LibraryItem } from '@/features/library/library.types';
+import { getAppFirestore } from '@/lib/firebase';
 
 const props = defineProps<{ section: EventSection }>();
 
@@ -274,6 +303,7 @@ const {
   saving,
   saveError,
   mode,
+  editingId,
   draft,
   titleError,
   slotsError,
@@ -328,6 +358,11 @@ const uploadInput = ref<HTMLInputElement | null>(null);
 const pickerOpen = ref(false);
 const libraryLoaded = ref(false);
 const route = useRoute();
+const router = useRouter();
+const eventActionTarget = ref<AdminEvent | null>(null);
+const eventSignups = ref<Array<{ id: string; name: string; email: string; slotLabel: string }>>([]);
+const signupsLoading = ref(false);
+const signupsError = ref('');
 const datePicker = ref<HTMLInputElement | null>(null);
 const locationSuggestions = ref<LocationSuggestion[]>([]);
 const locationActiveIndex = ref(-1);
@@ -369,10 +404,28 @@ const locationMapUrl = computed(() => {
   return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
 });
 
+function openEventActions(event: AdminEvent) { eventActionTarget.value = event; }
+function editEventFromActions() {
+  const event = eventActionTarget.value;
+  eventActionTarget.value = null;
+  if (event) startEdit(event.id);
+}
+async function viewSignupsFromActions() {
+  const event = eventActionTarget.value;
+  eventActionTarget.value = null;
+  if (!event) return;
+  await viewSignups(event);
+}
+async function viewSignups(event: AdminEvent) {
+  await router.push(event.type === 'timed'
+    ? { path: `/vagter/${event.id}/tilmelde` }
+    : { path: '/admin/tilmeldte', query: { event: event.id } });
+}
+
 onMounted(async () => {
   await load();
   // Deep link from the public events page: /vagter?edit=<id> opens that event.
-  const editId = route.query.edit;
+  const editId = route.query.edit ?? route.params.eventId;
   if (typeof editId === 'string' && editId) {
     if (events.value.some(event => event.id === editId)) {
       startEdit(editId);
@@ -417,6 +470,36 @@ watch(mode, currentMode => {
   locationMapQuery.value = currentMode === 'form' ? draft.location.trim() : '';
   closeLocationSuggestions();
 });
+
+watch(() => draft.id, id => { if (id) void loadEventSignups(id); else eventSignups.value = []; });
+
+async function loadEventSignups(eventId: string) {
+  signupsLoading.value = true;
+  signupsError.value = '';
+  try {
+    const db = await getAppFirestore();
+    const [signupsSnap, contactsSnap] = await Promise.all([
+      getDocs(query(collection(db, 'signups'), where('eventId', '==', eventId))),
+      getDocs(query(collection(db, 'signupContacts'), where('eventId', '==', eventId))),
+    ]);
+    const contacts = new Map(contactsSnap.docs.map(item => [item.id, item.data()]));
+    eventSignups.value = signupsSnap.docs.map(item => {
+      const data = item.data(); const contact = contacts.get(item.id) || {};
+      const slot = draft.slots.find(candidate => candidate.id === data.slotId);
+      return { id: item.id, name: String(data.name || contact.name || 'Ukendt'), email: String(contact.email || ''), slotLabel: slot ? `${slot.label}${slot.sublabel ? ` · ${slot.sublabel}` : ''}` : 'Ukendt vagt' };
+    });
+  } catch (error) { console.error('[event-admin] signups load failed', error); signupsError.value = 'Kunne ikke hente tilmeldte.'; }
+  finally { signupsLoading.value = false; }
+}
+
+async function cancelSignup(signup: { id: string; name: string }) {
+  if (!window.confirm(`Afmeld ${signup.name}?`)) return;
+  try {
+    const db = await getAppFirestore();
+    await Promise.all([deleteDoc(doc(db, 'signups', signup.id)), deleteDoc(doc(db, 'signupContacts', signup.id))]);
+    eventSignups.value = eventSignups.value.filter(item => item.id !== signup.id);
+  } catch (error) { console.error('[event-admin] signup cancellation failed', error); signupsError.value = 'Afmelding fejlede — prøv igen.'; }
+}
 
 onBeforeUnmount(() => {
   if (locationSearchTimer) clearTimeout(locationSearchTimer);
@@ -997,6 +1080,13 @@ textarea.form-input {
 .btn-add-slot {
   justify-self: start;
 }
+
+.admin-action-dialog { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(5, 24, 49, .58); }
+.admin-action-dialog__panel { position: relative; width: min(440px, 100%); padding: 28px; border-radius: 18px; background: #fff; box-shadow: 0 18px 60px rgba(5, 24, 49, .28); }
+.admin-action-dialog__panel h2 { margin: 0 0 8px; color: var(--navy); }
+.admin-action-dialog__panel p { margin: 0 0 20px; color: var(--muted); }
+.admin-action-dialog__close { position: absolute; top: 12px; right: 14px; border: 0; background: transparent; color: var(--navy); font-size: 28px; cursor: pointer; }
+.admin-action-dialog__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .field-error {
   color: #c94853;
