@@ -28,7 +28,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
@@ -45,6 +45,9 @@ jobs:
       - name: Install Vue dependencies
         working-directory: apps/www
         run: npm ci
+
+      - name: Configure a test-only Functions secret
+        run: printf '%s\n' 'PARENT_ACCESS_APPS_SCRIPT_SECRET=ci-smoke-test-secret' > .secret.local
 
       - name: Start Firestore and Functions emulators for the public signup smoke test
         working-directory: .
