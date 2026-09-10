@@ -44,10 +44,16 @@ function rebuildUrl(): string {
 export async function fetchVolunteerLeaderboard(): Promise<VolunteerLeaderboardEntry[]> {
   const db = await getAppFirestore();
   const leaderboardRef = doc(db, 'leaderboards', 'volunteers');
-  const cached = await getDoc(leaderboardRef);
-  const record = cached.data() as LeaderboardRecord | undefined;
-  if (record?.initialized === true && record?.version === 3) {
-    return parseEntries(record.entries);
+  try {
+    const cached = await getDoc(leaderboardRef);
+    const record = cached.data() as LeaderboardRecord | undefined;
+    if (record?.initialized === true && record?.version === 3) {
+      return parseEntries(record.entries);
+    }
+  } catch (error) {
+    // Public Firestore reads may be blocked by rules or browser transport;
+    // the public backend endpoint remains the authoritative fallback.
+    console.warn('[volunteer-leaderboard] cached read unavailable, using endpoint', error);
   }
 
   const response = await fetch(rebuildUrl());
