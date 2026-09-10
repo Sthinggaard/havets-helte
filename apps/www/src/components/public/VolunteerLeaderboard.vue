@@ -54,13 +54,14 @@
           </span>
           <span v-else class="leaderboard-rank">{{ index + 1 }}</span>
           <span class="leaderboard-avatar" aria-hidden="true">{{ initials(entry.name) }}</span>
-          <span class="leaderboard-name">{{ entry.name }}</span>
-          <span class="leaderboard-count">{{ pointLabel(entry.points) }}</span>
+          <span class="leaderboard-person">
+            <span class="leaderboard-name">{{ entry.name }}</span>
+            <span class="leaderboard-roles">{{ roleLabel(entry.roleCounts) }}</span>
+          </span>
+          <span class="leaderboard-count">{{ signupLabel(entry.signups) }}</span>
         </li>
       </ol>
-      <p v-if="topEntries.length" class="leaderboard-note">
-        Pointene afhænger af rollen: koordinator/togholder 5, opsætning/nedtagning 3, almindelig vagt 2 og oprydning/service 1.
-      </p>
+      <p v-if="topEntries.length" class="leaderboard-note">Rangeringen tager højde for både antal frivilligvagter og ansvar i rollen.</p>
     </template>
   </PublicLandingPageShell>
 </template>
@@ -87,8 +88,15 @@ function initials(name: string): string {
     .join('');
 }
 
-function pointLabel(points: number): string {
-  return `${points} ${points === 1 ? 'point' : 'point'}`;
+function signupLabel(signups: number): string {
+  return `${signups} ${signups === 1 ? 'gang' : 'gange'}`;
+}
+
+function roleLabel(roleCounts: Record<string, number>): string {
+  return Object.entries(roleCounts)
+    .sort(([, a], [, b]) => b - a)
+    .map(([role, count]) => `${role} (${count})`)
+    .join(' · ');
 }
 
 function medalTone(index: number): 'gold' | 'silver' | 'bronze' {
@@ -196,6 +204,21 @@ onMounted(async () => {
   overflow: hidden;
   color: var(--text);
   font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-person {
+  min-width: 0;
+}
+
+.leaderboard-roles {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

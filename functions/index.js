@@ -30,7 +30,7 @@ const parentAccessSiteUrl = defineString('PARENT_ACCESS_SITE_URL', {
 const PARENT_ACCESS_WINDOW_MS = 20 * 60 * 1000;
 const PARENT_ACCESS_EMAIL_LIMIT = 3;
 const PARENT_ACCESS_IP_LIMIT = 10;
-const VOLUNTEER_LEADERBOARD_VERSION = 2;
+const VOLUNTEER_LEADERBOARD_VERSION = 3;
 
 class ApiError extends Error {
   constructor(status, code, message) {
@@ -271,6 +271,7 @@ async function volunteerContribution(signup, eventCache) {
     key: leaderboardNameKey(name),
     name,
     points: volunteerRoleWeight(slot.role),
+    role: normalizeName(slot.role) || 'Vagt',
   };
 }
 
@@ -285,9 +286,10 @@ async function rebuildVolunteerLeaderboard() {
   for (const signupDoc of signupsSnap.docs) {
     const contribution = await volunteerContribution(signupDoc.data(), events);
     if (!contribution) continue;
-    const current = entries.get(contribution.key) || { name: contribution.name, points: 0, signups: 0 };
+    const current = entries.get(contribution.key) || { name: contribution.name, points: 0, signups: 0, roleCounts: {} };
     current.points += contribution.points;
     current.signups += 1;
+    current.roleCounts[contribution.role] = (current.roleCounts[contribution.role] || 0) + 1;
     entries.set(contribution.key, current);
   }
 
@@ -346,16 +348,18 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
     const entries = new Map(
       Array.isArray(stored?.entries)
         ? stored.entries
-          .filter(entry => entry && typeof entry.name === 'string' && typeof entry.points === 'number' && typeof entry.signups === 'number')
-          .map(entry => [leaderboardNameKey(entry.name), { name: entry.name, points: entry.points, signups: entry.signups }])
+          .filter(entry => entry && typeof entry.name === 'string' && typeof entry.points === 'number' && typeof entry.signups === 'number' && entry.roleCounts && typeof entry.roleCounts === 'object')
+          .map(entry => [leaderboardNameKey(entry.name), { name: entry.name, points: entry.points, signups: entry.signups, roleCounts: { ...entry.roleCounts } }])
         : [],
     );
 
     for (const contribution of [before, after]) {
       if (!contribution) continue;
-      const current = entries.get(contribution.key) || { name: contribution.name, points: 0, signups: 0 };
+      const current = entries.get(contribution.key) || { name: contribution.name, points: 0, signups: 0, roleCounts: {} };
       current.points += contribution === before ? -before.points : after.points;
       current.signups += contribution === before ? -1 : 1;
+      current.roleCounts[contribution.role] = (current.roleCounts[contribution.role] || 0) + (contribution === before ? -1 : 1);
+      if (current.roleCounts[contribution.role] <= 0) delete current.roleCounts[contribution.role];
       if (current.points > 0 && current.signups > 0) entries.set(contribution.key, current);
       else entries.delete(contribution.key);
     }

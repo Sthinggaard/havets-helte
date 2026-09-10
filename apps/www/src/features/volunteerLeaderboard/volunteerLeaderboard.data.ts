@@ -5,6 +5,7 @@ import { getAppFirestore } from '@/lib/firebase';
 export type VolunteerLeaderboardEntry = {
   name: string;
   points: number;
+  roleCounts: Record<string, number>;
   signups: number;
 };
 
@@ -23,6 +24,7 @@ function parseEntries(value: unknown): VolunteerLeaderboardEntry[] {
       && entry !== null
       && typeof (entry as VolunteerLeaderboardEntry).name === 'string'
       && typeof (entry as VolunteerLeaderboardEntry).points === 'number'
+      && typeof (entry as VolunteerLeaderboardEntry).roleCounts === 'object'
       && typeof (entry as VolunteerLeaderboardEntry).signups === 'number',
     )
     .sort((a, b) => b.points - a.points || b.signups - a.signups);
@@ -44,7 +46,7 @@ export async function fetchVolunteerLeaderboard(): Promise<VolunteerLeaderboardE
   const leaderboardRef = doc(db, 'leaderboards', 'volunteers');
   const cached = await getDoc(leaderboardRef);
   const record = cached.data() as LeaderboardRecord | undefined;
-  if (record?.initialized === true && record?.version === 2) {
+  if (record?.initialized === true && record?.version === 3) {
     return parseEntries(record.entries);
   }
 
