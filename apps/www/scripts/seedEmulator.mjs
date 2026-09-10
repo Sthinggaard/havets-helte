@@ -86,10 +86,10 @@ async function main() {
   log('Opretter Sankt Hans event…');
   const now = serverTimestamp();
   const slots = [
-    { id: 's1', label: 'Drinksboden', sublabel: '16:00–18:00', capacity: 3, requiresAdult: true },
-    { id: 's2', label: 'Drinksboden', sublabel: '18:00–20:00', capacity: 3, requiresAdult: true },
-    { id: 's3', label: 'Drinksboden', sublabel: '20:00–22:00', capacity: 3, requiresAdult: true },
-    { id: 's4', label: 'Skumfidus-station', sublabel: '16:00–18:00', capacity: 3, requiresAdult: false },
+    { id: 's1', label: 'Drinksboden', sublabel: '16:00–18:00', capacity: 3, requiresAdult: true, role: 'Ansvarlig' },
+    { id: 's2', label: 'Drinksboden', sublabel: '18:00–20:00', capacity: 3, requiresAdult: true, role: 'Vagt' },
+    { id: 's3', label: 'Drinksboden', sublabel: '20:00–22:00', capacity: 3, requiresAdult: true, role: 'Koordinator' },
+    { id: 's4', label: 'Skumfidus-station', sublabel: '16:00–18:00', capacity: 3, requiresAdult: false, role: 'Hjælper' },
     { id: 's5', label: 'Skumfidus-station', sublabel: '18:00–20:00', capacity: 3, requiresAdult: false },
     { id: 's6', label: 'Skumfidus-station', sublabel: '20:00–22:00', capacity: 3, requiresAdult: false },
   ];
@@ -125,8 +125,8 @@ async function main() {
 
   log('Opretter test-tilmeldinger…');
   const testSignups = [
-    { slotId: 's1', name: 'Jonas Hansen', email: 'jonas@test.dk', adult: true },
-    { slotId: 's1', name: 'Maria Larsen', email: 'maria@test.dk', adult: false },
+    { slotId: 's1', name: 'Søren Jensen', email: 'soren@test.dk', adult: true },
+    { slotId: 's1', name: 'Anne Hansen', email: 'anne@test.dk', adult: true },
     { slotId: 's2', name: 'Peter Madsen', email: 'peter@test.dk', adult: true },
     { slotId: 's4', name: 'Anna Christensen', email: 'anna@test.dk', adult: false },
   ];
