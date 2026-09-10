@@ -54,7 +54,11 @@ function sendApiError(res, error, fallbackMessage) {
   }
 
   logger.error('parent access request failed', { errorMessage: error?.message || 'unknown error' });
-  res.status(500).json({ status: 'error', message: fallbackMessage });
+  const isDev = parentAccessSiteUrl.value().includes('havets-helte-dev');
+  res.status(500).json({
+    status: 'error',
+    message: isDev && error?.message ? `${fallbackMessage} (${error.message})` : fallbackMessage,
+  });
 }
 
 function getConfiguredSiteUrl() {
@@ -91,6 +95,10 @@ async function sendAppsScriptMail(payload) {
   });
   if (!response.ok) {
     throw new Error(`Apps Script responded with ${response.status}.`);
+  }
+  const result = (await response.text()).trim();
+  if (result !== 'ok') {
+    throw new Error(`Apps Script rejected the request: ${result || 'empty response'}.`);
   }
 }
 
@@ -203,6 +211,7 @@ async function loadParentSignups(email) {
       return {
         id: contact.id,
         eventId: signup.eventId,
+        eventType: event.type || 'event',
         eventTitle: event.title || contact.get('eventTitle') || 'Arrangement',
         dateText: event.dateText || '',
         location: event.location || '',
@@ -502,12 +511,17 @@ exports.submitSignup = onRequest({
           groupSize,
           location: outcome.event.location || '',
           dateText: outcome.event.dateText || '',
+          eventDate: outcome.slot.date || '',
+          timeText: outcome.slot.sublabel || '',
           manageUrl: manageLink,
           waitlist: outcome.waitlist,
         });
         emailSent = true;
       } catch (error) {
-        logger.error('signup confirmation delivery failed', { signupId: signupRef.id, message: error?.message || 'unknown error' });
+        logger.error('signup confirmation delivery failed', {
+          signupId: signupRef.id,
+          errorMessage: error?.message || 'unknown error',
+        });
       }
     }
 

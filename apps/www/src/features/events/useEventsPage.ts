@@ -2,7 +2,7 @@ import { computed, onMounted, ref } from 'vue';
 
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventType } from '@/features/eventAdmin/eventAdmin.types';
-import { eventFilterOptions, eventItems } from './events.data';
+import { eventFilterOptions } from './events.data';
 import type { EventFilterType, EventItem } from './events.types';
 
 const FALLBACK_IMAGE = '/og-sankthans.png';
@@ -36,22 +36,17 @@ function toEventItem(event: AdminEvent): EventItem {
 export function useEventsPage() {
   const activeFilter = ref<EventFilterType>('all');
   const selectedEventId = ref('');
-  // Start from the static seed so the page renders instantly, then replace with
-  // live Firestore data once it loads (or keep the seed if the collection is
-  // empty, so the public page never goes blank pre-seed).
-  const items = ref<EventItem[]>(eventItems);
+  const items = ref<EventItem[]>([]);
   const loading = ref(true);
 
   onMounted(async () => {
     try {
       const all = (await fetchAllAdminEvents()).filter(event => event.active);
-      if (all.length) {
-        items.value = all
-          .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || a.title.localeCompare(b.title, 'da'))
-          .map(toEventItem);
-      }
+      items.value = all
+        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || a.title.localeCompare(b.title, 'da'))
+        .map(toEventItem);
     } catch (error) {
-      console.error('[events] live load failed, using static seed', error);
+      console.error('[events] live load failed', error);
     } finally {
       loading.value = false;
     }
