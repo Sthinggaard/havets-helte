@@ -79,3 +79,4 @@ dist/
 .playwright-mcp/
 functions/.npm-cache/
 functions/.env.*
+!functions/.env.havets-helte
