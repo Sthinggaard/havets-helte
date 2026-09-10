@@ -52,7 +52,7 @@ function sendApiError(res, error, fallbackMessage) {
     return;
   }
 
-  logger.error('parent access request failed', { message: error?.message || 'unknown error' });
+  logger.error('parent access request failed', { errorMessage: error?.message || 'unknown error' });
   res.status(500).json({ status: 'error', message: fallbackMessage });
 }
 
