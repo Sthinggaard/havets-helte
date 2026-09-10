@@ -42,17 +42,17 @@
       </div>
 
       <ol v-else class="leaderboard-list" aria-label="Top 10 frivillighelte">
-        <li v-for="(entry, index) in topEntries" :key="entry.name" class="leaderboard-row" :class="{ 'leaderboard-row--first': index === 0 }">
+        <li v-for="(entry, index) in topEntries" :key="entry.name" class="leaderboard-row" :class="{ 'leaderboard-row--first': leaderboardRank(index) === 1 }">
           <span
-            v-if="index < 3"
+            v-if="leaderboardRank(index) <= 3"
             class="leaderboard-rank leaderboard-rank--medal"
-            :class="`leaderboard-rank--${medalTone(index)}`"
-            :aria-label="`${medalLabel(index)} · plads ${index + 1}`"
+            :class="`leaderboard-rank--${medalTone(leaderboardRank(index))}`"
+            :aria-label="`${medalLabel(leaderboardRank(index))} · plads ${leaderboardRank(index)}`"
             role="img"
           >
             <i class="ti ti-medal" aria-hidden="true"></i>
           </span>
-          <span v-else class="leaderboard-rank">{{ index + 1 }}</span>
+          <span v-else class="leaderboard-rank">{{ leaderboardRank(index) }}</span>
           <span class="leaderboard-avatar" aria-hidden="true">{{ initials(entry.name) }}</span>
           <span class="leaderboard-person">
             <span class="leaderboard-name">{{ entry.name }}</span>
@@ -92,6 +92,11 @@ function signupLabel(signups: number): string {
   return `${signups} ${signups === 1 ? 'gang' : 'gange'}`;
 }
 
+function leaderboardRank(index: number): number {
+  const points = topEntries.value[index]?.points ?? 0;
+  return 1 + topEntries.value.filter(entry => entry.points > points).length;
+}
+
 function roleLabel(roleCounts: Record<string, number>): string {
   return Object.entries(roleCounts)
     .sort(([, a], [, b]) => b - a)
@@ -99,12 +104,12 @@ function roleLabel(roleCounts: Record<string, number>): string {
     .join(' · ');
 }
 
-function medalTone(index: number): 'gold' | 'silver' | 'bronze' {
-  return index === 0 ? 'gold' : index === 1 ? 'silver' : 'bronze';
+function medalTone(rank: number): 'gold' | 'silver' | 'bronze' {
+  return rank === 1 ? 'gold' : rank === 2 ? 'silver' : 'bronze';
 }
 
-function medalLabel(index: number): string {
-  return index === 0 ? 'Guld' : index === 1 ? 'Sølv' : 'Bronze';
+function medalLabel(rank: number): string {
+  return rank === 1 ? 'Guld' : rank === 2 ? 'Sølv' : 'Bronze';
 }
 
 onMounted(async () => {
