@@ -30,6 +30,7 @@ const parentAccessSiteUrl = defineString('PARENT_ACCESS_SITE_URL', {
 const PARENT_ACCESS_WINDOW_MS = 20 * 60 * 1000;
 const PARENT_ACCESS_EMAIL_LIMIT = 3;
 const PARENT_ACCESS_IP_LIMIT = 10;
+const VOLUNTEER_LEADERBOARD_VERSION = 2;
 
 class ApiError extends Error {
   constructor(status, code, message) {
@@ -235,8 +236,18 @@ function leaderboardNameKey(name) {
 
 function sortedEntries(entries) {
   return [...entries.values()]
-    .filter(entry => entry.signups > 0)
-    .sort((a, b) => b.signups - a.signups || a.name.localeCompare(b.name, 'da-DK'));
+    .filter(entry => entry.points > 0)
+    // Do not use the name as a tie-breaker: that unfairly favours people
+    // whose names happen to come first alphabetically.
+    .sort((a, b) => b.points - a.points || b.signups - a.signups);
+}
+
+function volunteerRoleWeight(role) {
+  const value = normalizeName(role).toLocaleLowerCase('da-DK');
+  if (/(koordinator|togholder|ansvarlig|leder)/u.test(value)) return 5;
+  if (/(opsæt|opsaet|nedtag)/u.test(value)) return 3;
+  if (/(hjælper|hjaelper|opryd|service)/u.test(value)) return 1;
+  return 2;
 }
 
 async function volunteerContribution(signup, eventCache) {
@@ -256,7 +267,11 @@ async function volunteerContribution(signup, eventCache) {
   const slot = event.slots.find(candidate => candidate && candidate.id === signup.slotId);
   if (!slot || (slot.kind ?? 'volunteer') !== 'volunteer') return null;
 
-  return { key: leaderboardNameKey(name), name };
+  return {
+    key: leaderboardNameKey(name),
+    name,
+    points: volunteerRoleWeight(slot.role),
+  };
 }
 
 async function rebuildVolunteerLeaderboard() {
@@ -270,7 +285,8 @@ async function rebuildVolunteerLeaderboard() {
   for (const signupDoc of signupsSnap.docs) {
     const contribution = await volunteerContribution(signupDoc.data(), events);
     if (!contribution) continue;
-    const current = entries.get(contribution.key) || { name: contribution.name, signups: 0 };
+    const current = entries.get(contribution.key) || { name: contribution.name, points: 0, signups: 0 };
+    current.points += contribution.points;
     current.signups += 1;
     entries.set(contribution.key, current);
   }
@@ -279,6 +295,7 @@ async function rebuildVolunteerLeaderboard() {
   await leaderboardRef.set({
     entries: leaderboard,
     initialized: true,
+    version: VOLUNTEER_LEADERBOARD_VERSION,
     updatedAt: FieldValue.serverTimestamp(),
   });
   return leaderboard;
@@ -297,7 +314,7 @@ exports.volunteerLeaderboard = onRequest({ region: 'europe-west1', cors: true, i
   try {
     const cached = await leaderboardRef.get();
     const cachedData = cached.data();
-    const entries = cachedData?.initialized === true
+    const entries = cachedData?.initialized === true && cachedData?.version === VOLUNTEER_LEADERBOARD_VERSION
       ? cachedData.entries || []
       : await rebuildVolunteerLeaderboard();
     res.status(200).json({ entries });
@@ -316,30 +333,37 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
     volunteerContribution(event.data.before.exists ? event.data.before.data() : null, eventCache),
     volunteerContribution(event.data.after.exists ? event.data.after.data() : null, eventCache),
   ]);
-  if (before?.key === after?.key) return;
+    if (before?.key === after?.key && before?.points === after?.points) return;
 
   await db.runTransaction(async transaction => {
     const leaderboardSnap = await transaction.get(leaderboardRef);
     const stored = leaderboardSnap.data();
+    if (stored?.version !== VOLUNTEER_LEADERBOARD_VERSION) {
+      await rebuildVolunteerLeaderboard();
+      return;
+    }
+
     const entries = new Map(
       Array.isArray(stored?.entries)
         ? stored.entries
-          .filter(entry => entry && typeof entry.name === 'string' && typeof entry.signups === 'number')
-          .map(entry => [leaderboardNameKey(entry.name), { name: entry.name, signups: entry.signups }])
+          .filter(entry => entry && typeof entry.name === 'string' && typeof entry.points === 'number' && typeof entry.signups === 'number')
+          .map(entry => [leaderboardNameKey(entry.name), { name: entry.name, points: entry.points, signups: entry.signups }])
         : [],
     );
 
     for (const contribution of [before, after]) {
       if (!contribution) continue;
-      const current = entries.get(contribution.key) || { name: contribution.name, signups: 0 };
+      const current = entries.get(contribution.key) || { name: contribution.name, points: 0, signups: 0 };
+      current.points += contribution === before ? -before.points : after.points;
       current.signups += contribution === before ? -1 : 1;
-      if (current.signups > 0) entries.set(contribution.key, current);
+      if (current.points > 0 && current.signups > 0) entries.set(contribution.key, current);
       else entries.delete(contribution.key);
     }
 
     transaction.set(leaderboardRef, {
       entries: sortedEntries(entries),
       initialized: stored?.initialized === true,
+      version: VOLUNTEER_LEADERBOARD_VERSION,
       updatedAt: FieldValue.serverTimestamp(),
     });
   });
