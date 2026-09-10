@@ -46,6 +46,6 @@ jobs:
         working-directory: apps/www
         run: npm ci
 
-      - name: Start Firestore emulator and smoke test public signup write
+      - name: Start Firestore and Functions emulators for the public signup smoke test
         working-directory: .
-        run: npx -y firebase-tools@latest emulators:exec --project havets-helte --only firestore "node scripts/smoke-signup.cjs"
+        run: npx -y firebase-tools@latest emulators:exec --project havets-helte --only firestore,functions "node scripts/smoke-signup.cjs"
