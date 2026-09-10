@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const logger = require('firebase-functions/logger');
 const { onRequest } = require('firebase-functions/v2/https');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
@@ -118,13 +119,13 @@ async function consumeParentAccessRateLimit(email, ip) {
 
     transaction.set(emailRef, {
       count: email.count,
-      windowStartedAt: admin.firestore.Timestamp.fromMillis(email.windowStartedAt),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      windowStartedAt: Timestamp.fromMillis(email.windowStartedAt),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.set(ipRef, {
       count: address.count,
-      windowStartedAt: admin.firestore.Timestamp.fromMillis(address.windowStartedAt),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      windowStartedAt: Timestamp.fromMillis(address.windowStartedAt),
+      updatedAt: FieldValue.serverTimestamp(),
     });
     return true;
   });
@@ -269,7 +270,7 @@ async function rebuildVolunteerLeaderboard() {
   await leaderboardRef.set({
     entries: leaderboard,
     initialized: true,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   });
   return leaderboard;
 }
@@ -330,7 +331,7 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
     transaction.set(leaderboardRef, {
       entries: sortedEntries(entries),
       initialized: stored?.initialized === true,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
 });
@@ -463,7 +464,7 @@ exports.submitSignup = onRequest({
         name,
         adult,
         groupSize,
-        created: admin.firestore.FieldValue.serverTimestamp(),
+        created: FieldValue.serverTimestamp(),
         ...(waitlist ? { waitlist: true } : {}),
       });
       transaction.create(contactRef, {
@@ -472,13 +473,13 @@ exports.submitSignup = onRequest({
         name,
         email,
         ...(email ? { emailNormalized: email } : {}),
-        created: admin.firestore.FieldValue.serverTimestamp(),
+        created: FieldValue.serverTimestamp(),
       });
       transaction.set(usageRef, {
         eventId,
         slotId,
         confirmed: waitlist ? confirmed : confirmed + groupSize,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
 
       return {
@@ -581,7 +582,7 @@ exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true, inv
       if (remainingConfirmed >= 0) {
         transaction.set(usageRef, {
           confirmed: remainingConfirmed,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
       }
       transaction.delete(signupRef);
