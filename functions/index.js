@@ -381,7 +381,7 @@ exports.requestParentAccessLink = onRequest({
     logger.info('parent access link requested', { emailHash: hashValue(email) });
     genericResponse();
   } catch (error) {
-    logger.error('parent access mail delivery failed', { message: error?.message || 'unknown error' });
+    logger.error('parent access mail delivery failed', { errorMessage: error?.message || 'unknown error' });
     // This remains generic so operational errors cannot be used to enumerate
     // identities. A parent can safely retry after the issue is resolved.
     genericResponse();
