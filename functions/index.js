@@ -244,9 +244,9 @@ function sortedEntries(entries) {
 
 function volunteerRoleWeight(role) {
   const value = normalizeName(role).toLocaleLowerCase('da-DK');
-  if (/(koordinator|togholder|ansvarlig)/u.test(value)) return 5;
+  if (/(koordinator|togholder|ansvarlig|leder)/u.test(value)) return 5;
   if (/(opsæt|opsaet|nedtag)/u.test(value)) return 3;
-  if (/(opryd|service)/u.test(value)) return 1;
+  if (/(hjælper|hjaelper|opryd|service)/u.test(value)) return 1;
   return 2;
 }
 
