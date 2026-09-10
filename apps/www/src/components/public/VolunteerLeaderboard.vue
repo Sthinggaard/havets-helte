@@ -55,9 +55,12 @@
           <span v-else class="leaderboard-rank">{{ index + 1 }}</span>
           <span class="leaderboard-avatar" aria-hidden="true">{{ initials(entry.name) }}</span>
           <span class="leaderboard-name">{{ entry.name }}</span>
-          <span class="leaderboard-count">{{ signupLabel(entry.signups) }}</span>
+          <span class="leaderboard-count">{{ pointLabel(entry.points) }}</span>
         </li>
       </ol>
+      <p v-if="topEntries.length" class="leaderboard-note">
+        Pointene afhænger af rollen: koordinator/togholder 5, opsætning/nedtagning 3, almindelig vagt 2 og oprydning/service 1.
+      </p>
     </template>
   </PublicLandingPageShell>
 </template>
@@ -84,8 +87,8 @@ function initials(name: string): string {
     .join('');
 }
 
-function signupLabel(signups: number): string {
-  return `${signups} ${signups === 1 ? 'tilmelding' : 'tilmeldinger'}`;
+function pointLabel(points: number): string {
+  return `${points} ${points === 1 ? 'point' : 'point'}`;
 }
 
 function medalTone(index: number): 'gold' | 'silver' | 'bronze' {
@@ -236,6 +239,13 @@ onMounted(async () => {
 
 .leaderboard-status--error {
   color: #9d2f3c;
+}
+
+.leaderboard-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 520px) {

@@ -4,12 +4,14 @@ import { getAppFirestore } from '@/lib/firebase';
 
 export type VolunteerLeaderboardEntry = {
   name: string;
+  points: number;
   signups: number;
 };
 
 type LeaderboardRecord = {
   entries?: unknown;
   initialized?: unknown;
+  version?: unknown;
 };
 
 function parseEntries(value: unknown): VolunteerLeaderboardEntry[] {
@@ -20,9 +22,10 @@ function parseEntries(value: unknown): VolunteerLeaderboardEntry[] {
       typeof entry === 'object'
       && entry !== null
       && typeof (entry as VolunteerLeaderboardEntry).name === 'string'
+      && typeof (entry as VolunteerLeaderboardEntry).points === 'number'
       && typeof (entry as VolunteerLeaderboardEntry).signups === 'number',
     )
-    .sort((a, b) => b.signups - a.signups || a.name.localeCompare(b.name, 'da-DK'));
+    .sort((a, b) => b.points - a.points || b.signups - a.signups);
 }
 
 function rebuildUrl(): string {
@@ -41,7 +44,7 @@ export async function fetchVolunteerLeaderboard(): Promise<VolunteerLeaderboardE
   const leaderboardRef = doc(db, 'leaderboards', 'volunteers');
   const cached = await getDoc(leaderboardRef);
   const record = cached.data() as LeaderboardRecord | undefined;
-  if (record?.initialized === true) {
+  if (record?.initialized === true && record?.version === 2) {
     return parseEntries(record.entries);
   }
 
