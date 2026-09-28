@@ -1,16 +1,12 @@
 <template>
   <PublicLandingPageShell
-    content-width="70vw"
+    content-width="1100px"
     :hero-image="heroImage"
     :hero-image-alt="heroTitle"
-    :hero-badge="sectionMeta.badge"
-    hero-count-label="1 aktiv"
-    :hero-title="sectionMeta.title"
-    :hero-copy="sectionMeta.description"
-    section-eyebrow="Tilmelding"
-    :section-title="selectedEvent?.title || sectionMeta.title"
-    :section-chip="selectedEvent?.dateText || ''"
-    :section-lead="selectedEvent?.description || ''"
+    :hero-title="heroTitle"
+    :hero-copy="heroCopy"
+    hero-variant="event"
+    section-title=""
   >
     <template #hero-actions>
       <button type="button" class="hero-action hero-action--primary" @click="scrollToSignup">
@@ -32,45 +28,11 @@
     </template>
 
     <template #hero-meta>
-      <span class="meta-chip">
-        <i class="ti ti-calendar" aria-hidden="true"></i>
-        {{ selectedEvent?.dateText }}
-      </span>
-      <a
-        v-if="selectedEvent?.location"
-        class="meta-chip chip-link"
-        :href="buildMapsUrl(selectedEvent.location)"
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        <i class="ti ti-map-pin" aria-hidden="true"></i>
-        {{ selectedEvent.location }}
-      </a>
-      <span class="meta-chip">
-        <i class="ti ti-list" aria-hidden="true"></i>
-        {{ selectedEvent?.slots.length ?? 0 }} pladser
-      </span>
-    </template>
-
-    <template #info>
-      <a
-        v-if="selectedEvent?.location"
-        class="info-chip chip-link"
-        :href="buildMapsUrl(selectedEvent.location)"
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        <i class="ti ti-map-pin" aria-hidden="true"></i>
-        {{ selectedEvent.location }}
-      </a>
-      <span class="info-chip">
-        <i class="ti ti-list" aria-hidden="true"></i>
-        {{ selectedEvent?.slots.length ?? 0 }} slots
-      </span>
-      <span class="info-chip" v-if="selectedEvent?.paymentUrl">
-        <i class="ti ti-credit-card" aria-hidden="true"></i>
-        Betaling via MobilePay
-      </span>
+      <HeroMeta
+        :date="selectedEvent?.dateText"
+        :location="selectedEvent?.location"
+        :elements="selectedEvent?.slots.length ?? 0"
+      />
     </template>
 
     <template #body>
@@ -85,18 +47,62 @@
         </div>
 
         <div v-if="!selectedEvent.slots.length" class="empty-state">
-          <div class="empty-state-title">Ingen pladser endnu</div>
-          <div class="empty-state-copy">Der ligger stadig ikke nogen tilmeldingspladser på dette opslag.</div>
+          <div class="empty-state-title">Ingen opgaver eller vagter endnu</div>
+          <div class="empty-state-copy">Der er ikke lagt noget ind under arrangementet endnu.</div>
         </div>
 
-        <div v-else class="slot-list">
-          <article v-for="slot in selectedEvent.slots" :key="slot.id" class="slot-card">
+        <div v-if="calendarGroups.length > 1" class="shift-tabs-carousel" aria-label="Arrangementsdage">
+          <button v-if="calendarTabsCanScrollPrev" type="button" class="shift-tabs-arrow shift-tabs-arrow--prev" aria-label="Vis tidligere dage" @click="scrollCalendarTabs(-1)">
+            <i class="ti ti-chevron-left" aria-hidden="true"></i>
+          </button>
+          <div ref="shiftTabsViewport" class="shift-tabs-viewport" @scroll="updateCalendarTabsOverflow">
+            <div class="shift-tabs">
+              <section v-for="month in calendarMonthGroups" :key="month.id" class="shift-tabs-month-group">
+                <h3 class="shift-tabs-month-label">{{ month.label }}</h3>
+                <div class="shift-tabs-month-days" role="tablist" :aria-label="month.label">
+              <button
+                v-for="day in month.days"
+                :key="day.id"
+                type="button"
+                role="tab"
+                class="shift-tab"
+                :class="{ active: day.id === selectedCalendarDate, full: calendarDayIsFull(day), task: calendarDayHasTask(day) && !calendarDayHasShift(day) }"
+                :aria-selected="day.id === selectedCalendarDate"
+                :aria-label="`${calendarDayLabel(day)}, ${calendarDayIsFull(day) ? 'fyldt' : 'ledige pladser'}`"
+                @click="selectedCalendarDate = day.id"
+              >
+                <span class="shift-tab-calendar" aria-hidden="true">
+                  <i class="ti ti-calendar-event"></i>
+                  <span class="shift-tab-weekday">{{ calendarDayWeekday(day) }}</span>
+                  <strong class="shift-tab-day">{{ calendarDayNumber(day) }}</strong>
+                  <span class="shift-tab-kind">{{ calendarDayKind(day) }}</span>
+                </span>
+              </button>
+                </div>
+              </section>
+            </div>
+          </div>
+          <button v-if="calendarTabsCanScrollNext" type="button" class="shift-tabs-arrow shift-tabs-arrow--next" aria-label="Vis flere dage" @click="scrollCalendarTabs(1)">
+            <i class="ti ti-chevron-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div
+          v-if="selectedEvent.slots.length"
+          id="slot-group-panel"
+          class="slot-list"
+        >
+          <template v-for="group in visibleSlotGroups" :key="group.id">
+          <article v-if="group.slots.length === 1" class="slot-card" :class="{ 'slot-card--task': group.slots[0].componentType === 'task', 'slot-card--shift': group.slots[0].componentType === 'shift' }">
+            <template v-for="slot in group.slots" :key="slot.id">
             <div class="slot-card-head">
               <div>
-                <div class="slot-card-title">{{ slot.label }}</div>
+                <span class="component-type-chip" :class="`component-type-chip--${slot.componentType}`">{{ componentLabel(slot) }}</span>
+                <div class="slot-card-title">{{ slot.taskGroupTitle || slot.label }}</div>
+                <div v-if="slot.componentType === 'task' && slot.taskGroupTitle && slot.taskGroupTitle !== slot.label" class="slot-card-sub">{{ slot.label }}</div>
                 <div class="slot-card-sub">{{ slotMeta(slot) }}</div>
               </div>
-              <span class="slot-card-chip" :class="{ full: slotRemaining(slot) === 0 && slot.capacity !== 0 }">
+              <span v-if="!usesMemberService(slot)" class="slot-card-chip" :class="{ full: slotRemaining(slot) === 0 && slot.capacity !== 0 }">
                 {{ slotCapacityLabel(slot) }}
               </span>
             </div>
@@ -106,7 +112,7 @@
                 <i class="ti ti-id" aria-hidden="true"></i>
                 {{ slot.minAge || 18 }}+
               </span>
-              <span v-if="slot.kind === 'paid' && slot.price" class="detail-pill">
+              <span v-if="slot.kind === 'paid' && slot.price && !usesMemberService(slot)" class="detail-pill">
                 <i class="ti ti-credit-card" aria-hidden="true"></i>
                 {{ slot.price }} kr
               </span>
@@ -116,7 +122,7 @@
               </span>
             </div>
 
-            <div class="signup-list">
+            <div v-if="!usesMemberService(slot)" class="signup-list">
               <div v-if="slotSignups(slot.id).length === 0" class="signup-empty">Ingen tilmeldte endnu</div>
               <div v-for="signup in slotSignups(slot.id)" :key="signup.id" class="signup-row" :class="{ waitlist: signup.waitlist }">
                 <span class="signup-av">{{ initials(signup.name) }}</span>
@@ -134,10 +140,21 @@
             </div>
 
             <div class="slot-card-actions">
-              <RouterLink class="manage-signup-link" :to="{ path: '/mine', query: { event: selectedEvent.id } }">
-                Har du allerede tilmeldt dig? Se eller afmeld din tilmelding
-              </RouterLink>
+              <button v-if="hasSignupDeadlinePassed(slot)" type="button" class="slot-button" disabled>
+                Tilmeldingsfristen er udløbet
+              </button>
+              <a
+                v-else-if="usesMemberService(slot)"
+                class="slot-button primary"
+                :href="slot.memberServiceUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i class="ti ti-external-link" aria-hidden="true"></i>
+                Tilmeld i Medlemsservice
+              </a>
               <button
+                v-else
                 type="button"
                 class="slot-button"
                 :class="{ primary: slotRemaining(slot) > 0 || slot.capacity === 0, waitlist: slotRemaining(slot) === 0 && slot.capacity !== 0 }"
@@ -147,8 +164,54 @@
                 {{ slotActionLabel(slot) }}
               </button>
             </div>
+            </template>
           </article>
+          <article v-else class="slot-card slot-card--grouped" :class="{ 'slot-card--task': group.slots[0].componentType === 'task', 'slot-card--shift': group.slots[0].componentType === 'shift' }">
+            <div class="slot-card-head">
+              <div>
+                <span class="component-type-chip" :class="`component-type-chip--${group.slots[0].componentType}`">{{ componentLabel(group.slots[0]) }}</span>
+                <div class="slot-card-title">{{ groupTitle(group) }}</div>
+                <div class="slot-card-sub">{{ groupMeta(group) }}</div>
+              </div>
+              <span class="slot-card-chip">{{ group.slots.length }} perioder</span>
+            </div>
+
+            <div class="shift-period-list">
+              <section v-for="slot in group.slots" :key="slot.id" class="shift-period">
+                <div class="shift-period-head">
+                  <span class="shift-period-time"><i class="ti" :class="slot.componentType === 'shift' ? 'ti-clock' : 'ti-list-check'" aria-hidden="true"></i>{{ groupSlotLabel(slot) }}</span>
+                  <span class="slot-card-chip" :class="{ full: slotRemaining(slot) === 0 && slot.capacity !== 0 }">{{ slotCapacityLabel(slot) }}</span>
+                </div>
+                <div class="slot-card-details">
+                  <span v-if="slot.requiresAdult || slot.minAge" class="detail-pill"><i class="ti ti-id" aria-hidden="true"></i>{{ slot.minAge || 18 }}+</span>
+                  <span v-if="slot.kind === 'paid' && slot.price" class="detail-pill"><i class="ti ti-credit-card" aria-hidden="true"></i>{{ slot.price }} kr</span>
+                  <span v-if="slot.groupMax > 1" class="detail-pill"><i class="ti ti-users" aria-hidden="true"></i>{{ slot.groupMin === slot.groupMax ? `${slot.groupMax} personer` : `${slot.groupMin}-${slot.groupMax} personer` }}</span>
+                </div>
+                <div class="signup-list">
+                  <div v-if="slotSignups(slot.id).length === 0" class="signup-empty">Ingen tilmeldte endnu</div>
+                  <div v-for="signup in slotSignups(slot.id)" :key="signup.id" class="signup-row" :class="{ waitlist: signup.waitlist }">
+                    <span class="signup-av">{{ initials(signup.name) }}</span>
+                    <div class="signup-main">
+                      <div class="signup-name">{{ signup.name }}<span v-if="signup.groupSize > 1" class="group-badge">× {{ signup.groupSize }}</span></div>
+                      <div class="signup-sub">{{ signup.waitlist ? 'Venteliste' : 'Bekræftet' }}<span v-if="signup.adult"> · 18+</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="slot-card-actions">
+                  <button type="button" class="slot-button" :class="{ primary: slotRemaining(slot) > 0 || slot.capacity === 0, waitlist: slotRemaining(slot) === 0 && slot.capacity !== 0 }" @click="openSignup(slot, slotRemaining(slot) === 0 && slot.capacity !== 0)">
+                    <i class="ti" :class="slotActionIcon(slot)" aria-hidden="true"></i>{{ slotActionLabel(slot) }}
+                  </button>
+                </div>
+              </section>
+            </div>
+          </article>
+          </template>
         </div>
+        <nav v-if="hasLocalSignupFlow(selectedEvent)" class="event-signup-management" aria-label="Administrer tilmeldinger">
+          <RouterLink class="manage-signup-link" :to="{ path: '/mine', query: { event: selectedEvent.id } }">
+            Har du allerede tilmeldt dig? Se eller afmeld din tilmelding
+          </RouterLink>
+        </nav>
       </div>
       <div v-else-if="!loading" class="empty-state">
         <div class="empty-state-title">Ingen {{ sectionMeta.title.toLowerCase() }} lige nu</div>
@@ -221,16 +284,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
+import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
 import { buildMapsEmbedUrl, buildMapsUrl } from '@/lib/maps';
+import HeroMeta from './HeroMeta.vue';
 import { submitSignupRequest } from '@/lib/signupApi';
 
 type LandingSection = EventType;
@@ -243,14 +308,19 @@ type SignupRow = {
   waitlist: boolean;
 };
 
+type SlotGroup = {
+  id: string;
+  slots: EventSlot[];
+};
+
 type PublicEvent = {
   active: boolean;
   dateText: string;
+  eventDate?: string;
   description: string;
   id: string;
   imageUrl: string;
   location: string;
-  paymentUrl: string;
   slots: EventSlot[];
   title: string;
   type: LandingSection;
@@ -294,8 +364,12 @@ const loading = ref(true);
 const loadingSignups = ref(false);
 const allEvents = ref<PublicEvent[]>([]);
 const selectedEventId = ref('');
+const selectedCalendarDate = ref('');
 const signupMap = ref<Record<string, SignupRow[]>>({});
 const signupSection = ref<HTMLElement | null>(null);
+const shiftTabsViewport = ref<HTMLElement | null>(null);
+const calendarTabsCanScrollPrev = ref(false);
+const calendarTabsCanScrollNext = ref(false);
 
 const modalOpen = ref(false);
 const waitlistMode = ref(false);
@@ -329,10 +403,59 @@ const filteredEvents = computed(() =>
 );
 
 const selectedEvent = computed(() => filteredEvents.value.find(event => event.id === selectedEventId.value) ?? filteredEvents.value[0] ?? null);
+const slotGroups = computed<SlotGroup[]>(() => {
+  const groups = new Map<string, EventSlot[]>();
+  for (const slot of selectedEvent.value?.slots ?? []) {
+    const key = slot.componentType === 'shift'
+      // A recurring shift template is materialized into concrete slots that
+      // share a shiftGroupId. Include the concrete date in the public group
+      // key so each occurrence gets its own day while periods on that day
+      // remain grouped together.
+      ? `${slot.shiftGroupId || slot.label.trim()}\u0000${slot.date || ''}`
+      : slot.componentType === 'signup'
+        ? `signup\u0000${slot.id}`
+        : slot.taskGroupId || `task\u0000${(slot.taskGroupTitle || slot.label).trim()}\u0000${slot.date}`;
+    const group = groups.get(key) ?? [];
+    group.push(slot);
+    groups.set(key, group);
+  }
+  return [...groups.entries()].map(([id, slots]) => ({ id, slots }));
+});
+const calendarGroups = computed(() => {
+  const groups = new Map<string, SlotGroup>();
+  for (const group of slotGroups.value) {
+    const date = groupDateKey(group);
+    const existing = groups.get(date);
+    if (existing) existing.slots.push(...group.slots);
+    else groups.set(date, { id: date, slots: [...group.slots] });
+  }
+  return [...groups.values()].sort((a, b) => {
+    const dateA = a.slots[0]?.date || '';
+    const dateB = b.slots[0]?.date || '';
+    return dateA.localeCompare(dateB);
+  });
+});
+const calendarMonthGroups = computed(() => {
+  const groups = new Map<string, { id: string; label: string; days: SlotGroup[] }>();
+  for (const day of calendarGroups.value) {
+    const parsed = calendarDayDate(day);
+    const id = parsed ? `${parsed.getFullYear()}-${parsed.getMonth() + 1}` : 'unknown';
+    const label = parsed ? parsed.toLocaleDateString('da-DK', { month: 'long', year: 'numeric' }) : 'Dato ikke angivet';
+    const group = groups.get(id);
+    if (group) group.days.push(day);
+    else groups.set(id, { id, label, days: [day] });
+  }
+  return [...groups.values()];
+});
+const visibleSlotGroups = computed(() => {
+  const selectedDate = selectedCalendarDate.value || calendarGroups.value[0]?.id;
+  return slotGroups.value.filter(group => groupDateKey(group) === selectedDate);
+});
 const locationMapUrl = computed(() => buildMapsEmbedUrl(selectedEvent.value?.location));
 
 const heroTitle = computed(() => selectedEvent.value?.title || sectionMeta.value.title);
-const heroImage = computed(() => selectedEvent.value?.imageUrl || '/og-sankthans.png');
+const heroImage = computed(() => selectedEvent.value?.imageUrl || '/og-sankthans.webp');
+const heroCopy = computed(() => selectedEvent.value?.description || sectionMeta.value.description);
 const backHref = computed(() => {
   const tab = props.section === 'event' ? 'event' : props.section === 'timed' ? 'shift' : 'task';
   return router.resolve({ path: '/', query: { tab } }).href;
@@ -344,16 +467,26 @@ const showGroupSize = computed(() => !!modalSlot.value && (modalSlot.value.group
 const groupMin = computed(() => modalSlot.value?.groupMin || 1);
 const groupMax = computed(() => modalSlot.value?.groupMax || modalSlot.value?.groupSize || 1);
 
+watch(calendarGroups, groups => {
+  if (groups.length && !groups.some(group => group.id === selectedCalendarDate.value)) {
+    selectedCalendarDate.value = groups[0].id;
+  }
+}, { immediate: true });
+
+watch(calendarMonthGroups, () => {
+  void nextTick(updateCalendarTabsOverflow);
+});
+
 function normalizeLiveEvent(event: AdminEvent): PublicEvent {
   return {
     id: event.id,
     type: event.type,
     title: event.title,
     dateText: event.dateText,
+    eventDate: event.eventDate,
     location: event.location,
     description: event.description,
-    paymentUrl: event.paymentUrl,
-    imageUrl: event.imageUrl || '/og-sankthans.png',
+    imageUrl: event.imageUrl || '/og-sankthans.webp',
     slots: event.slots,
     active: event.active,
     createdAt: event.createdAt,
@@ -410,6 +543,12 @@ watch(() => route.query.event, nextEventId => {
 });
 
 async function loadSignups(eventId: string) {
+  const event = filteredEvents.value.find(candidate => candidate.id === eventId);
+  if (event && !hasLocalSignupFlow(event)) {
+    signupMap.value = {};
+    loadingSignups.value = false;
+    return;
+  }
   loadingSignups.value = true;
   try {
     const db = await getAppFirestore();
@@ -462,12 +601,130 @@ function slotCapacityLabel(slot: EventSlot) {
   return remaining === 0 ? 'Fuldt' : `${remaining} ledig${remaining === 1 ? '' : 'e'}`;
 }
 
+function usesMemberService(slot: EventSlot) {
+  return slot.componentType === 'signup' && slot.kind === 'paid' && slot.registrationMode === 'memberService';
+}
+
+function hasLocalSignupFlow(event: PublicEvent | null) {
+  return !!event?.slots.some(slot => !usesMemberService(slot));
+}
+
 function slotMeta(slot: EventSlot) {
-  const parts = [formatSlotDate(slot.date), slot.role, slot.sublabel].filter(Boolean);
+  const deadline = signupDeadline(slot);
+  const parts = [formatSlotDate(slot.date), slot.componentType === 'task' ? slot.role : '', slot.sublabel, deadline ? `Tilmeld senest ${formatSlotDate(deadline)}` : ''].filter(Boolean);
   return parts.join(' · ') || 'Plads';
 }
 
+function signupDeadline(slot: EventSlot) {
+  if (slot.componentType !== 'signup') return '';
+  return calculateSlotDeadline(selectedEvent.value?.eventDate, slot) || '';
+}
+
+function hasSignupDeadlinePassed(slot: EventSlot) {
+  const deadline = signupDeadline(slot);
+  if (!deadline) return false;
+  const today = new Date();
+  const localToday = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
+  return localToday > deadline;
+}
+
+function groupMeta(group: SlotGroup) {
+  const first = group.slots[0];
+  const date = formatSlotDate(first.date) || selectedEvent.value?.dateText || '';
+  return [date, first.role].filter(Boolean).join(' · ') || 'Dato ikke angivet';
+}
+
+function calendarDayDate(day: SlotGroup) {
+  const date = day.slots[0]?.date || '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const parsed = new Date(`${date}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function calendarDayWeekday(day: SlotGroup) {
+  const parsed = calendarDayDate(day);
+  if (!parsed) return '—';
+  return parsed.toLocaleDateString('da-DK', { weekday: 'short' }).replace('.', '');
+}
+
+function calendarDayNumber(day: SlotGroup) {
+  const parsed = calendarDayDate(day);
+  return parsed ? String(parsed.getDate()) : '—';
+}
+
+function calendarDayMonth(day: SlotGroup) {
+  const parsed = calendarDayDate(day);
+  if (!parsed) return 'Dato ikke angivet';
+  return parsed.toLocaleDateString('da-DK', { month: 'long', year: 'numeric' });
+}
+
+function calendarDayKind(day: SlotGroup) {
+  const kinds = new Set(day.slots.map(slot => slot.componentType));
+  return [
+    kinds.has('task') ? 'Opgaver' : '',
+    kinds.has('signup') ? 'Tilmelding' : '',
+    kinds.has('shift') ? 'Vagter' : '',
+  ].filter(Boolean).join(' + ');
+}
+
+function scrollCalendarTabs(direction: number) {
+  shiftTabsViewport.value?.scrollBy({ left: direction * Math.max(280, shiftTabsViewport.value.clientWidth * 0.82), behavior: 'smooth' });
+}
+
+function updateCalendarTabsOverflow() {
+  const viewport = shiftTabsViewport.value;
+  if (!viewport) {
+    calendarTabsCanScrollPrev.value = false;
+    calendarTabsCanScrollNext.value = false;
+    return;
+  }
+  calendarTabsCanScrollPrev.value = viewport.scrollLeft > 1;
+  calendarTabsCanScrollNext.value = viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1;
+}
+
+function calendarDayHasTask(day: SlotGroup) {
+  return day.slots.some(slot => slot.componentType === 'task' || slot.componentType === 'signup');
+}
+
+function calendarDayHasShift(day: SlotGroup) {
+  return day.slots.some(slot => slot.componentType === 'shift');
+}
+
+function calendarDayLabel(day: SlotGroup) {
+  const parsed = calendarDayDate(day);
+  return parsed ? parsed.toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Dato ikke angivet';
+}
+
+function groupTitle(group: SlotGroup) {
+  const first = group.slots[0];
+  return first.componentType === 'task' ? first.taskGroupTitle || first.label : first.label;
+}
+
+function groupSlotLabel(slot: EventSlot) {
+  return slot.componentType === 'shift' ? slot.sublabel || 'Tidspunkt mangler' : slot.label || 'Opgave uden navn';
+}
+
+function groupDateKey(group: SlotGroup) {
+  return group.slots[0]?.date || '__arrangement-date__';
+}
+
+function shiftGroupIsFull(group: SlotGroup) {
+  return group.slots.every(slot => slot.capacity !== 0 && slotRemaining(slot) === 0);
+}
+
+function calendarDayIsFull(day: SlotGroup) {
+  const capacitySlots = day.slots.filter(slot => slot.capacity !== 0);
+  return capacitySlots.length > 0 && capacitySlots.every(slot => slotRemaining(slot) === 0);
+}
+
+function componentLabel(slot: EventSlot) {
+  if (slot.componentType === 'shift') return 'Vagt';
+  if (slot.componentType === 'signup') return 'Tilmelding';
+  return 'Opgave';
+}
+
 function slotActionLabel(slot: EventSlot) {
+  if (hasSignupDeadlinePassed(slot)) return 'Tilmeldingsfristen er udløbet';
   const remaining = slotRemaining(slot);
   if (remaining === 0 && slot.capacity !== 0) return 'Skriv på venteliste';
   if (slot.kind === 'paid' && slot.price) return `Tilmeld og betal ${slot.price} kr`;
@@ -499,6 +756,7 @@ function resetErrors() {
 }
 
 function openSignup(slot: EventSlot, waitlistPreferred = false) {
+  if (hasSignupDeadlinePassed(slot)) return;
   modalSlot.value = slot;
   waitlistMode.value = waitlistPreferred;
   modalOpen.value = true;
@@ -580,8 +838,8 @@ async function submit() {
       toastVisible.value = false;
     }, 4500);
 
-    if (!response.waitlist && slot.kind === 'paid' && event.paymentUrl) {
-      setTimeout(() => window.open(event.paymentUrl || '', '_blank', 'noopener,noreferrer'), 250);
+    if (!response.waitlist && slot.kind === 'paid' && slot.paymentUrl) {
+      setTimeout(() => window.open(slot.paymentUrl, '_blank', 'noopener,noreferrer'), 250);
     }
   } catch (error: any) {
     console.error('[signup-landing] signup failed', error);
@@ -617,7 +875,15 @@ function shareCurrentOnFacebook() {
   window.open(url.toString(), '_blank', 'noopener,noreferrer');
 }
 
-onMounted(loadEvents);
+onMounted(() => {
+  void loadEvents();
+  window.addEventListener('resize', updateCalendarTabsOverflow);
+  void nextTick(updateCalendarTabsOverflow);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateCalendarTabsOverflow);
+});
 </script>
 
 <style scoped>
@@ -628,65 +894,6 @@ onMounted(loadEvents);
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.hero {
-  position: relative;
-  min-height: 56vh;
-  padding: 40px 20px 48px;
-  display: grid;
-  align-items: end;
-  overflow: clip;
-  background: var(--navy);
-}
-
-.hero-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 30%;
-  opacity: 0.58;
-}
-
-.hero-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 34, 71, 0.16) 0%, rgba(0, 34, 71, 0.32) 42%, rgba(0, 34, 71, 0.88) 100%);
-}
-
-.hero-inner {
-  position: relative;
-  z-index: 1;
-  width: min(1100px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 16px;
-  color: #fff;
-}
-
-.hero-brand {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 4px;
-}
-
-.hero-logo {
-  display: block;
-  width: min(184px, 52vw);
-  height: auto;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.18));
-}
-
-.hero-kicker,
-.hero-meta,
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.hero-badge,
-.hero-count,
 .meta-chip,
 .section-chip,
 .event-card-pill,
@@ -699,22 +906,6 @@ onMounted(loadEvents);
   border-radius: 999px;
   font-size: 0.84rem;
   font-weight: 700;
-}
-
-.hero-title {
-  margin: 0;
-  max-width: 760px;
-  font-size: clamp(2.4rem, 5vw, 4.6rem);
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-}
-
-.hero-copy {
-  margin: 0;
-  max-width: 720px;
-  font-size: 1.02rem;
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.9);
 }
 
 .hero-action,
@@ -760,13 +951,6 @@ onMounted(loadEvents);
 
 .chip-link {
   text-decoration: none;
-}
-
-.page-shell {
-  width: min(1100px, calc(100% - 32px));
-  margin: -42px auto 48px;
-  display: grid;
-  gap: 18px;
 }
 
 .page-section {
@@ -948,6 +1132,175 @@ onMounted(loadEvents);
   gap: 14px;
 }
 
+.shift-tabs-carousel {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0 0 14px;
+  padding: 0;
+}
+
+.shift-tabs-viewport {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+
+.shift-tabs-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.shift-tabs {
+  display: flex;
+  gap: 18px;
+  width: max-content;
+  padding: 2px;
+}
+
+.shift-tabs-month-group {
+  display: grid;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.shift-tabs-month-label {
+  margin: 0;
+  color: var(--navy-dark);
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.shift-tabs-month-days {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 96px;
+  justify-content: start;
+  gap: 8px;
+}
+
+.shift-tabs-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #d8e1ea;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--navy);
+  box-shadow: 0 4px 12px rgba(9, 38, 68, 0.12);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.shift-tabs-arrow:hover {
+  border-color: var(--navy-mid);
+  background: #f4f8fb;
+}
+
+.shift-tabs-arrow--prev { left: 8px; }
+.shift-tabs-arrow--next { right: 8px; }
+
+.shift-tab {
+  display: grid;
+  width: 96px;
+  min-width: 96px;
+  min-height: 74px;
+  padding: 5px 4px;
+  border: 1px solid rgba(216, 225, 234, 0.95);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--navy-dark);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease-out-quint), box-shadow 0.15s var(--ease-out-quint), transform 0.15s var(--ease-out-quint);
+}
+
+.shift-tab:hover {
+  transform: translateY(-1px);
+  border-color: var(--navy-mid);
+}
+
+.shift-tab.active {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(15, 65, 114, 0.12);
+}
+
+.shift-tab.full {
+  border-color: #d98686;
+  background: #fff4f3;
+  color: #9b3030;
+}
+
+.shift-tab.full .shift-tab-calendar {
+  background: #f8dedd;
+  color: #9b3030;
+}
+
+.shift-tab.full.active {
+  border-color: #a94040;
+  box-shadow: 0 0 0 3px rgba(169, 64, 64, 0.16);
+}
+
+.shift-tab.task {
+  border-color: #e4c86a;
+  background: #fffbea;
+  color: #765600;
+}
+
+.shift-tab.task .shift-tab-calendar {
+  background: #fff1b8;
+  color: #765600;
+}
+
+.shift-tab.task.active {
+  border-color: #c79d25;
+  box-shadow: 0 0 0 3px rgba(199, 157, 37, 0.18);
+}
+
+.shift-tab:focus-visible {
+  outline: 3px solid rgba(15, 65, 114, 0.35);
+  outline-offset: 2px;
+}
+
+.shift-tab-name {
+  font-weight: 800;
+}
+
+.shift-tab-calendar {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 3px 4px;
+  background: #f4f8fb;
+  border-radius: 10px;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.shift-tab-calendar i {
+  margin-bottom: 5px;
+  font-size: 1rem;
+}
+
+.shift-tab-weekday {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.shift-tab-day {
+  margin-top: 2px;
+  font-size: 1.2rem;
+}
+
 .slot-card {
   display: grid;
   gap: 14px;
@@ -956,6 +1309,64 @@ onMounted(loadEvents);
   border-radius: 18px;
   background: #fff;
   animation: slot-in 280ms var(--ease-out-quint) backwards;
+}
+
+.slot-card--grouped {
+  gap: 16px;
+}
+
+.slot-card--task {
+  border-color: #e4c86a;
+  background: #fffdf2;
+}
+
+.slot-card--task .component-type-chip {
+  background: #fff1b8;
+  color: #765600;
+}
+
+.slot-card--shift {
+  border-color: #b8d0e8;
+  background: #f4f9ff;
+}
+
+.slot-card--shift .component-type-chip {
+  background: #dcecff;
+  color: #174d7d;
+}
+
+.shift-period-list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid rgba(216, 225, 234, 0.95);
+}
+
+.shift-period {
+  display: grid;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(216, 225, 234, 0.95);
+}
+
+.shift-period:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.shift-period-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shift-period-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--navy-dark);
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .slot-card-head {
@@ -969,6 +1380,25 @@ onMounted(loadEvents);
   color: var(--navy-dark);
   font-size: 1rem;
   font-weight: 800;
+}
+
+.component-type-chip {
+  display: inline-flex;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.component-type-chip--task {
+  background: var(--gold-light);
+  color: var(--navy);
+}
+
+.component-type-chip--shift {
+  background: #dcecff;
+  color: #174d7d;
 }
 
 .slot-card-sub {
@@ -1068,6 +1498,14 @@ onMounted(loadEvents);
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.event-signup-management {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
 }
 
 .slot-button {
@@ -1248,11 +1686,17 @@ onMounted(loadEvents);
   padding: 12px 18px;
   border-radius: 999px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
   transition: transform 0.28s var(--ease-out-quint);
   z-index: 60;
 }
 
 .toast.show {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
 
@@ -1284,25 +1728,39 @@ onMounted(loadEvents);
   }
 }
 
-@media (max-width: 840px) {
-  .hero {
-    min-height: 48vh;
-  }
-
-  .page-shell {
-    width: min(100%, calc(100% - 20px));
-    margin-top: -30px;
-  }
-}
-
 @media (max-width: 640px) {
-  .hero {
-    min-height: 40vh;
-    padding: 28px 16px 36px;
+  :deep(.page-content),
+  :deep(.page-section) {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
-  .hero-title {
-    font-size: clamp(2rem, 12vw, 3.4rem);
+  .shift-tabs-carousel {
+    margin-right: 0;
+    margin-left: 0;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .shift-tabs-month-group {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+
+  .shift-tabs-month-days {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .shift-tabs-month-days::-webkit-scrollbar {
+    display: none;
+  }
+
+  .shift-tabs-arrow {
+    width: 30px;
+    height: 30px;
   }
 
   .hero-actions,

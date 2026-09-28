@@ -233,7 +233,7 @@ const {
   startEditBranch,
 } = useBranchesPage();
 
-const heroImage = '/og-sankthans.png';
+const heroImage = '/og-sankthans.webp';
 
 const heroCountLabel = computed(() => `${branchCards.value.length} ${branchCards.value.length === 1 ? 'gren' : 'grene'}`);
 const heroTitle = computed(() => (mode.value === 'form' ? (isCreating.value ? 'Ny gren' : draftLabel.value || formBranch.value?.label || 'Rediger gren') : 'Administrer grene'));
@@ -688,11 +688,17 @@ textarea.form-input {
   padding: 12px 18px;
   border-radius: 999px;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
   transition: transform 0.28s var(--ease-out-quint);
   z-index: 60;
 }
 
 .toast.show {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
 

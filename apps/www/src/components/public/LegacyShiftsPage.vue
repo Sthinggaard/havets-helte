@@ -6,6 +6,7 @@
     hero-badge="Havets Helte"
     :hero-title="heroTitle"
     :hero-copy="heroCopy"
+    hero-variant="event"
     section-eyebrow="Vagtplan"
     :section-title="selectedEvent?.title || heroTitle"
     :section-chip="selectedEvent?.dateText || ''"
@@ -231,7 +232,6 @@ type PublicEvent = {
   id: string;
   imageUrl: string;
   location: string;
-  paymentUrl: string;
   slots: EventSlot[];
   title: string;
   type: LandingSection;
@@ -283,7 +283,7 @@ const backHref = computed(() => router.resolve({ path: '/', query: { tab: 'shift
 const selectedEvent = computed(() => timedEvents.value.find(event => event.id === selectedEventId.value) ?? timedEvents.value[0] ?? null);
 const locationMapUrl = computed(() => buildMapsEmbedUrl(selectedEvent.value?.location));
 const heroTitle = computed(() => selectedEvent.value?.title || 'Vagter');
-const heroImage = computed(() => selectedEvent.value?.imageUrl || '/og-sankthans.png');
+const heroImage = computed(() => selectedEvent.value?.imageUrl || '/og-sankthans.webp');
 const heroCopy = computed(() => selectedEvent.value?.description || 'Vælg den vagt, der passer dig, og meld dig på direkte i den faste vagtplan.');
 
 const timedEvents = computed(() =>
@@ -331,8 +331,7 @@ function normalizeLiveEvent(event: AdminEvent): PublicEvent {
     dateText: event.dateText,
     location: event.location,
     description: event.description,
-    paymentUrl: event.paymentUrl,
-    imageUrl: event.imageUrl || '/og-sankthans.png',
+    imageUrl: event.imageUrl || '/og-sankthans.webp',
     slots: event.slots,
     active: event.active,
     createdAt: event.createdAt,
@@ -1141,10 +1140,16 @@ onMounted(loadEvents);
   border-radius: 24px;
   background: #0b1f3a;
   color: #fff;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
   transition: transform 0.25s ease;
 }
 
 .toast.show {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
 

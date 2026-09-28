@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, deleteField, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { computed, reactive, ref } from 'vue';
 
 import { getAppAuth, getAppFirestore, waitForAppAuthReady } from '@/lib/firebase';
@@ -8,10 +8,11 @@ import {
   createSlot,
   fetchAllAdminEvents,
   formatTimeRange,
+  isValidMemberServiceUrl,
   parseTimeRange,
   toEventRecord,
 } from './eventAdmin.data';
-import type { AdminEvent, EventSection, EventSlot } from './eventAdmin.types';
+import type { AdminEvent, EventSection, EventSlot, SlotComponentType } from './eventAdmin.types';
 
 type FormMode = 'list' | 'form';
 
@@ -21,13 +22,13 @@ function emptyDraft(type: AdminEvent['type']): AdminEvent {
     title: '',
     description: '',
     dateText: '',
+    eventDate: '',
+    planYear: new Date().getFullYear(),
     location: '',
     locationLat: null,
     locationLng: null,
     type,
     active: true,
-    paymentUrl: '',
-    cancelDeadlineDays: 0,
     imageUrl: '',
     slots: [],
   };
@@ -52,19 +53,20 @@ export function useEventAdmin(section: EventSection) {
   const slotsError = ref(false);
   const invalidSlotIds = ref<Set<string>>(new Set());
   const invalidSlotTimeIds = ref<Set<string>>(new Set());
+  const invalidMemberServiceUrlIds = ref<Set<string>>(new Set());
 
   function applyDraft(source: AdminEvent) {
     draft.id = source.id;
     draft.title = source.title;
     draft.description = source.description;
     draft.dateText = source.dateText;
+    draft.eventDate = source.eventDate ?? '';
+    draft.planYear = source.planYear;
     draft.location = source.location;
     draft.locationLat = source.locationLat;
     draft.locationLng = source.locationLng;
     draft.type = source.type;
     draft.active = source.active;
-    draft.paymentUrl = source.paymentUrl;
-    draft.cancelDeadlineDays = source.cancelDeadlineDays;
     draft.imageUrl = source.imageUrl;
     draft.slots = source.slots.map(slot => createSlot(slot));
   }
@@ -74,6 +76,7 @@ export function useEventAdmin(section: EventSection) {
     slotsError.value = false;
     invalidSlotIds.value = new Set();
     invalidSlotTimeIds.value = new Set();
+    invalidMemberServiceUrlIds.value = new Set();
     saveError.value = '';
   }
 
@@ -82,9 +85,13 @@ export function useEventAdmin(section: EventSection) {
     loadError.value = '';
     try {
       await waitForAppAuthReady();
-      const all = await fetchAllAdminEvents();
+      const all = await fetchAllAdminEvents({ collapseRecurring: true });
       events.value = all
-        .filter(event => event.type === config.type)
+        // The arrangements view is the new home for legacy task and shift
+        // records as well. They are promoted to an arrangement only when a
+        // leader explicitly saves the edited record, preserving its id and
+        // existing signups during the transition.
+        .filter(event => config.type === 'event' || event.type === config.type)
         .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || a.title.localeCompare(b.title, 'da'));
     } catch (error) {
       console.error('[event-admin] load failed', error);
@@ -101,7 +108,6 @@ export function useEventAdmin(section: EventSection) {
     clearErrors();
     applyDraft({ ...emptyDraft(config.type), ...prefill, type: config.type });
     editingId.value = '';
-    if (!draft.slots.length) addSlot();
     mode.value = 'form';
   }
 
@@ -110,6 +116,7 @@ export function useEventAdmin(section: EventSection) {
     if (!target) return;
     clearErrors();
     applyDraft(target);
+    if (config.type === 'event') draft.type = 'event';
     editingId.value = eventId;
     mode.value = 'form';
   }
@@ -120,8 +127,8 @@ export function useEventAdmin(section: EventSection) {
     editingId.value = '';
   }
 
-  function addSlot() {
-    draft.slots.push(createSlot());
+  function addSlot(componentType: SlotComponentType = config.timedSlots ? 'shift' : 'task') {
+    draft.slots.push(createSlot({ componentType }));
     slotsError.value = false;
   }
 
@@ -132,12 +139,15 @@ export function useEventAdmin(section: EventSection) {
   // Time-range editing for timed (vagt) slots: the editor binds two time
   // inputs and writes them back as the slot's "HH:MM–HH:MM" sublabel.
   function slotTimeRange(slot: EventSlot) {
-    return parseTimeRange(slot.sublabel);
+    const legacyRange = parseTimeRange(slot.sublabel);
+    return { start: slot.startTime || legacyRange.start, end: slot.endTime || legacyRange.end };
   }
 
   function setSlotTime(slot: EventSlot, part: 'start' | 'end', value: string) {
-    const range = parseTimeRange(slot.sublabel);
+    const range = slotTimeRange(slot);
     range[part] = value;
+    slot.startTime = range.start;
+    slot.endTime = range.end;
     slot.sublabel = formatTimeRange(range.start, range.end);
   }
 
@@ -161,21 +171,31 @@ export function useEventAdmin(section: EventSection) {
 
     const invalid = new Set<string>();
     const invalidTimes = new Set<string>();
+    const invalidMemberServiceUrls = new Set<string>();
     for (const slot of draft.slots) {
       if (!slot.label.trim()) {
         invalid.add(slot.id);
         valid = false;
       }
-      if (config.timedSlots) {
-        const range = parseTimeRange(slot.sublabel);
-        if ((range.start || range.end) && (!range.start || !range.end)) {
+      if (slot.componentType === 'task' && !slot.taskGroupTitle.trim()) {
+        invalid.add(slot.id);
+        valid = false;
+      }
+      if (slot.componentType === 'shift') {
+        const range = slotTimeRange(slot);
+        if (!range.start || !range.end) {
           invalidTimes.add(slot.id);
           valid = false;
         }
       }
+      if (slot.componentType === 'signup' && slot.kind === 'paid' && slot.registrationMode === 'memberService' && !isValidMemberServiceUrl(slot.memberServiceUrl)) {
+        invalidMemberServiceUrls.add(slot.id);
+        valid = false;
+      }
     }
     invalidSlotIds.value = invalid;
     invalidSlotTimeIds.value = invalidTimes;
+    invalidMemberServiceUrlIds.value = invalidMemberServiceUrls;
 
     return valid;
   }
@@ -190,6 +210,10 @@ export function useEventAdmin(section: EventSection) {
       if (editingId.value) {
         await updateDoc(doc(db, EVENTS_COLLECTION, editingId.value), {
           ...record,
+          // Clean up the old event-wide fields once their values have been
+          // migrated into the paid signup groups above.
+          paymentUrl: deleteField(),
+          cancelDeadlineDays: deleteField(),
           updated: serverTimestamp(),
         });
       } else {
@@ -242,6 +266,7 @@ export function useEventAdmin(section: EventSection) {
     slotsError,
     invalidSlotIds,
     invalidSlotTimeIds,
+    invalidMemberServiceUrlIds,
     formTitle,
     load,
     startCreate,

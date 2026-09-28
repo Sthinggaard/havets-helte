@@ -10,22 +10,7 @@
       <p class="lead">Henter adgang…</p>
     </PageCard>
 
-    <PageCard v-else-if="unlocked">
-      <template #header>
-        <div class="kiosk-head">
-          <div>
-            <p class="eyebrow">Fremmøde</p>
-            <h1 class="page-title">Check-in er aktiv på denne enhed</h1>
-          </div>
-          <div class="kiosk-actions">
-            <RouterLink class="btn-action" to="/admin/fremmoede">Til admin</RouterLink>
-          </div>
-        </div>
-      </template>
-      <p class="lead">Denne side kører nu som selvstændig check-in uden admin-menu. Går du tilbage til admin, skal du logge ind igen.</p>
-    </PageCard>
-
-    <PageCard v-else-if="!user">
+    <PageCard v-else-if="!user && !unlocked">
       <template #header>
         <div>
           <p class="eyebrow">Fremmøde</p>
@@ -53,7 +38,7 @@
       </form>
     </PageCard>
 
-    <PageCard v-else-if="!isAdmin">
+    <PageCard v-else-if="!isAdmin && !unlocked">
       <template #header>
         <div>
           <p class="eyebrow">Fremmøde</p>
@@ -68,7 +53,7 @@
       </div>
     </PageCard>
 
-    <PageCard v-else>
+    <PageCard v-else-if="!unlocked">
       <template #header>
         <div>
           <p class="eyebrow">Fremmøde</p>
@@ -85,12 +70,6 @@
     </PageCard>
 
     <template v-if="unlocked">
-      <div class="attendance-kiosk-bar">
-        <span class="attendance-kiosk-chip">Check-in</span>
-        <div class="kiosk-actions">
-          <RouterLink class="btn-action" to="/admin/fremmoede">Til admin</RouterLink>
-        </div>
-      </div>
       <slot />
     </template>
   </div>
@@ -98,8 +77,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { RouterLink } from 'vue-router';
-
 import PageCard from '@/components/PageCard.vue';
 import { useAdminAuth } from '@/features/admin/useAdminAuth';
 
@@ -148,6 +125,11 @@ onMounted(() => {
   gap: 16px;
 }
 
+.attendance-access-gate > .page-card {
+  width: min(1180px, calc(100% - 40px));
+  margin: 24px auto;
+}
+
 .attendance-login {
   display: grid;
   gap: 14px;
@@ -161,40 +143,21 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.attendance-login-actions,
-.kiosk-head,
-.attendance-kiosk-bar {
+.attendance-login-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.attendance-kiosk-bar,
-.kiosk-head {
-  justify-content: space-between;
-}
+@media (max-width: 560px) {
+  .attendance-access-gate {
+    gap: 12px;
+  }
 
-.kiosk-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.attendance-kiosk-bar {
-  padding: 0 4px;
-}
-
-.attendance-kiosk-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--row-bg);
-  color: var(--navy);
-  font-size: 0.76rem;
-  font-weight: 800;
+  .attendance-access-gate > .page-card {
+    width: min(100%, calc(100% - 24px));
+    margin-block: 12px;
+  }
 }
 </style>

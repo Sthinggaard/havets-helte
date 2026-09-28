@@ -174,6 +174,30 @@ function eventSlotUsageRef(eventId, slotId) {
   return db.collection('eventSlotUsage').doc(slotUsageId(eventId, slotId));
 }
 
+function isIsoDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+function signupDeadlineDate(event, slot) {
+  if (slot.componentType !== 'signup') return '';
+  if (isIsoDate(slot.deadlineDate)) return slot.deadlineDate;
+  if (slot.deadlineScheduleMode !== 'relative' || !isIsoDate(event.eventDate) || !Number.isInteger(slot.deadlineOffsetDays)) return '';
+  const [year, month, day] = event.eventDate.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + slot.deadlineOffsetDays));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+function copenhagenDate() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Copenhagen', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
 async function signupCountForSlot(transaction, eventId, slotId) {
   const snapshot = await transaction.get(
     db.collection('signups').where('eventId', '==', eventId).where('slotId', '==', slotId),
@@ -471,6 +495,13 @@ exports.submitSignup = onRequest({
       const event = eventSnap.data() || {};
       const slot = Array.isArray(event.slots) ? event.slots.find(candidate => candidate?.id === slotId) : null;
       if (!slot) throw apiError(404, 'not_found', 'Pladsen findes ikke længere.');
+      if (slot.registrationMode === 'memberService') {
+        throw apiError(409, 'external_registration', 'Tilmeldingen foregår i Medlemsservice.');
+      }
+      const deadline = signupDeadlineDate(event, slot);
+      if (deadline && copenhagenDate() > deadline) {
+        throw apiError(409, 'deadline_passed', 'Tilmeldingsfristen er udløbet.');
+      }
 
       const groupMin = Number.isInteger(slot.groupMin) ? slot.groupMin : 1;
       const groupMax = Number.isInteger(slot.groupMax) ? slot.groupMax : 1;

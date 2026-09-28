@@ -1,5 +1,6 @@
 <template>
-  <div class="page-stack members-workspace">
+  <AdminPageTemplate title="Samlet medlemsliste" copy="Opret, find og administrer foreningens medlemmer.">
+    <div class="page-stack members-workspace">
     <PageCard>
       <template #header>
         <div class="workspace-header">
@@ -254,11 +255,13 @@
         @upload="handleImageUpload"
       />
     </PageCard>
-  </div>
+    </div>
+  </AdminPageTemplate>
 </template>
 
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
+import AdminPageTemplate from '@/components/admin/AdminPageTemplate.vue';
 import { computed, ref } from 'vue';
 import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
 import { useLibraryPage } from '@/features/library/useLibraryPage';

@@ -110,7 +110,7 @@ a {
 }
 
 .topbar {
-  position: relative;
+  position: sticky;
   top: 0;
   z-index: 20;
   display: flex;
@@ -238,6 +238,12 @@ a {
   padding: 28px 20px 52px;
   border-radius: 20px 20px 0 0;
   background: var(--white);
+}
+
+.page-shell--dashboard {
+  min-height: calc(100vh - 48px);
+  margin: 24px auto;
+  border-radius: 20px;
 }
 
 .page-stack {
@@ -1642,6 +1648,11 @@ a {
 
   .page-shell {
     padding: 16px;
+  }
+
+  .page-shell--dashboard {
+    min-height: calc(100vh - 24px);
+    margin: 12px auto;
   }
 
   .page-card__header,

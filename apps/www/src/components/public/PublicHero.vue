@@ -1,7 +1,7 @@
 <template>
   <section class="hero">
     <img v-if="image" class="hero-image" :src="image" :alt="imageAlt || title" />
-    <div class="hero-scrim" aria-hidden="true" />
+    <div v-if="image" class="hero-scrim" aria-hidden="true" />
 
     <div class="hero-inner">
       <div v-if="$slots.brand || logoSrc" class="hero-brand">

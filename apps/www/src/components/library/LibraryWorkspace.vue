@@ -1,5 +1,6 @@
 <template>
-  <div class="page-stack library-workspace">
+  <AdminPageTemplate title="Billedbibliotek" copy="Organiser og genbrug billeder på tværs af foreningens sider.">
+    <div class="page-stack library-workspace">
     <PageCard>
       <template #header>
         <div class="workspace-header library-header">
@@ -219,7 +220,8 @@
         @cancel="confirmDeleteCategory = false"
       />
     </PageCard>
-  </div>
+    </div>
+  </AdminPageTemplate>
 </template>
 
 <script setup lang="ts">
@@ -227,6 +229,7 @@ import { ref, watch } from 'vue';
 
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import PageCard from '@/components/PageCard.vue';
+import AdminPageTemplate from '@/components/admin/AdminPageTemplate.vue';
 import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
 import { IMAGE_LIBRARY_UNCATEGORIZED_ID } from '@/features/library/library.data';
 import { useLibraryPage } from '@/features/library/useLibraryPage';

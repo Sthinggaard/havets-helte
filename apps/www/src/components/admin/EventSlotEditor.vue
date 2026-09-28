@@ -1,34 +1,31 @@
 <template>
   <div class="slot-row" :class="{ 'has-error': invalid || invalidTime }">
     <div class="slot-header">
-      <span class="slot-index">Plads {{ index + 1 }}</span>
-      <button type="button" class="btn-rm-slot" :aria-label="`Fjern plads ${index + 1}`" title="Slet plads" @click="$emit('remove')">×</button>
+      <span class="slot-index">{{ componentLabel }} {{ index + 1 }}</span>
+      <button type="button" class="btn-rm-slot" :aria-label="`Fjern ${componentLabel.toLowerCase()} ${index + 1}`" :title="`Slet ${componentLabel.toLowerCase()}`" @click="$emit('remove')">×</button>
     </div>
 
     <div class="slot-primary">
-      <div class="si-label">
-        <label class="si-field-label" :for="`${slot.id}-label`">Navn{{ config.timedSlots ? ' / tidsrum' : '' }} *</label>
-        <input
+      <FormField class="si-label" label="Navn" :for-id="`${slot.id}-label`" required :error="invalid ? 'Udfyld navn.' : undefined" :error-id="`${slot.id}-label-error`">
+        <FormControl
           :id="`${slot.id}-label`"
           v-model="slot.label"
-          class="sl-input"
-          :placeholder="config.timedSlots ? 'fx Drinksboden' : 'fx Opsætning'"
+          :placeholder="isShift ? 'fx Drinksboden' : 'fx Opsætning'"
           :aria-invalid="invalid"
           :aria-describedby="invalid ? `${slot.id}-label-error` : undefined"
         />
-        <div v-if="invalid" :id="`${slot.id}-label-error`" class="field-error" role="alert">Udfyld navn{{ config.timedSlots ? '/tidsrum' : '' }}.</div>
-      </div>
+      </FormField>
       <div class="si-cap">
-        <label class="si-field-label" :for="`${slot.id}-cap`">Pladser</label>
-        <input
+        <label class="si-field-label" :for="`${slot.id}-cap`">{{ isShift ? 'Antal personer' : 'Pladser' }}</label>
+        <FormControl
           :id="`${slot.id}-cap`"
-          class="sl-input sl-cap"
+          class="sl-cap"
           type="number"
           min="1"
           max="999"
-          :value="slot.capacity === 0 ? '' : slot.capacity"
+          :model-value="slot.capacity === 0 ? '' : slot.capacity"
           :disabled="slot.capacity === 0"
-          @input="onCapacityInput"
+          @update:model-value="onCapacityInput"
         />
         <label class="slot-toggle">
           <input type="checkbox" :checked="slot.capacity === 0" @change="onUnlimited" />
@@ -37,57 +34,63 @@
       </div>
     </div>
 
-    <div class="slot-secondary">
-      <div class="si-role">
+    <div class="slot-secondary" :class="{ 'slot-secondary--shift': isShift }">
+        <div v-if="slot.componentType === 'task' && !isShift" class="si-role">
         <label class="si-field-label" :for="`${slot.id}-role`">Rolle</label>
-        <select :id="`${slot.id}-role`" v-model="slot.role" class="sl-input">
+        <FormControl :id="`${slot.id}-role`" v-model="slot.role" as="select">
           <option v-for="role in roleOptions" :key="role.value" :value="role.value">{{ role.label }}</option>
-        </select>
+        </FormControl>
+        </div>
+      <div v-else-if="slot.componentType === 'signup'" class="si-deadline">
+        <label class="si-field-label" :for="`${slot.id}-deadline`">Tilmeldingsfrist</label>
+        <FormControl :id="`${slot.id}-deadline`" as="select" :model-value="deadlineScheduleValue" @update:model-value="updateDeadlineSchedule">
+          <option value="none">Ingen tilmeldingsfrist</option>
+          <option value="fixed">Fast dato</option>
+          <option v-for="option in relativeDeadlineOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+        </FormControl>
+        <FormControl v-if="deadlineScheduleValue === 'fixed'" :model-value="slot.deadlineDate ?? ''" type="date" @update:model-value="updateDeadlineDate" />
+        <output v-else-if="deadlineScheduleValue !== 'none'" class="schedule-preview">{{ calculatedDeadline || 'Vælg en eventdato først' }}</output>
       </div>
-
-      <div class="si-date">
+      <div v-if="!hideDate" class="si-date">
         <label class="si-field-label" :for="`${slot.id}-date`">Dato</label>
-        <input :id="`${slot.id}-date`" v-model="slot.date" class="sl-input" type="date" />
+        <FormControl :id="`${slot.id}-date`" v-model="slot.date" type="date" />
       </div>
 
       <div class="si-sub">
-        <label class="si-field-label" :for="`${slot.id}-sub`">{{ config.timedSlots ? 'Tidsrum' : 'Detalje' }}</label>
-        <div v-if="config.timedSlots" class="time-range-row">
-          <input
+        <label class="si-field-label" :for="`${slot.id}-sub`">{{ isShift ? 'Tidsrum' : 'Detalje' }}</label>
+        <div v-if="isShift" class="time-range-row">
+          <FormControl
             :id="`${slot.id}-sub`"
-            class="sl-input"
             type="time"
-            :value="timeRange.start"
+            :model-value="timeRange.start"
             aria-label="Starttid"
             :aria-invalid="invalidTime"
             :aria-describedby="invalidTime ? `${slot.id}-time-error` : undefined"
-            @input="emitTime('start', $event)"
+            @update:model-value="emitTime('start', $event)"
           />
           <span class="time-range-sep">–</span>
-          <input
-            class="sl-input"
+          <FormControl
             type="time"
-            :value="timeRange.end"
+            :model-value="timeRange.end"
             aria-label="Sluttid"
             :aria-invalid="invalidTime"
             :aria-describedby="invalidTime ? `${slot.id}-time-error` : undefined"
-            @input="emitTime('end', $event)"
+            @update:model-value="emitTime('end', $event)"
           />
         </div>
         <div v-if="invalidTime" :id="`${slot.id}-time-error`" class="field-error" role="alert">Vælg både start- og sluttid.</div>
-        <input
-          v-else
+        <FormControl
+          v-else-if="!isShift"
           :id="`${slot.id}-sub`"
           v-model="slot.sublabel"
-          class="sl-input"
           placeholder="fx 5 spejdere pr. patrulje"
         />
       </div>
 
-      <fieldset v-if="config.showKindPicker" class="si-kind">
+      <fieldset v-if="config.showKindPicker && !isShift && slot.componentType === 'signup'" class="si-kind">
         <legend class="si-field-label">Deltagelse</legend>
         <div class="kind-pills">
-          <label v-for="option in kindOptions" :key="option.value" class="kind-pill" :class="{ active: slot.kind === option.value }">
+          <label v-for="option in visibleKindOptions" :key="option.value" class="kind-pill" :class="{ active: slot.kind === option.value }">
             <input type="radio" :name="`${slot.id}-kind`" :value="option.value" :checked="slot.kind === option.value" @change="slot.kind = option.value" />
             <span>{{ option.label }}</span>
           </label>
@@ -100,19 +103,48 @@
         <input v-model="slot.requiresAdult" type="checkbox" />
         <span>Kræver 18+ år</span>
       </label>
-      <label class="slot-toggle">
+      <label v-if="slot.componentType === 'signup'" class="slot-toggle">
         <input type="checkbox" :checked="isGroup" @change="onGroup" />
         <span>Gruppetilmelding</span>
       </label>
-      <span v-if="isGroup" class="slot-inline-field">
+      <span v-if="slot.componentType === 'signup' && isGroup" class="slot-inline-field">
         <span>antal pr. gruppe</span>
-        <input class="sl-input sl-mini" type="number" min="2" max="99" :value="slot.groupSize" @input="onGroupSize" />
+        <FormControl class="sl-mini" type="number" min="2" :max="slot.capacity || 99" :model-value="slot.groupSize" @update:model-value="onGroupSize" />
+        <small class="slot-inline-hint">Anbefalet: {{ recommendedGroupSize }}</small>
       </span>
-      <span v-if="config.showKindPicker && slot.kind === 'paid'" class="slot-inline-field">
-        <span>Pris</span>
-        <input class="sl-input sl-mini" type="number" min="0" placeholder="200" :value="slot.price || ''" @input="onPrice" />
-        <span>kr</span>
-      </span>
+      <fieldset v-if="slot.componentType === 'signup' && slot.kind === 'paid'" class="payment-fields">
+        <legend>Tilmelding og betaling</legend>
+        <div class="kind-pills">
+          <label class="kind-pill" :class="{ active: slot.registrationMode === 'local' }">
+            <input type="radio" :name="`${slot.id}-registration-mode`" value="local" :checked="slot.registrationMode === 'local'" @change="setRegistrationMode('local')" />
+            <span>Havets Helte + MobilePay</span>
+          </label>
+          <label class="kind-pill" :class="{ active: slot.registrationMode === 'memberService' }">
+            <input type="radio" :name="`${slot.id}-registration-mode`" value="memberService" :checked="slot.registrationMode === 'memberService'" @change="setRegistrationMode('memberService')" />
+            <span>Medlemsservice</span>
+          </label>
+        </div>
+        <template v-if="slot.registrationMode === 'memberService'">
+          <label class="payment-field payment-field--link">
+            <span>Link til Medlemsservice *</span>
+            <FormControl v-model.trim="slot.memberServiceUrl" type="url" inputmode="url" placeholder="https://…" :aria-invalid="invalidMemberServiceUrl" :aria-describedby="invalidMemberServiceUrl ? `${slot.id}-member-service-url-error` : undefined" />
+            <span v-if="invalidMemberServiceUrl" :id="`${slot.id}-member-service-url-error`" class="field-error" role="alert">Indsæt et gyldigt HTTPS-link til den konkrete tilmelding i Medlemsservice.</span>
+          </label>
+        </template>
+        <template v-else>
+          <label class="payment-field">
+            <span>Pris</span>
+            <span class="payment-input-wrap">
+              <FormControl class="sl-mini" type="number" min="0" placeholder="200" :model-value="slot.price || ''" @update:model-value="onPrice" />
+              <span>kr</span>
+            </span>
+          </label>
+          <label class="payment-field payment-field--link">
+            <span>MobilePay-link</span>
+            <FormControl v-model="slot.paymentUrl" type="url" placeholder="https://mobilepay.dk/…" />
+          </label>
+        </template>
+      </fieldset>
     </div>
   </div>
 </template>
@@ -120,7 +152,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import { SLOT_ROLES } from '@/features/eventAdmin/eventAdmin.data';
+import FormControl from '@/components/form/FormControl.vue';
+import FormField from '@/components/form/FormField.vue';
+import { SLOT_ROLES, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
+import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
 import type { EventSlot, EventTypeConfig, SlotKind } from '@/features/eventAdmin/eventAdmin.types';
 
 const props = defineProps<{
@@ -129,7 +164,10 @@ const props = defineProps<{
   config: EventTypeConfig;
   invalid: boolean;
   invalidTime: boolean;
+  invalidMemberServiceUrl?: boolean;
+  eventDate?: string;
   timeRange: { start: string; end: string };
+  hideDate?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -141,37 +179,85 @@ const roleOptions = SLOT_ROLES.map(role => ({ value: role, label: role || 'Ingen
 
 const kindOptions: Array<{ value: SlotKind; label: string }> = [
   { value: 'volunteer', label: 'Frivillig' },
-  { value: 'attend', label: 'Tilmeld' },
-  { value: 'paid', label: 'Betalt' },
+  { value: 'attend', label: 'Gratis tilmelding' },
+  { value: 'paid', label: 'Betalt tilmelding' },
 ];
+const visibleKindOptions = computed(() => kindOptions);
+const recommendedGroupSize = computed(() => recommendGroupSize(props.slot.capacity));
 
 const isGroup = computed(() => props.slot.groupSize > 1);
+const isShift = computed(() => props.slot.componentType === 'shift' || props.config.timedSlots);
+const componentLabel = computed(() => isShift.value ? 'Vagt' : props.slot.componentType === 'signup' ? 'Tilmelding' : 'Opgave');
+const relativeDeadlineOptions = [
+  { value: '-42', label: '6 uger før eventet' },
+  { value: '-28', label: '4 uger før eventet' },
+  { value: '-14', label: '2 uger før eventet' },
+  { value: '-7', label: '1 uge før eventet' },
+  { value: '-1', label: '1 dag før eventet' },
+  { value: '0', label: 'På eventdagen' },
+];
+const deadlineScheduleValue = computed(() => {
+  if (!props.slot.deadlineScheduleMode) return 'none';
+  return props.slot.deadlineScheduleMode === 'relative' ? String(props.slot.deadlineOffsetDays ?? 0) : 'fixed';
+});
+const calculatedDeadline = computed(() => {
+  if (deadlineScheduleValue.value === 'none' || deadlineScheduleValue.value === 'fixed') return '';
+  const date = calculateSlotDeadline(props.eventDate, props.slot);
+  return date ? `Tilmeld senest ${formatSlotDate(date)}` : '';
+});
 
-function onCapacityInput(event: Event) {
-  const value = parseInt((event.target as HTMLInputElement).value, 10);
+function onCapacityInput(input: string | number) {
+  const value = parseInt(String(input), 10);
   props.slot.capacity = Number.isFinite(value) && value > 0 ? value : 1;
+  if (props.slot.componentType === 'signup' && isGroup.value) props.slot.groupSize = recommendGroupSize(props.slot.capacity);
 }
 
 function onUnlimited(event: Event) {
   props.slot.capacity = (event.target as HTMLInputElement).checked ? 0 : 3;
+  if (props.slot.componentType === 'signup' && isGroup.value) props.slot.groupSize = recommendGroupSize(props.slot.capacity);
 }
 
-function emitTime(part: 'start' | 'end', event: Event) {
-  emit('set-time', part, (event.target as HTMLInputElement).value);
+function emitTime(part: 'start' | 'end', value: string | number) {
+  emit('set-time', part, String(value));
 }
 
 function onGroup(event: Event) {
-  props.slot.groupSize = (event.target as HTMLInputElement).checked ? 5 : 1;
+  props.slot.groupSize = (event.target as HTMLInputElement).checked ? recommendGroupSize(props.slot.capacity) : 1;
 }
 
-function onGroupSize(event: Event) {
-  const value = parseInt((event.target as HTMLInputElement).value, 10);
+function recommendGroupSize(capacity: number) {
+  if (!capacity) return 5;
+  const divisors = Array.from({ length: Math.min(capacity, 10) - 1 }, (_, index) => index + 2)
+    .filter(size => capacity % size === 0);
+  return divisors.sort((a, b) => Math.abs(5 - a) - Math.abs(5 - b) || b - a)[0] ?? Math.min(5, capacity);
+}
+
+function onGroupSize(input: string | number) {
+  const value = parseInt(String(input), 10);
   props.slot.groupSize = Number.isFinite(value) && value >= 2 ? value : 2;
 }
 
-function onPrice(event: Event) {
-  const value = parseInt((event.target as HTMLInputElement).value, 10);
+function onPrice(input: string | number) {
+  const value = parseInt(String(input), 10);
   props.slot.price = Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+function setRegistrationMode(mode: 'local' | 'memberService') {
+  props.slot.registrationMode = mode;
+}
+
+function updateDeadlineSchedule(input: string | number) {
+  const value = String(input);
+  const mode = value === 'none' ? undefined : value === 'fixed' ? 'fixed' : 'relative';
+  props.slot.deadlineScheduleMode = mode;
+  props.slot.deadlineOffsetDays = mode === 'relative' ? Number(value) : undefined;
+  if (mode !== 'fixed') props.slot.deadlineDate = '';
+}
+
+function updateDeadlineDate(input: string | number) {
+  props.slot.deadlineDate = String(input);
+  props.slot.deadlineScheduleMode = 'fixed';
+  props.slot.deadlineOffsetDays = undefined;
 }
 </script>
 
@@ -228,33 +314,16 @@ function onPrice(event: Event) {
   grid-template-columns: 1fr 1fr 1.4fr;
 }
 
+.slot-secondary--shift {
+  grid-template-columns: 1fr 1.4fr;
+}
+
 .si-field-label {
   display: block;
   margin-bottom: 5px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
-}
-
-.sl-input {
-  width: 100%;
-  padding: 9px 11px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: #fff;
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-}
-
-.sl-input:focus {
-  outline: none;
-  border-color: var(--navy-mid, var(--navy));
-}
-
-.sl-input:focus-visible {
-  outline: 2px solid var(--navy);
-  outline-offset: 2px;
 }
 
 .si-cap {
@@ -286,6 +355,18 @@ function onPrice(event: Event) {
   padding: 0;
   margin: 0;
   grid-column: 1 / -1;
+}
+
+.si-deadline {
+  display: grid;
+  gap: 6px;
+}
+
+.schedule-preview {
+  padding-top: 2px;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .kind-pills {
@@ -338,6 +419,53 @@ function onPrice(event: Event) {
   width: 72px;
 }
 
+.slot-inline-hint {
+  color: var(--navy-mid);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.payment-fields {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  gap: 10px 14px;
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(15, 70, 123, 0.22);
+  border-radius: 10px;
+  background: rgba(15, 70, 123, 0.04);
+}
+
+.payment-fields legend {
+  padding: 0 4px;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.payment-fields > .kind-pills {
+  align-items: center;
+  align-self: end;
+}
+
+.payment-field {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.payment-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
 .field-error {
   margin-top: 5px;
   color: #c94853;
@@ -348,6 +476,10 @@ function onPrice(event: Event) {
 @media (max-width: 640px) {
   .slot-primary,
   .slot-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-fields {
     grid-template-columns: 1fr;
   }
 }

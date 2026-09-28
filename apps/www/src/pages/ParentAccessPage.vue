@@ -1,14 +1,11 @@
 <template>
-  <div class="parent-access-page">
-    <section class="parent-access-hero">
-      <div class="parent-access-hero__inner">
-        <p class="eyebrow">Forældrehelte</p>
-        <h1>Se mine tilmeldinger</h1>
-        <p>Få adgang til dine arrangementer og frivillige opgaver med et link på mail.</p>
-      </div>
-    </section>
-
-    <main class="page-shell parent-access-content">
+  <PublicLandingPageShell
+    hero-title="Se mine tilmeldinger"
+    hero-copy="Få adgang til dine arrangementer og frivillige opgaver med et link på mail."
+    section-title=""
+    section-eyebrow=""
+  >
+    <template #body>
       <PageCard v-if="checkingLink || !ready">
         <p class="parent-access-status" aria-live="polite">Gør klar…</p>
       </PageCard>
@@ -81,16 +78,18 @@
           </li>
         </ul>
       </PageCard>
-    </main>
-    <ConfirmDialog
-      :open="!!cancelTarget"
-      title="Afmeld tilmelding?"
-      :message="cancelTarget ? `Du afmeldes fra ${cancelTarget.eventTitle}.` : ''"
-      confirm-label="Afmeld"
-      @confirm="confirmCancel"
-      @cancel="cancelTarget = null"
-    />
-  </div>
+    </template>
+    <template #modal>
+      <ConfirmDialog
+        :open="!!cancelTarget"
+        title="Afmeld tilmelding?"
+        :message="cancelTarget ? `Du afmeldes fra ${cancelTarget.eventTitle}.` : ''"
+        confirm-label="Afmeld"
+        @confirm="confirmCancel"
+        @cancel="cancelTarget = null"
+      />
+    </template>
+  </PublicLandingPageShell>
 </template>
 
 <script setup lang="ts">
@@ -100,6 +99,7 @@ import { useRouter } from 'vue-router';
 
 import PageCard from '@/components/PageCard.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import { isAdminEmail } from '@/features/admin/useAdminAuth';
 import { cancelParentSignup, loadParentSignups, requestParentAccessLink, type ParentSignup } from '@/features/parentAccess/parentAccess.data';
 import { getAppAuth } from '@/lib/firebase';
@@ -213,6 +213,7 @@ async function logout() {
   const auth = await getAppAuth();
   await signOut(auth);
   signups.value = [];
+  await router.replace('/');
 }
 
 onMounted(async () => {
@@ -222,7 +223,7 @@ onMounted(async () => {
     ready.value = true;
     checkingLink.value = false;
     if (nextUser && isAdminEmail(nextUser.email)) {
-      await router.replace('/admin');
+      await router.replace('/admin/mine');
       return;
     }
     if (nextUser) await load();

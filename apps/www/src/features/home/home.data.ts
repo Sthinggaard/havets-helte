@@ -38,7 +38,7 @@ function toFeedType(type: EventType): Exclude<EventFilterType, 'all'> {
 }
 
 function toCtaRoute(type: EventType) {
-  if (type === 'event') return '/events';
+  if (type === 'event') return '/';
   if (type === 'timed') return '/vagter';
   return '/opgaver';
 }
@@ -52,7 +52,7 @@ function spotsLabel(event: AdminEvent): string {
 
 export function toHomeFeedItem(event: AdminEvent): HomeFeedItem {
   const feedType = toFeedType(event.type);
-  const fallbackImage = eventItems.find(item => item.type === feedType)?.image || '/og-sankthans.png';
+  const fallbackImage = eventItems.find(item => item.type === feedType)?.image || '/og-sankthans.webp';
   return {
     id: event.id,
     type: feedType,
@@ -70,7 +70,7 @@ export function toHomeFeedItem(event: AdminEvent): HomeFeedItem {
 export const homeFeedItems: HomeFeedItem[] = eventItems.map(item => ({
   ...item,
   ctaLabel: toCtaLabel(item.type),
-  ctaRoute: item.type === 'event' ? '/events' : item.type === 'shift' ? '/vagter' : '/opgaver',
+  ctaRoute: item.type === 'event' ? '/' : item.type === 'shift' ? '/vagter' : '/opgaver',
 }));
 
 export const homeSignups: HomeSignupItem[] = [

@@ -65,25 +65,24 @@
         havetshelte.dk-mail for at administrere indhold.
       </p>
       <div class="admin-login-actions">
-        <button type="button" class="btn-action" @click="logout">Log ud</button>
+        <button type="button" class="btn-action" @click="handleLogout">Log ud</button>
       </div>
     </PageCard>
 
     <template v-else>
-      <div class="admin-userbar">
-        <span class="admin-user">{{ user.email }}</span>
-        <button type="button" class="btn-action" @click="logout">Log ud</button>
-      </div>
       <slot />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
+
 import PageCard from '@/components/PageCard.vue';
 import { useAdminAuth } from '@/features/admin/useAdminAuth';
 
 const { busy, email, error, isAdmin, login, loginWithGoogle, logout, password, ready, user } = useAdminAuth();
+const router = useRouter();
 
 async function handleLogin() {
   await login();
@@ -91,6 +90,11 @@ async function handleLogin() {
 
 async function handleGoogleLogin() {
   await loginWithGoogle();
+}
+
+async function handleLogout() {
+  await logout();
+  await router.replace('/');
 }
 </script>
 

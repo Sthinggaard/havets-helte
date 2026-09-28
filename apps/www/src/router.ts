@@ -3,7 +3,6 @@ import { createRouter, createWebHistory } from 'vue-router';
 // Home is eager for fast first paint; every other route is split into its own chunk.
 import HomePage from './pages/HomePage.vue';
 
-const EventsPage = () => import('./pages/EventsPage.vue');
 const TasksPage = () => import('./pages/TasksPage.vue');
 const ShiftsPage = () => import('./pages/ShiftsPage.vue');
 const AttendancePage = () => import('./pages/AttendancePage.vue');
@@ -17,7 +16,7 @@ const AdminArrangementerPage = () => import('./pages/AdminArrangementerPage.vue'
 const AdminOpgaverPage = () => import('./pages/AdminOpgaverPage.vue');
 const AdminVagterPage = () => import('./pages/AdminVagterPage.vue');
 const AdminSignupsPage = () => import('./pages/AdminSignupsPage.vue');
-const AdminShellPage = () => import('./pages/AdminShellPage.vue');
+const LeaderSignupsPage = () => import('./pages/LeaderSignupsPage.vue');
 
 const routes = [
   {
@@ -30,7 +29,7 @@ const routes = [
   {
     path: '/events',
     name: 'events',
-    component: EventsPage,
+    redirect: '/',
     alias: ['/events.html'],
     meta: { shell: 'landing' },
   },
@@ -62,12 +61,14 @@ const routes = [
     path: '/admin/fremmoede',
     name: 'admin-attendance',
     component: AdminAttendancePage,
+    meta: { shell: 'landing' },
     alias: ['/admin-fremmoede-setup.html'],
   },
   {
     path: '/medlemmer',
     name: 'members',
     component: MembersPage,
+    meta: { shell: 'landing' },
     alias: ['/medlemmer.html', '/admin-medlemmer.html', '/admin-medlemmer-form.html'],
   },
   {
@@ -75,6 +76,7 @@ const routes = [
     name: 'branches',
     component: BranchesPage,
     alias: ['/grene.html', '/admin-grene.html'],
+    meta: { shell: 'landing' },
   },
   {
     path: '/mine-tilmeldinger',
@@ -99,31 +101,41 @@ const routes = [
     path: '/admin/billedbibliotek',
     name: 'admin-library',
     component: AdminLibraryPage,
+    meta: { shell: 'landing' },
     alias: ['/admin-billedbibliotek.html'],
   },
   {
     path: '/admin/opgaver',
     name: 'admin-opgaver',
     component: AdminOpgaverPage,
+    meta: { shell: 'landing' },
     alias: ['/admin-opgaver.html', '/admin-opgaver-form.html'],
   },
   {
     path: '/admin/vagter',
     name: 'admin-vagter',
     component: AdminVagterPage,
+    meta: { shell: 'landing' },
     alias: ['/admin-vagter.html', '/admin-vagter-form.html'],
   },
-  { path: '/admin/tilmeldte', name: 'admin-signups', component: AdminSignupsPage },
+  { path: '/admin/tilmeldte', name: 'admin-signups', component: AdminSignupsPage, meta: { shell: 'landing' } },
   {
     path: '/admin/arrangementer',
     name: 'admin-arrangementer',
     component: AdminArrangementerPage,
+    meta: { shell: 'landing' },
     alias: ['/admin-arrangementer.html', '/admin-arrangementer-form.html'],
+  },
+  {
+    path: '/admin/mine',
+    name: 'leader-signups',
+    component: LeaderSignupsPage,
+    meta: { shell: 'landing' },
   },
   {
     path: '/admin',
     name: 'admin',
-    component: AdminShellPage,
+    redirect: { name: 'admin-arrangementer' },
     alias: [
       '/admin.html',
       '/admin-fremmoede.html',

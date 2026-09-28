@@ -16,7 +16,7 @@ export const eventItems: EventItem[] = [
     location: 'Havets Helte',
     spots: '1 plads tilbage',
     summary: 'En aften på vandet med fælles ansvar, sejlads og aftensmad.',
-    image: '/og-sankthans.png',
+    image: '/og-sankthans.webp',
   },
   {
     id: 'sankthans-sluseholmen',
@@ -26,7 +26,7 @@ export const eventItems: EventItem[] = [
     location: 'Vandtrappen Sluseholmen',
     spots: '6 vagter',
     summary: 'Bål, drikkevarer og skumfidus-stationer for hele familien.',
-    image: '/og-sankthans.png',
+    image: '/og-sankthans.webp',
   },
   {
     id: 'lejrtur-forberedelse',
@@ -36,7 +36,7 @@ export const eventItems: EventItem[] = [
     location: 'Havets Helte',
     spots: '3 opgaver',
     summary: 'Pakkeliste, transport og køkkenhjælp fordeles på et samlet opgaveflow.',
-    image: '/og-sankthans.png',
+    image: '/og-sankthans.webp',
   },
   {
     id: 'sommermode-vagt',
@@ -46,7 +46,6 @@ export const eventItems: EventItem[] = [
     location: 'Havets Helte',
     spots: '2 ledige',
     summary: 'Vagtplan til sommermødet med tydelige roller og færre ad hoc-beslutninger.',
-    image: '/og-sankthans.png',
+    image: '/og-sankthans.webp',
   },
 ];
-

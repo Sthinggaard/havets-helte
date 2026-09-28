@@ -2,14 +2,14 @@
   <PublicLandingPageShell
     content-width="640px"
     hero-badge="Frivillige"
-    hero-count-label="Top 10"
+    hero-count-label="Alle"
     hero-title="Frivillighelte"
     hero-copy="Tak til dem, der giver en hånd med, når der er brug for det."
-    hero-image="/og-sankthans.png"
+    hero-image="/og-sankthans.webp"
     hero-image-alt="Havets Helte"
     section-eyebrow="Frivillighelte"
     section-title="Flest frivilligtilmeldinger"
-    section-chip="Top 10"
+    section-chip="Alle frivillige"
   >
     <template #hero-actions>
       <RouterLink class="hero-action" to="/">
@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <ol v-else class="leaderboard-list" aria-label="Top 10 frivillighelte">
+      <ol v-else class="leaderboard-list" aria-label="Alle frivillighelte">
         <li v-for="(entry, index) in topEntries" :key="entry.name" class="leaderboard-row" :class="{ 'leaderboard-row--first': leaderboardRank(index) === 1 }">
           <span
             v-if="leaderboardRank(index) <= 3"
@@ -77,7 +77,7 @@ import PublicLandingPageShell from './PublicLandingPageShell.vue';
 const loading = ref(true);
 const loadError = ref(false);
 const entries = ref<VolunteerLeaderboardEntry[]>([]);
-const topEntries = computed(() => entries.value.slice(0, 10));
+const topEntries = computed(() => entries.value);
 
 function initials(name: string): string {
   return name

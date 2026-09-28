@@ -1,10 +1,10 @@
 <template>
   <PublicLandingPageShell
-    content-width="920px"
+    content-width="70vw"
     hero-badge="Fremmøde"
     :hero-copy="heroCopy"
     :hero-count-label="heroCountLabel"
-    hero-image="/og-sankthans.png"
+    hero-image="/og-sankthans.webp"
     hero-image-alt="Fremmøde"
     :hero-title="heroTitle"
     :section-chip="sectionChip"
@@ -28,6 +28,7 @@
     </template>
 
     <template #body>
+
       <div v-if="!hasRequestedDate" class="attendance-empty-state">
         <h2 class="attendance-empty-title">Vælg først en dag i admin</h2>
         <p class="attendance-empty-copy">Fremmøde kan kun startes fra admin, når en leder har valgt dagens hold.</p>
@@ -186,6 +187,22 @@ function onSearchInput(event: Event) {
 .meeting-list {
   display: grid;
   gap: 16px;
+}
+
+.workspace-header,
+.workspace-info {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.workspace-header {
+  justify-content: space-between;
+}
+
+.workspace-info {
+  justify-content: flex-end;
 }
 
 .attendance-center {

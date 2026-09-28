@@ -1,39 +1,30 @@
 <template>
-  <PublicLandingPageShell
-    content-width="70vw"
-    hero-badge="Lederportal"
-    :hero-copy="heroCopy"
-    :hero-count-label="heroCountLabel"
-    :hero-image="heroImage"
-    :hero-image-alt="heroTitle"
-    :hero-title="heroTitle"
-    :section-chip="sectionChip"
-    :section-eyebrow="sectionEyebrow"
-    :section-lead="sectionLead"
-    :section-title="sectionTitle"
-  >
-    <template #hero-actions>
-      <button v-if="mode === 'form'" type="button" class="hero-action" @click="cancel">
-        <i class="ti ti-layout-list" aria-hidden="true"></i>Tilbage til oversigt
-      </button>
-    </template>
+  <div class="admin-workspace-shell">
+    <PublicHero :title="heroTitle" :copy="heroCopy" />
 
-    <template #hero-meta>
-      <span class="meta-chip">
-        <i class="ti ti-list" aria-hidden="true"></i>
-        {{ heroCountLabel }}
-      </span>
-      <span class="meta-chip">
-        <i class="ti ti-photo" aria-hidden="true"></i>
-        {{ mode === 'form' ? 'Formular' : 'Oversigt' }}
-      </span>
-      <span v-if="mode === 'form'" class="meta-chip">
-        <i class="ti ti-eye" aria-hidden="true"></i>
-        {{ draft.active ? 'Synlig' : 'Skjult' }}
-      </span>
-    </template>
+    <div class="page-stack">
+      <PageCard>
+      <template #header>
+        <div class="workspace-header">
+          <div>
+            <p class="eyebrow">Lederportal</p>
+            <h1 class="page-title">{{ heroTitle }}</h1>
+            <p class="workspace-subtitle">{{ heroCopy }}</p>
+          </div>
+          <div class="workspace-header-actions">
+            <div class="hero-meta">
+              <span class="meta-chip"><i class="ti ti-list" aria-hidden="true"></i>{{ heroCountLabel }}</span>
+              <span class="meta-chip"><i class="ti ti-photo" aria-hidden="true"></i>{{ mode === 'form' ? 'Formular' : 'Oversigt' }}</span>
+              <span v-if="mode === 'form'" class="meta-chip"><i class="ti ti-eye" aria-hidden="true"></i>{{ draft.active ? 'Synlig' : 'Skjult' }}</span>
+            </div>
+            <button v-if="mode === 'form'" type="button" class="btn-action" @click="cancel">
+              <i class="ti ti-layout-list" aria-hidden="true"></i>Tilbage til oversigt
+            </button>
+          </div>
+        </div>
+      </template>
 
-    <template #info>
+      <div class="info-strip">
       <span class="info-chip">
         <i class="ti ti-calendar" aria-hidden="true"></i>
         {{ config.title }}
@@ -46,9 +37,10 @@
         <i class="ti ti-layout-list" aria-hidden="true"></i>
         {{ formTitle }}
       </span>
-    </template>
+      </div>
 
-    <template #body>
+      <p v-if="sectionLead" class="lead event-lead">{{ sectionLead }}</p>
+
       <section v-if="mode === 'list'" class="admin-list">
         <div class="admin-list-head">
           <div class="admin-list-head-main">
@@ -78,7 +70,7 @@
                 <div class="admin-card-meta">
                   <span v-if="event.dateText">{{ event.dateText }}</span>
                   <span v-if="event.location">· {{ event.location }}</span>
-                  <span>· {{ event.slots.length }} {{ event.slots.length === 1 ? 'plads' : 'pladser' }}</span>
+                  <span>· {{ componentSummary(event) }}</span>
                 </div>
               </div>
             </button>
@@ -94,33 +86,48 @@
       <form v-else class="admin-form" @submit.prevent="onSave">
         <div class="field" :class="{ 'has-error': titleError }">
           <label for="evTitle">Titel *</label>
-          <input id="evTitle" v-model="draft.title" type="text" class="form-input" :placeholder="config.formNew" :aria-invalid="titleError" />
+          <FormControl id="evTitle" v-model="draft.title" :placeholder="config.formNew" :aria-invalid="titleError" />
           <div v-if="titleError" class="field-error" role="alert">{{ config.titleError }}</div>
         </div>
 
+        <section class="image-field" aria-labelledby="image-field-title">
+          <div id="image-field-title" class="field-label-static">Billede</div>
+          <div class="image-field-content" :class="{ 'image-field-content--empty': !draft.imageUrl }">
+            <div v-if="draft.imageUrl" class="image-preview-wrap">
+              <img class="image-preview" :src="draft.imageUrl" alt="Valgt billede til siden" />
+            </div>
+            <div class="image-field-actions">
+              <button type="button" class="btn-action" @click="pickerOpen = true">
+                <i class="ti ti-photo-plus" aria-hidden="true"></i>{{ draft.imageUrl ? 'Skift billede' : 'Vælg billede' }}
+              </button>
+              <button v-if="draft.imageUrl" type="button" class="btn-action" @click="draft.imageUrl = ''">Fjern billede</button>
+              <p v-if="uploadError" class="image-field-error" role="alert">{{ uploadError }}</p>
+            </div>
+          </div>
+        </section>
+
         <div class="field">
           <label for="evDesc">Beskrivelse</label>
-          <textarea id="evDesc" v-model="draft.description" class="form-input" rows="3" placeholder="Kort beskrivelse til forældrene…"></textarea>
+          <FormControl id="evDesc" v-model="draft.description" as="textarea" rows="3" placeholder="Kort beskrivelse til forældrene…" />
         </div>
 
         <div class="form-row">
           <div class="field">
-            <label for="evDate">Dato-tekst</label>
+            <label for="evEventDate">Eventdato</label>
             <div class="input-action-row">
-              <input id="evDate" v-model="draft.dateText" type="text" class="form-input" placeholder="Tirsdag 23. juni · 16:00–22:00" />
+              <FormControl id="evEventDate" v-model="draft.eventDate" type="date" @update:model-value="syncEventDateText" />
               <button type="button" class="field-icon-button" aria-label="Vælg dato" title="Vælg dato" @click="openDatePicker">
                 <i class="ti ti-calendar" aria-hidden="true"></i>
               </button>
               <input ref="datePicker" class="native-date-picker" type="date" tabindex="-1" aria-hidden="true" @change="applyPickedDate" />
             </div>
+            <small class="field-help">Året til årshjulet udledes automatisk fra eventdatoen.</small>
           </div>
           <div class="field location-field">
             <label for="evLoc">Sted</label>
-            <input
+            <FormControl
               id="evLoc"
               v-model="draft.location"
-              type="text"
-              class="form-input"
               placeholder="Sluseholmen"
               autocomplete="off"
               role="combobox"
@@ -128,7 +135,7 @@
               aria-controls="evLocListbox"
               :aria-expanded="locationSuggestionsOpen"
               :aria-activedescendant="activeLocationOptionId"
-              @input="onLocationInput"
+              @update:model-value="onLocationInput"
               @keydown="onLocationKeydown"
               @blur="onLocationBlur"
             />
@@ -156,74 +163,85 @@
           </div>
         </div>
 
+
         <div v-if="locationMapUrl" class="location-map-wrap">
           <iframe class="location-map" :src="locationMapUrl" loading="lazy" title="Kort over valgt sted"></iframe>
         </div>
 
-        <div class="field">
-          <span class="field-label-static">Billede</span>
-          <div class="img-block">
-            <img v-if="draft.imageUrl" class="img-preview" :src="draft.imageUrl" alt="" />
-            <div class="img-actions">
-              <input ref="uploadInput" class="sr-only" type="file" accept="image/*" @change="handleUpload" />
-              <button type="button" class="btn-action" @click="triggerUpload">
-                <i class="ti ti-upload" aria-hidden="true"></i>Upload nyt billede
-              </button>
-              <button type="button" class="btn-action" @click="pickerOpen = true">
-                <i class="ti ti-photo-search" aria-hidden="true"></i>Vælg fra bibliotek
-              </button>
-              <button v-if="draft.imageUrl" type="button" class="btn-action" @click="draft.imageUrl = ''">Fjern billede</button>
-            </div>
-            <p v-if="uploadError" class="upload-error" role="alert">{{ uploadError }}</p>
-          </div>
-        </div>
-
-        <div class="divider">Pladser</div>
+        <div class="divider">{{ config.type === 'event' ? 'Tilmeldinger, opgaver og vagter' : 'Pladser' }}</div>
         <div class="slots-list">
-          <EventSlotEditor
-            v-for="(slot, index) in draft.slots"
-            :key="slot.id"
-            :slot="slot"
-            :index="index"
-            :config="config"
-            :invalid="invalidSlotIds.has(slot.id)"
-            :invalid-time="invalidSlotTimeIds.has(slot.id)"
-            :time-range="slotTimeRange(slot)"
-            @remove="removeSlot(slot.id)"
-            @set-time="(part, value) => setSlotTime(slot, part, value)"
-          />
-        </div>
-        <button type="button" class="btn-action btn-add-slot" @click="addSlot">
-          <i class="ti ti-plus" aria-hidden="true"></i>Tilføj plads
-        </button>
-        <div v-if="slotsError" class="field-error" role="alert">Tilføj mindst én plads.</div>
-
-        <section v-if="editingId" class="admin-signups">
-          <div class="divider">Tilmeldte frivillige</div>
-          <p v-if="signupsLoading" class="lead">Henter tilmeldinger…</p>
-          <p v-else-if="signupsError" class="admin-error">{{ signupsError }}</p>
-          <p v-else-if="!eventSignups.length" class="admin-empty">Ingen tilmeldte frivillige endnu.</p>
-          <ul v-else class="admin-signup-list">
-            <li v-for="signup in eventSignups" :key="signup.id" class="admin-signup-row">
-              <div><strong>{{ signup.name }}</strong><span>{{ signup.email }} · {{ signup.slotLabel }}</span></div>
-              <button type="button" class="btn-action btn-action--danger" @click="cancelSignup(signup)">Afmeld</button>
-            </li>
-          </ul>
-        </section>
-
-        <template v-if="config.showPayment">
-          <div class="divider">Betaling</div>
-          <div class="form-row">
-            <div class="field">
-              <label for="evPay">MobilePay-link</label>
-              <input id="evPay" v-model="draft.paymentUrl" type="url" class="form-input" placeholder="https://mobilepay.dk/…" />
-            </div>
-            <div class="field field--narrow">
-              <label for="evCancel">Aflysningsfrist (dage)</label>
-              <input id="evCancel" v-model.number="draft.cancelDeadlineDays" type="number" min="0" class="form-input" placeholder="3" />
-            </div>
+          <div v-if="(config.type === 'event' || config.type === 'task') && !taskGroups.length || config.type === 'event' && !signupSlots.length || (config.type === 'event' || config.type === 'timed') && !shiftGroups.length" class="empty-section-actions">
+            <SectionAddButton v-if="(config.type === 'event' || config.type === 'task') && !taskGroups.length" tone="task" label="Tilføj opgavesektion" @click="addAndFocus('task')" />
+            <SectionAddButton v-if="config.type === 'event' && !signupSlots.length" tone="signup" label="Tilføj tilmeldingssektion" @click="addAndFocus('signup')" />
+            <SectionAddButton v-if="(config.type === 'event' || config.type === 'timed') && !shiftGroups.length" tone="shift" label="Tilføj vagtsektion" @click="addAndFocus('shift')" />
           </div>
-        </template>
+          <template v-for="(group, index) in taskGroups" :key="group.id">
+            <TaskTypeEditor
+              :slots="group.slots"
+              :index="index"
+              :config="config"
+              :event-date="draft.eventDate"
+              :invalid="group.slots.some(slot => invalidSlotIds.has(slot.id))"
+              :invalid-slot-ids="invalidSlotIds"
+              data-component-type="task"
+              :data-section-id="group.id"
+              @remove="removeTaskGroup(group.id)"
+              @remove-task="removeSlot"
+              @add-task="addTask(group.id)"
+              @update-title="title => updateTaskTitle(group.id, title)"
+              @update-date="date => updateTaskDate(group.id, date)"
+              @update-schedule="(mode, offsetDays) => updateTaskSchedule(group.id, mode, offsetDays)"
+              @update-deadline-schedule="(mode, offsetDays) => updateTaskDeadlineSchedule(group.id, mode, offsetDays)"
+              @update-deadline-date="date => updateTaskDeadlineDate(group.id, date)"
+            />
+            <SectionAddButton tone="task" icon="ti-copy" label="Kopiér opgavesektion" @click="copyTaskGroup(group.id)" />
+            <SectionAddButton tone="task" label="Tilføj opgavesektion" @click="addAndFocus('task')" />
+          </template>
+
+          <template v-for="(slot, index) in signupSlots" :key="slot.id">
+            <EventSlotEditor
+              :slot="slot"
+              :index="index"
+              :config="config"
+              :invalid="invalidSlotIds.has(slot.id)"
+              :invalid-time="false"
+              :invalid-member-service-url="invalidMemberServiceUrlIds.has(slot.id)"
+              :event-date="draft.eventDate"
+              :time-range="{ start: '', end: '' }"
+              data-component-type="signup"
+              :data-section-id="slot.id"
+              @remove="removeSlot(slot.id)"
+              @set-time="() => undefined"
+            />
+            <SectionAddButton tone="signup" icon="ti-copy" label="Kopiér tilmeldingssektion" @click="copySignupSlot(slot.id)" />
+            <SectionAddButton tone="signup" label="Tilføj tilmeldingssektion" @click="addAndFocus('signup')" />
+          </template>
+
+          <template v-for="(group, index) in shiftGroups" :key="group.id">
+            <ShiftTypeEditor
+              :index="index"
+              :slots="group.slots"
+              :invalid="group.slots.some(slot => invalidSlotIds.has(slot.id))"
+              :invalid-time-ids="invalidSlotTimeIds"
+              :event-date="draft.eventDate"
+              data-component-type="shift"
+              :data-section-id="group.id"
+              @remove="removeShiftGroup(group.id)"
+              @remove-period="removeShiftPeriod"
+              @add-period="addShiftPeriod(group.id)"
+              @update-common="(field, value) => updateShiftCommon(group.id, field, value)"
+              @update-duration="duration => updateShiftDuration(group.id, duration)"
+              @update-capacity="updateShiftCapacity"
+              @update-adult="updateShiftAdult"
+              @set-start="start => setShiftStart(group.id, start)"
+              @update-schedule="(mode, offsetDays) => updateShiftSchedule(group.id, mode, offsetDays)"
+              @update-recurrence="(weekday, startDate, endDate) => updateShiftRecurrence(group.id, weekday, startDate, endDate)"
+            />
+            <SectionAddButton tone="shift" icon="ti-copy" label="Kopiér vagtsektion" @click="copyShiftGroup(group.id)" />
+            <SectionAddButton tone="shift" label="Tilføj vagtsektion" @click="addAndFocus('shift')" />
+          </template>
+        </div>
+        <div v-if="slotsError" class="field-error" role="alert">Tilføj mindst én tilmelding, opgave eller vagt.</div>
 
         <div class="form-footer">
           <label class="check-row">
@@ -236,9 +254,12 @@
           <p v-if="saveError" class="admin-error" role="alert">{{ saveError }}</p>
         </div>
       </form>
-    </template>
 
-    <template #modal>
+      <div class="admin-toast" :class="{ show: toastVisible }" role="status" aria-live="polite">{{ toastText }}</div>
+
+      </PageCard>
+
+    <div class="admin-modals">
       <LibraryPickerModal
         :open="pickerOpen"
         title="Billedbibliotek"
@@ -272,26 +293,30 @@
           </div>
         </div>
       </div>
-    </template>
-  </PublicLandingPageShell>
+    </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EventSlotEditor from '@/components/admin/EventSlotEditor.vue';
+import ShiftTypeEditor from '@/components/admin/ShiftTypeEditor.vue';
+import TaskTypeEditor from '@/components/admin/TaskTypeEditor.vue';
+import SectionAddButton from '@/components/admin/SectionAddButton.vue';
+import FormControl from '@/components/form/FormControl.vue';
 import LibraryPickerModal from '@/components/library/LibraryPickerModal.vue';
-import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
+import PageCard from '@/components/PageCard.vue';
+import PublicHero from '@/components/public/PublicHero.vue';
 import { useEventAdmin } from '@/features/eventAdmin/useEventAdmin';
-import type { AdminEvent, EventSection } from '@/features/eventAdmin/eventAdmin.types';
+import { createSlot, createSlotId, timeAfter } from '@/features/eventAdmin/eventAdmin.data';
+import type { AdminEvent, EventSection, EventSlot } from '@/features/eventAdmin/eventAdmin.types';
 import { eventItems } from '@/features/events/events.data';
-import { IMAGE_LIBRARY_UNCATEGORIZED_ID } from '@/features/library/library.data';
 import { useLibraryPage } from '@/features/library/useLibraryPage';
 import type { LibraryItem } from '@/features/library/library.types';
-import { getAppFirestore } from '@/lib/firebase';
 
 const props = defineProps<{ section: EventSection }>();
 
@@ -309,6 +334,7 @@ const {
   slotsError,
   invalidSlotIds,
   invalidSlotTimeIds,
+  invalidMemberServiceUrlIds,
   formTitle,
   load,
   startCreate,
@@ -316,13 +342,61 @@ const {
   cancel,
   addSlot,
   removeSlot,
-  slotTimeRange,
-  setSlotTime,
   save,
   remove,
 } = useEventAdmin(props.section);
 
 const heroTitle = computed(() => (mode.value === 'form' ? draft.title || formTitle.value : config.title));
+const taskGroups = computed(() => {
+  const groups = new Map<string, EventSlot[]>();
+  for (const slot of draft.slots) {
+    if (slot.componentType !== 'task') continue;
+    const groupId = slot.taskGroupId || `legacy-${slot.taskGroupTitle || slot.label}-${slot.date}`;
+    const group = groups.get(groupId) ?? [];
+    group.push(slot);
+    groups.set(groupId, group);
+  }
+  return [...groups.entries()].map(([id, slots]) => ({ id, slots }));
+});
+const signupSlots = computed(() => draft.slots.filter(slot => slot.componentType === 'signup'));
+const shiftGroups = computed(() => {
+  const groups = new Map<string, EventSlot[]>();
+  for (const slot of draft.slots) {
+    if (slot.componentType !== 'shift') continue;
+    const groupId = slot.shiftGroupId || slot.id;
+    const group = groups.get(groupId) ?? [];
+    group.push(slot);
+    groups.set(groupId, group);
+  }
+  return [...groups.entries()].map(([id, slots]) => ({ id, slots }));
+});
+
+async function addAndFocus(componentType: 'task' | 'shift' | 'signup') {
+  addSlot(componentType);
+  await nextTick();
+  const components = document.querySelectorAll<HTMLElement>(`[data-component-type="${componentType}"]`);
+  const newest = components[components.length - 1];
+  newest?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  newest?.querySelector<HTMLElement>('input, select, button')?.focus({ preventScroll: true });
+}
+
+async function focusCopiedSection(componentType: 'task' | 'shift' | 'signup', sectionId: string, message: string) {
+  await nextTick();
+  const target = document.querySelector<HTMLElement>(`[data-component-type="${componentType}"][data-section-id="${sectionId}"]`);
+  target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  target?.querySelector<HTMLElement>('input, select, button')?.focus({ preventScroll: true });
+  showToast(message);
+}
+
+function showToast(message: string) {
+  toastText.value = message;
+  toastVisible.value = true;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastVisible.value = false;
+    toastTimer = null;
+  }, 2600);
+}
 const heroImage = computed(() => {
   if (mode.value === 'form') return draft.imageUrl || eventItems.find(item => item.type === config.type)?.image || '';
   const firstImage = events.value[0]?.imageUrl;
@@ -334,7 +408,7 @@ const heroCopy = computed(() =>
     : `Åbn et opslag og rediger det som den offentlige landing page viser det.`,
 );
 const heroCountLabel = computed(() => {
-  if (mode.value === 'form') return `${draft.slots.length} pladser`;
+  if (mode.value === 'form') return `${draft.slots.length} elementer`;
   return `${events.value.length} opslag`;
 });
 const sectionEyebrow = computed(() => (mode.value === 'form' ? config.formEdit : 'Oversigt'));
@@ -342,7 +416,7 @@ const sectionTitle = computed(() => (mode.value === 'form' ? (draft.title || for
 const sectionChip = computed(() => (mode.value === 'form' ? (draft.active ? 'Synlig' : 'Skjult') : ''));
 const sectionLead = computed(() =>
   mode.value === 'form'
-    ? 'Skift titel, tekst, billede, pladser og betaling.'
+    ? 'Skift titel, tekst, billede, opgaver, vagter og betaling.'
     : `Det her er den redigerbare backend-version af ${config.title.toLowerCase()}.`,
 );
 
@@ -354,15 +428,14 @@ const {
   uploadItem,
 } = useLibraryPage({ autoLoad: false });
 
-const uploadInput = ref<HTMLInputElement | null>(null);
 const pickerOpen = ref(false);
 const libraryLoaded = ref(false);
 const route = useRoute();
 const router = useRouter();
 const eventActionTarget = ref<AdminEvent | null>(null);
-const eventSignups = ref<Array<{ id: string; name: string; email: string; slotLabel: string }>>([]);
-const signupsLoading = ref(false);
-const signupsError = ref('');
+const toastVisible = ref(false);
+const toastText = ref('');
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
 const datePicker = ref<HTMLInputElement | null>(null);
 const locationSuggestions = ref<LocationSuggestion[]>([]);
 const locationActiveIndex = ref(-1);
@@ -417,9 +490,7 @@ async function viewSignupsFromActions() {
   await viewSignups(event);
 }
 async function viewSignups(event: AdminEvent) {
-  await router.push(event.type === 'timed'
-    ? { path: `/vagter/${event.id}/tilmelde` }
-    : { path: '/admin/tilmeldte', query: { event: event.id } });
+  await router.push({ path: '/admin/tilmeldte', query: { event: event.id } });
 }
 
 onMounted(async () => {
@@ -452,6 +523,201 @@ function staticTemplate(id: string) {
   };
 }
 
+function shiftSlots(groupId: string) {
+  return draft.slots.filter(slot => slot.componentType === 'shift' && (slot.shiftGroupId || slot.id) === groupId);
+}
+
+function updateShiftCommon(groupId: string, field: 'label' | 'date', value: string) {
+  shiftSlots(groupId).forEach(slot => {
+    slot[field] = value;
+  });
+}
+
+function updateShiftSchedule(groupId: string, mode: 'fixed' | 'weekly' | 'biweekly', offsetDays: number) {
+  shiftSlots(groupId).forEach(slot => {
+    slot.scheduleMode = mode;
+    slot.relativeTo = undefined;
+    slot.offsetDays = undefined;
+    slot.recurrenceMaterialized = false;
+    if (mode !== 'fixed') {
+      slot.date = '';
+      slot.recurrenceWeekday = slot.recurrenceWeekday ?? 6;
+      slot.recurrenceStartDate = slot.recurrenceStartDate || draft.eventDate || '';
+      slot.recurrenceEndDate = slot.recurrenceEndDate || draft.eventDate || '';
+    }
+  });
+}
+
+function updateShiftRecurrence(groupId: string, weekday: number, startDate: string, endDate: string) {
+  shiftSlots(groupId).forEach(slot => {
+    slot.scheduleMode = slot.scheduleMode === 'biweekly' ? 'biweekly' : 'weekly';
+    slot.recurrenceWeekday = weekday;
+    slot.recurrenceStartDate = startDate;
+    slot.recurrenceEndDate = endDate;
+    slot.date = '';
+    slot.recurrenceMaterialized = false;
+  });
+}
+
+function shiftDuration(groupId: string) {
+  return shiftSlots(groupId)[0]?.shiftDurationMinutes ?? 60;
+}
+
+function reflowShiftPeriods(groupId: string) {
+  const periods = shiftSlots(groupId);
+  const duration = shiftDuration(groupId);
+  let start = periods[0]?.startTime ?? '';
+  periods.forEach(period => {
+    period.startTime = start;
+    period.endTime = timeAfter(start, duration);
+    period.sublabel = period.startTime && period.endTime ? `${period.startTime}–${period.endTime}` : '';
+    period.shiftDurationMinutes = duration;
+    start = period.endTime;
+  });
+}
+
+function updateShiftDuration(groupId: string, duration: number) {
+  shiftSlots(groupId).forEach(slot => { slot.shiftDurationMinutes = duration; });
+  reflowShiftPeriods(groupId);
+}
+
+function updateShiftCapacity(slotId: string, value: number) {
+  const slot = draft.slots.find(candidate => candidate.id === slotId);
+  if (slot) slot.capacity = value;
+}
+
+function updateShiftAdult(slotId: string, value: boolean) {
+  const slot = draft.slots.find(candidate => candidate.id === slotId);
+  if (slot) slot.requiresAdult = value;
+}
+
+function setShiftStart(groupId: string, start: string) {
+  const firstPeriod = shiftSlots(groupId)[0];
+  if (!firstPeriod) return;
+  firstPeriod.startTime = start;
+  reflowShiftPeriods(groupId);
+}
+
+function addShiftPeriod(groupId: string) {
+  const periods = shiftSlots(groupId);
+  const previous = periods.at(-1);
+  if (!previous) return;
+  const duration = shiftDuration(groupId);
+  draft.slots.push(createSlot({
+    ...previous,
+    id: undefined,
+    shiftGroupId: groupId,
+    sublabel: '',
+    startTime: previous.endTime,
+    endTime: timeAfter(previous.endTime, duration),
+    shiftDurationMinutes: duration,
+  }));
+  slotsError.value = false;
+}
+
+function removeShiftPeriod(slotId: string) {
+  removeSlot(slotId);
+}
+
+function removeShiftGroup(groupId: string) {
+  draft.slots = draft.slots.filter(slot => slot.componentType !== 'shift' || (slot.shiftGroupId || slot.id) !== groupId);
+}
+
+function taskSlots(groupId: string) {
+  return draft.slots.filter(slot => slot.componentType === 'task' && (slot.taskGroupId || `legacy-${slot.taskGroupTitle || slot.label}-${slot.date}`) === groupId);
+}
+
+function updateTaskTitle(groupId: string, title: string) {
+  taskSlots(groupId).forEach(slot => { slot.taskGroupTitle = title; });
+}
+
+function updateTaskDate(groupId: string, date: string) {
+  taskSlots(groupId).forEach(slot => { slot.date = date; });
+}
+
+function updateTaskSchedule(groupId: string, mode: 'fixed' | 'relative', offsetDays: number) {
+  taskSlots(groupId).forEach(slot => {
+    slot.scheduleMode = mode;
+    slot.relativeTo = mode === 'relative' ? 'event' : undefined;
+    slot.offsetDays = mode === 'relative' ? offsetDays : undefined;
+    if (mode === 'relative') slot.date = '';
+  });
+}
+
+function updateTaskDeadlineSchedule(groupId: string, mode: 'fixed' | 'relative' | undefined, offsetDays: number | undefined) {
+  taskSlots(groupId).forEach(slot => {
+    slot.deadlineScheduleMode = mode;
+    slot.deadlineOffsetDays = offsetDays;
+    if (mode !== 'fixed') slot.deadlineDate = '';
+  });
+}
+
+function updateTaskDeadlineDate(groupId: string, date: string) {
+  taskSlots(groupId).forEach(slot => {
+    slot.deadlineDate = date;
+    slot.deadlineScheduleMode = 'fixed';
+    slot.deadlineOffsetDays = undefined;
+  });
+}
+
+function addTask(groupId: string) {
+  const group = taskSlots(groupId);
+  const template = group[0];
+  if (!template) return;
+  draft.slots.push(createSlot({
+    ...template,
+    id: undefined,
+    taskGroupId: groupId,
+    taskGroupTitle: template.taskGroupTitle,
+    label: '',
+    sublabel: '',
+  }));
+  slotsError.value = false;
+}
+
+function removeTaskGroup(groupId: string) {
+  draft.slots = draft.slots.filter(slot => slot.componentType !== 'task' || (slot.taskGroupId || `legacy-${slot.taskGroupTitle || slot.label}-${slot.date}`) !== groupId);
+}
+
+async function copyTaskGroup(groupId: string) {
+  const group = taskSlots(groupId);
+  if (!group.length) return;
+  const newGroupId = createSlotId();
+  const copies = group.map(slot => createSlot({
+    ...slot,
+    id: undefined,
+    taskGroupId: newGroupId,
+  }));
+  const insertAt = Math.max(...group.map(slot => draft.slots.indexOf(slot))) + 1;
+  draft.slots.splice(insertAt, 0, ...copies);
+  slotsError.value = false;
+  await focusCopiedSection('task', newGroupId, 'Opgavesektionen er kopieret');
+}
+
+async function copySignupSlot(slotId: string) {
+  const slot = draft.slots.find(candidate => candidate.id === slotId);
+  if (!slot) return;
+  const copied = createSlot({ ...slot, id: undefined, shiftGroupId: '', taskGroupId: '' });
+  draft.slots.splice(draft.slots.indexOf(slot) + 1, 0, copied);
+  slotsError.value = false;
+  await focusCopiedSection('signup', copied.id, 'Tilmeldingssektionen er kopieret');
+}
+
+async function copyShiftGroup(groupId: string) {
+  const group = shiftSlots(groupId);
+  if (!group.length) return;
+  const newGroupId = createSlotId();
+  const copies = group.map(slot => createSlot({
+    ...slot,
+    id: undefined,
+    shiftGroupId: newGroupId,
+  }));
+  const insertAt = Math.max(...group.map(slot => draft.slots.indexOf(slot))) + 1;
+  draft.slots.splice(insertAt, 0, ...copies);
+  slotsError.value = false;
+  await focusCopiedSection('shift', newGroupId, 'Vagtsektionen er kopieret');
+}
+
 async function onSave() {
   const saved = await save();
   if (!saved) {
@@ -471,39 +737,10 @@ watch(mode, currentMode => {
   closeLocationSuggestions();
 });
 
-watch(() => draft.id, id => { if (id) void loadEventSignups(id); else eventSignups.value = []; });
-
-async function loadEventSignups(eventId: string) {
-  signupsLoading.value = true;
-  signupsError.value = '';
-  try {
-    const db = await getAppFirestore();
-    const [signupsSnap, contactsSnap] = await Promise.all([
-      getDocs(query(collection(db, 'signups'), where('eventId', '==', eventId))),
-      getDocs(query(collection(db, 'signupContacts'), where('eventId', '==', eventId))),
-    ]);
-    const contacts = new Map(contactsSnap.docs.map(item => [item.id, item.data()]));
-    eventSignups.value = signupsSnap.docs.map(item => {
-      const data = item.data(); const contact = contacts.get(item.id) || {};
-      const slot = draft.slots.find(candidate => candidate.id === data.slotId);
-      return { id: item.id, name: String(data.name || contact.name || 'Ukendt'), email: String(contact.email || ''), slotLabel: slot ? `${slot.label}${slot.sublabel ? ` · ${slot.sublabel}` : ''}` : 'Ukendt vagt' };
-    });
-  } catch (error) { console.error('[event-admin] signups load failed', error); signupsError.value = 'Kunne ikke hente tilmeldte.'; }
-  finally { signupsLoading.value = false; }
-}
-
-async function cancelSignup(signup: { id: string; name: string }) {
-  if (!window.confirm(`Afmeld ${signup.name}?`)) return;
-  try {
-    const db = await getAppFirestore();
-    await Promise.all([deleteDoc(doc(db, 'signups', signup.id)), deleteDoc(doc(db, 'signupContacts', signup.id))]);
-    eventSignups.value = eventSignups.value.filter(item => item.id !== signup.id);
-  } catch (error) { console.error('[event-admin] signup cancellation failed', error); signupsError.value = 'Afmelding fejlede — prøv igen.'; }
-}
-
 onBeforeUnmount(() => {
   if (locationSearchTimer) clearTimeout(locationSearchTimer);
   if (locationMapTimer) clearTimeout(locationMapTimer);
+  if (toastTimer) clearTimeout(toastTimer);
 });
 
 function focusFirstInvalidField() {
@@ -531,17 +768,25 @@ function openDatePicker() {
 function applyPickedDate(event: Event) {
   const value = (event.target as HTMLInputElement).value;
   if (!value) return;
+  draft.eventDate = value;
+  syncEventDateText();
+}
+
+function syncEventDateText(input?: string | number) {
+  const value = input === undefined ? draft.eventDate : String(input);
+  if (!value) return;
   const date = new Date(`${value}T12:00:00`);
   if (Number.isNaN(date.getTime())) return;
   const weekday = DA_WEEKDAYS[date.getDay()];
   draft.dateText = `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${date.getDate()}. ${DA_MONTHS[date.getMonth()]}`;
 }
 
-function onLocationInput() {
+function onLocationInput(input: string | number) {
+  const location = String(input);
   draft.locationLat = null;
   draft.locationLng = null;
-  scheduleLocationSearch(draft.location);
-  scheduleLocationMap(draft.location);
+  scheduleLocationSearch(location);
+  scheduleLocationMap(location);
 }
 
 function scheduleLocationSearch(query: string) {
@@ -635,21 +880,6 @@ function onPickImage(item: LibraryItem) {
   pickerOpen.value = false;
 }
 
-function triggerUpload() {
-  uploadInput.value?.click();
-}
-
-async function handleUpload(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-  const uploaded = await uploadItem(file, IMAGE_LIBRARY_UNCATEGORIZED_ID);
-  if (uploaded) {
-    draft.imageUrl = uploaded.imageUrl;
-  }
-  input.value = '';
-}
-
 async function onUploadImage(file: File, categoryId: string) {
   const uploaded = await uploadItem(file, categoryId);
   if (uploaded) {
@@ -660,6 +890,14 @@ async function onUploadImage(file: File, categoryId: string) {
 
 const pendingRemove = ref<AdminEvent | null>(null);
 
+function componentSummary(event: AdminEvent) {
+  const tasks = event.slots.filter(slot => slot.componentType === 'task').length;
+  const shifts = event.slots.length - tasks;
+  return [tasks ? `${tasks} ${tasks === 1 ? 'opgave' : 'opgaver'}` : '', shifts ? `${shifts} ${shifts === 1 ? 'vagt' : 'vagter'}` : '']
+    .filter(Boolean)
+    .join(' · ') || 'Ingen elementer';
+}
+
 function confirmRemove(event: AdminEvent) {
   pendingRemove.value = event;
 }
@@ -669,14 +907,59 @@ function performRemove() {
   pendingRemove.value = null;
   if (event) void remove(event.id);
 }
+
 </script>
 
 <style scoped>
+.admin-workspace-shell {
+  min-height: 100vh;
+  background: #f6f9fc;
+}
+
+.admin-workspace-shell :deep(.hero) {
+  min-height: 330px;
+  background: linear-gradient(135deg, #0b4378 0%, #0f467b 100%);
+}
+
+.admin-workspace-shell :deep(.hero-inner) {
+  width: min(1100px, calc(100% - 32px));
+  align-content: center;
+  justify-items: center;
+  padding-block: 34px 42px;
+  text-align: center;
+}
+
+.admin-workspace-shell :deep(.hero-copy) {
+  max-width: 620px;
+}
+
+.admin-workspace-shell .page-stack {
+  width: min(1180px, calc(100% - 32px));
+  margin: -72px auto 48px;
+  position: relative;
+  z-index: 2;
+}
+
 .workspace-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+}
+
+.workspace-subtitle {
+  max-width: 58ch;
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.workspace-header-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .hero-actions,
@@ -862,6 +1145,7 @@ function performRemove() {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .btn-action--danger {
@@ -872,6 +1156,12 @@ function performRemove() {
 .admin-form {
   display: grid;
   gap: 16px;
+}
+
+.payment-settings {
+  display: grid;
+  gap: 12px;
+  padding: 14px 0 2px;
 }
 
 .field {
@@ -890,34 +1180,8 @@ function performRemove() {
   font-weight: 600;
 }
 
-.field.has-error .form-input {
+.field.has-error :deep(.form-control) {
   border-color: #c94853;
-}
-
-.form-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: #f8f9fb;
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--navy-light);
-  background: #fff;
-}
-
-.form-input:focus-visible {
-  outline: 2px solid var(--navy);
-  outline-offset: 2px;
-}
-
-textarea.form-input {
-  resize: vertical;
 }
 
 .form-row {
@@ -931,7 +1195,7 @@ textarea.form-input {
   display: grid;
 }
 
-.input-action-row .form-input {
+.input-action-row :deep(.form-control) {
   padding-right: 46px;
 }
 
@@ -1038,25 +1302,46 @@ textarea.form-input {
   border: 0;
 }
 
-.img-block {
+.image-field {
   display: grid;
+  gap: 8px;
+}
+
+.image-field-content {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.image-field-content--empty {
+  grid-template-columns: 1fr;
+}
+
+.image-preview-wrap {
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--navy-soft);
+}
+
+.image-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-field-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
 }
 
-.img-preview {
-  width: 100%;
-  max-width: 260px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-}
-
-.img-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.upload-error {
+.image-field-error {
+  flex-basis: 100%;
   margin: 0;
   color: #c94853;
   font-size: 12px;
@@ -1077,8 +1362,9 @@ textarea.form-input {
   gap: 12px;
 }
 
-.btn-add-slot {
-  justify-self: start;
+.empty-section-actions {
+  display: grid;
+  gap: 12px;
 }
 
 .admin-action-dialog { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgba(5, 24, 49, .58); }
@@ -1087,6 +1373,29 @@ textarea.form-input {
 .admin-action-dialog__panel p { margin: 0 0 20px; color: var(--muted); }
 .admin-action-dialog__close { position: absolute; top: 12px; right: 14px; border: 0; background: transparent; color: var(--navy); font-size: 28px; cursor: pointer; }
 .admin-action-dialog__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.admin-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 60;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(120%);
+  transition: transform 0.28s var(--ease-out-quint);
+}
+
+.admin-toast.show {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
 
 .field-error {
   color: #c94853;
@@ -1113,7 +1422,52 @@ textarea.form-input {
   justify-self: start;
 }
 
+.year-wheel-date-fields {
+  align-items: start;
+}
+
+.field-help {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 @media (max-width: 640px) {
+  .admin-workspace-shell :deep(.hero) {
+    min-height: 280px;
+  }
+
+  .admin-workspace-shell :deep(.hero-inner) {
+    width: min(100%, calc(100% - 28px));
+    gap: 8px;
+    padding: 24px 14px 34px;
+  }
+
+  .admin-workspace-shell :deep(.hero-logo) {
+    width: min(132px, 38vw);
+  }
+
+  .admin-workspace-shell :deep(.hero-title) {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .admin-workspace-shell :deep(.hero-copy) {
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .admin-workspace-shell .page-stack {
+    width: min(100%, calc(100% - 28px));
+    margin-top: -36px;
+  }
+
+  .workspace-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .admin-list-head {
     align-items: stretch;
     flex-direction: column;
@@ -1128,9 +1482,23 @@ textarea.form-input {
     grid-template-columns: 1fr;
   }
 
+  .image-field-content {
+    grid-template-columns: 1fr;
+  }
+
   .admin-card {
     flex-direction: column;
     align-items: stretch;
   }
+
+  .admin-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-card-actions .btn-action {
+    justify-content: center;
+  }
+
 }
 </style>

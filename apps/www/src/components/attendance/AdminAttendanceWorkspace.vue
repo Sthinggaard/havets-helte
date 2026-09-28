@@ -1,5 +1,6 @@
 <template>
-  <div class="page-stack">
+  <AdminPageTemplate title="Vælg dag til check-in" copy="Administrer fremmøde og check-in for foreningens hold.">
+    <div class="page-stack">
     <PageCard>
       <template #header>
         <div class="workspace-header">
@@ -68,11 +69,13 @@
         </aside>
       </div>
     </PageCard>
-  </div>
+    </div>
+  </AdminPageTemplate>
 </template>
 
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
+import AdminPageTemplate from '@/components/admin/AdminPageTemplate.vue';
 import { useAttendanceSetupPage } from '@/features/attendance/useAttendanceSetupPage';
 
 const {

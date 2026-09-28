@@ -1,17 +1,13 @@
 export const publicNavigationItems = [
-  { path: '/', label: 'Forside' },
-  { path: '/events', label: 'Arrangementer' },
-  { path: '/opgaver', label: 'Opgaver' },
-  { path: '/vagter', label: 'Vagter' },
+  { path: '/', label: 'Forældreopgaver' },
   { path: '/frivillighelte', label: 'Frivillighelte' },
   { path: '/mine', label: 'Mine tilmeldinger' },
+  { path: '/admin', label: 'Leder-login' },
 ] as const;
 
 export const navigationItems = [
   { path: '/', label: 'Overblik' },
   { path: '/events', label: 'Arrangementer' },
-  { path: '/opgaver', label: 'Opgaver' },
-  { path: '/vagter', label: 'Vagter' },
   { path: '/medlemmer', label: 'Medlemmer' },
   { path: '/grene', label: 'Grene' },
   { path: '/mine-tilmeldinger', label: 'Mine tilmeldinger' },
@@ -19,12 +15,10 @@ export const navigationItems = [
 ] as const;
 
 export const adminNavigationItems = [
-  { path: '/admin', label: 'Oversigt' },
-  { path: '/admin/arrangementer', label: 'Arrangementer' },
-  { path: '/admin/opgaver', label: 'Opgaver' },
-  { path: '/admin/vagter', label: 'Vagter' },
-  { path: '/admin/fremmoede', label: 'Fremmøde' },
-  { path: '/medlemmer', label: 'Medlemmer' },
-  { path: '/grene', label: 'Grene' },
-  { path: '/admin/billedbibliotek', label: 'Billedbibliotek' },
+  { path: '/admin/arrangementer', label: 'Arrangementer', title: 'Arrangementer', meta: 'Opret arrangementer, opgaver og vagter', icon: 'ti ti-calendar' },
+  { path: '/admin/fremmoede', label: 'Fremmøde', title: 'Fremmøde', meta: 'Vælg dag og åbn check-in', icon: 'ti ti-checkup-list' },
+  { path: '/medlemmer', label: 'Medlemmer', title: 'Medlemmer', meta: 'Åbn medlemslisten og rediger', icon: 'ti ti-users' },
+  { path: '/grene', label: 'Grene', title: 'Grene', meta: 'Åbn grene og medlemmer', icon: 'ti ti-git-branch' },
+  { path: '/admin/billedbibliotek', label: 'Billedbibliotek', title: 'Billedbibliotek', meta: 'Upload og vælg billeder', icon: 'ti ti-photo' },
+  { path: '/admin/mine', label: 'Mine tilmeldinger', title: 'Mine tilmeldinger', meta: 'Se dine egne tilmeldinger', icon: 'ti ti-clipboard-list' },
 ] as const;

@@ -16,7 +16,7 @@ export const librarySeedCategories: LibraryCategory[] = [
   },
 ];
 
-const baseImage = '/og-sankthans.png';
+const baseImage = '/og-sankthans.webp';
 const logoImage = '/havets-helte-logo.svg';
 
 function makeItem(

@@ -13,7 +13,11 @@
     "build:dev": "vue-tsc -p tsconfig.app.json --noEmit && vite build --mode dev",
     "build:stage": "vue-tsc -p tsconfig.app.json --noEmit && vite build --mode stage",
     "build:prod": "vue-tsc -p tsconfig.app.json --noEmit && vite build --mode prod",
-    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "lighthouse": "lighthouse",
+    "lighthouse:local": "npm run build:prod && start-server-and-test preview http://127.0.0.1:4173 'npm run lighthouse -- http://127.0.0.1:4173'",
+    "preview": "vite preview --host 127.0.0.1",
     "typecheck": "vue-tsc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {
@@ -22,8 +26,13 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/vue3-vite": "^8.6.14",
     "@types/node": "^22.10.2",
     "@vitejs/plugin-vue": "^5.2.1",
+    "lighthouse": "^12.8.2",
+    "start-server-and-test": "^2.0.10",
+    "storybook": "^8.6.14",
     "typescript": "^5.7.3",
     "vite": "^6.0.0",
     "vue-tsc": "^2.1.10"
