@@ -159,6 +159,20 @@ async function verifyParentIdentity(req) {
   }
 }
 
+async function verifyAdminIdentity(req) {
+  const authorization = String(req.get('authorization') || '');
+  const token = authorization.startsWith('Bearer ') ? authorization.slice('Bearer '.length).trim() : '';
+  if (!token) throw apiError(401, 'unauthenticated', 'Log ind som leder for at fortsætte.');
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    if (!isAdminEmail(normalizeEmail(decoded.email))) throw apiError(403, 'forbidden', 'Kun ledere kan ændre tilmeldinger.');
+    return decoded;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw apiError(401, 'unauthenticated', 'Log ind som leder for at fortsætte.');
+  }
+}
+
 function requiredString(value, field, maxLength = 200) {
   const normalized = String(value ?? '').trim();
   if (!normalized || normalized.length > maxLength) {
@@ -421,6 +435,80 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
       updatedAt: FieldValue.serverTimestamp(),
     });
   });
+});
+
+exports.manageVolunteerSignup = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST') { res.status(405).json({ status: 'method_not_allowed', message: 'Kun POST er tilladt.' }); return; }
+
+  try {
+    await verifyAdminIdentity(req);
+    const body = requestBody(req);
+    const signupId = requiredString(body.signupId, 'Tilmeldingen', 160);
+    const action = requiredString(body.action, 'Handlingen', 20);
+    if (action !== 'approve' && action !== 'move') throw apiError(400, 'invalid', 'Handlingen er ugyldig.');
+    const targetSlotId = action === 'move' ? requiredString(body.targetSlotId, 'Målpladsen', 160) : '';
+
+    const result = await db.runTransaction(async transaction => {
+      const signupRef = db.collection('signups').doc(signupId);
+      const signupSnap = await transaction.get(signupRef);
+      if (!signupSnap.exists) throw apiError(404, 'not_found', 'Tilmeldingen findes ikke længere.');
+      const signup = signupSnap.data();
+      const eventRef = db.collection('events').doc(signup.eventId);
+      const eventSnap = await transaction.get(eventRef);
+      if (!eventSnap.exists) throw apiError(404, 'not_found', 'Arrangementet findes ikke længere.');
+      const event = eventSnap.data();
+      const source = Array.isArray(event.slots) ? event.slots.find(slot => slot?.id === signup.slotId) : null;
+      if (!source) throw apiError(409, 'invalid_slot', 'Den nuværende plads findes ikke længere.');
+      const groupSize = Math.max(1, Number(signup.groupSize) || 1);
+      const sourceUsageRef = eventSlotUsageRef(signup.eventId, signup.slotId);
+      await transaction.get(sourceUsageRef);
+      const sourceConfirmed = await signupCountForSlot(transaction, signup.eventId, signup.slotId);
+
+      if (action === 'approve') {
+        if (signup.waitlist !== true) throw apiError(409, 'already_confirmed', 'Tilmeldingen er allerede godkendt.');
+        transaction.update(signupRef, { waitlist: false });
+        transaction.set(sourceUsageRef, {
+          eventId: signup.eventId, slotId: signup.slotId,
+          confirmed: sourceConfirmed + groupSize, updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+        return { slotId: signup.slotId, waitlist: false };
+      }
+
+      if (targetSlotId === signup.slotId) throw apiError(400, 'invalid', 'Vælg en anden plads.');
+      const target = event.slots.find(slot => slot?.id === targetSlotId);
+      if (!target || source.kind !== 'volunteer' || target.kind !== 'volunteer'
+        || target.componentType !== source.componentType || target.registrationMode === 'memberService') {
+        throw apiError(400, 'invalid_slot', 'Vælg en anden opgave eller vagt af samme type.');
+      }
+      if (groupSize < (Number(target.groupMin) || 1) || groupSize > (Number(target.groupMax) || 1)
+        || (target.requiresAdult === true && signup.adult !== true)) {
+        throw apiError(409, 'not_eligible', 'Tilmeldingen opfylder ikke kravene til den valgte plads.');
+      }
+      const targetUsageRef = eventSlotUsageRef(signup.eventId, targetSlotId);
+      await transaction.get(targetUsageRef);
+      const targetConfirmed = await signupCountForSlot(transaction, signup.eventId, targetSlotId);
+      const capacity = Number(target.capacity) || 0;
+      const waitlist = signup.waitlist === true || (capacity > 0 && targetConfirmed + groupSize > capacity);
+
+      transaction.update(signupRef, { slotId: targetSlotId, waitlist });
+      if (signup.waitlist !== true) transaction.set(sourceUsageRef, {
+        eventId: signup.eventId, slotId: signup.slotId,
+        confirmed: Math.max(0, sourceConfirmed - groupSize), updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      if (!waitlist) transaction.set(targetUsageRef, {
+        eventId: signup.eventId, slotId: targetSlotId,
+        confirmed: targetConfirmed + groupSize, updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      return { slotId: targetSlotId, waitlist };
+    });
+
+    res.status(200).json({ status: 'ok', ...result });
+  } catch (error) {
+    if (error instanceof ApiError) { res.status(error.status).json({ status: error.code, message: error.message }); return; }
+    logger.error('manageVolunteerSignup failed', error);
+    res.status(500).json({ status: 'error', message: 'Kunne ikke ændre tilmeldingen. Prøv igen.' });
+  }
 });
 
 // Passwordless parent access. Firebase Auth owns the short-lived, single-use

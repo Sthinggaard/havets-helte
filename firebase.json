@@ -66,6 +66,10 @@
         "run": { "serviceId": "cancelparentsignup", "region": "europe-west1" }
       },
       {
+        "source": "/api/manage-volunteer-signup",
+        "run": { "serviceId": "managevolunteersignup", "region": "europe-west1" }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
