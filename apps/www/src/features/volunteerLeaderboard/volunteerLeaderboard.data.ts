@@ -47,7 +47,7 @@ export async function fetchVolunteerLeaderboard(): Promise<VolunteerLeaderboardE
   try {
     const cached = await getDoc(leaderboardRef);
     const record = cached.data() as LeaderboardRecord | undefined;
-    if (record?.initialized === true && record?.version === 5) {
+    if (record?.initialized === true && record?.version === 6) {
       return parseEntries(record.entries);
     }
   } catch (error) {
