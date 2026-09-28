@@ -31,7 +31,7 @@ const parentAccessSiteUrl = defineString('PARENT_ACCESS_SITE_URL', {
 const PARENT_ACCESS_WINDOW_MS = 20 * 60 * 1000;
 const PARENT_ACCESS_EMAIL_LIMIT = 3;
 const PARENT_ACCESS_IP_LIMIT = 10;
-const VOLUNTEER_LEADERBOARD_VERSION = 4;
+const VOLUNTEER_LEADERBOARD_VERSION = 5;
 
 class ApiError extends Error {
   constructor(status, code, message) {
@@ -309,7 +309,8 @@ async function volunteerContribution(signup, contact, eventCache) {
   if (!event || !Array.isArray(event.slots)) return null;
 
   const slot = event.slots.find(candidate => candidate && candidate.id === signup.slotId);
-  if (!slot || (slot.kind ?? 'volunteer') !== 'volunteer') return null;
+  if (!slot || (slot.componentType !== 'task' && slot.componentType !== 'shift')
+    || (slot.kind ?? 'volunteer') !== 'volunteer') return null;
 
   return {
     key: leaderboardIdentityKey(name, contact),
