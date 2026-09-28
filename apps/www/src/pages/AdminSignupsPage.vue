@@ -23,7 +23,7 @@
             <li v-for="row in group.rows" :key="row.id" class="signup-item">
               <div>
                 <strong>{{ row.name }}</strong>
-                <span>{{ row.email }}<template v-if="row.slotLabel"> · {{ row.slotLabel }}</template></span>
+                <span>{{ row.email }}<template v-if="row.slotDate"> · Vagtdato: {{ row.slotDate }}</template><template v-if="row.slotLabel"> · {{ row.slotLabel }}</template></span>
               </div>
               <button type="button" class="btn-action btn-action--danger" @click="cancel(row)">Afmeld</button>
             </li>
@@ -42,13 +42,14 @@ import { RouterLink, useRoute } from 'vue-router';
 import AdminAuthGate from '@/components/admin/AdminAuthGate.vue';
 import AdminPageTemplate from '@/components/admin/AdminPageTemplate.vue';
 import PageCard from '@/components/PageCard.vue';
-import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
+import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent } from '@/features/eventAdmin/eventAdmin.types';
+import { calculateSlotDate } from '@/features/eventAdmin/eventScheduling';
 import { getAppFirestore } from '@/lib/firebase';
 
 const route = useRoute();
 const event = ref<AdminEvent | null>(null);
-type SignupRow = { id: string; name: string; email: string; slotLabel: string; type: 'signup' | 'task' | 'shift' };
+type SignupRow = { id: string; name: string; email: string; slotLabel: string; slotDate: string; type: 'signup' | 'task' | 'shift' };
 const rows = ref<SignupRow[]>([]);
 const loading = ref(true);
 const error = ref('');
@@ -79,7 +80,11 @@ async function load() {
       const data = item.data();
       const contact = contacts.get(item.id) || {};
       const slot = event.value?.slots.find(candidate => candidate.id === data.slotId);
-      return { id: item.id, name: String(data.name || contact.name || 'Ukendt'), email: String(contact.email || ''), type: slot?.componentType === 'task' || slot?.componentType === 'shift' ? slot.componentType : 'signup', slotLabel: slot ? `${slot.label}${slot.sublabel ? ` · ${slot.sublabel}` : ''}` : 'Ukendt plads' };
+      const date = slot?.componentType === 'shift' ? calculateSlotDate(event.value?.eventDate, slot) : undefined;
+      const slotDate = slot?.componentType === 'shift'
+        ? date ? `${formatSlotDate(date)} ${date.slice(0, 4)}` : event.value?.dateText || ''
+        : '';
+      return { id: item.id, name: String(data.name || contact.name || 'Ukendt'), email: String(contact.email || ''), type: slot?.componentType === 'task' || slot?.componentType === 'shift' ? slot.componentType : 'signup', slotLabel: slot ? `${slot.label}${slot.sublabel ? ` · ${slot.sublabel}` : ''}` : 'Ukendt plads', slotDate };
     });
   } catch (err) { console.error('[admin-signups] load failed', err); error.value = 'Kunne ikke hente tilmeldte.'; }
   finally { loading.value = false; }
