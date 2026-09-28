@@ -1744,7 +1744,6 @@ onBeforeUnmount(() => {
   }
 
   .shift-tabs-month-group {
-    width: 100%;
     max-width: 100%;
   }
 
