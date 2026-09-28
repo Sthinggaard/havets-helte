@@ -1,11 +1,11 @@
 <template>
-  <main class="public-landing-shell" :class="[`public-landing-shell--${heroVariant}`, { 'public-landing-shell--has-image': heroImage }]" :style="shellStyle">
-    <img v-if="heroImage" class="page-image" :src="heroImage" :alt="heroImageAlt || heroTitle" />
+  <main class="public-landing-shell" :class="[`public-landing-shell--${heroVariant}`, { 'public-landing-shell--has-image': heroImage && heroVariant !== 'event' }]" :style="shellStyle">
+    <img v-if="heroImage && heroVariant !== 'event'" class="page-image" :src="heroImage" :alt="heroImageAlt || heroTitle" />
     <article class="page">
       <PublicHero
         class="top-header"
-        image=""
-        image-alt=""
+        :image="heroVariant === 'event' ? heroImage : ''"
+        :image-alt="heroImageAlt || heroTitle"
         :badge="heroBadge"
         :count-label="heroCountLabel"
         :title="heroTitle"
@@ -144,7 +144,7 @@ const shellStyle = {
   display: grid;
   min-height: 50svh;
   align-items: end;
-  background: transparent;
+  background: var(--navy);
 }
 
 .public-landing-shell--event :deep(.hero-inner) {
