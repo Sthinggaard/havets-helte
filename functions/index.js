@@ -19,6 +19,7 @@ admin.initializeApp();
 
 const db = admin.firestore();
 const leaderboardRef = db.collection('leaderboards').doc('volunteers');
+const privateLeaderboardRef = db.collection('leaderboardPrivate').doc('volunteers');
 const parentAccessAppsScriptSecret = defineSecret('PARENT_ACCESS_APPS_SCRIPT_SECRET');
 const parentAccessAppsScriptUrl = defineString('PARENT_ACCESS_APPS_SCRIPT_URL', {
   default: 'https://script.google.com/macros/s/AKfycbyfTjLyaY9sdOmJAtw6ntIu8KrdLB2NYBqfMbICCjslDK3CLJFKpTZTYR_KTiRy4vd1CA/exec',
@@ -30,7 +31,7 @@ const parentAccessSiteUrl = defineString('PARENT_ACCESS_SITE_URL', {
 const PARENT_ACCESS_WINDOW_MS = 20 * 60 * 1000;
 const PARENT_ACCESS_EMAIL_LIMIT = 3;
 const PARENT_ACCESS_IP_LIMIT = 10;
-const VOLUNTEER_LEADERBOARD_VERSION = 3;
+const VOLUNTEER_LEADERBOARD_VERSION = 4;
 
 class ApiError extends Error {
   constructor(status, code, message) {
@@ -254,8 +255,9 @@ function normalizeName(name) {
   return String(name ?? '').trim().replace(/\s+/g, ' ');
 }
 
-function leaderboardNameKey(name) {
-  return normalizeName(name).toLocaleLowerCase('da-DK');
+function leaderboardIdentityKey(name, contact) {
+  const email = normalizeEmail(contact?.emailNormalized || contact?.email);
+  return email ? `email:${hashValue(email)}` : `name:${normalizeName(name).toLocaleLowerCase('da-DK')}`;
 }
 
 function sortedEntries(entries) {
@@ -266,6 +268,10 @@ function sortedEntries(entries) {
     .sort((a, b) => b.points - a.points || b.signups - a.signups);
 }
 
+function publicLeaderboardEntries(entries) {
+  return sortedEntries(entries).map(({ name, points, signups, roleCounts }) => ({ name, points, signups, roleCounts }));
+}
+
 function volunteerRoleWeight(role) {
   const value = normalizeName(role).toLocaleLowerCase('da-DK');
   if (/(koordinator|togholder|ansvarlig|leder)/u.test(value)) return 5;
@@ -274,7 +280,7 @@ function volunteerRoleWeight(role) {
   return 2;
 }
 
-async function volunteerContribution(signup, eventCache) {
+async function volunteerContribution(signup, contact, eventCache) {
   if (!signup || signup.waitlist === true || !signup.eventId || !signup.slotId) return null;
 
   const name = normalizeName(signup.name);
@@ -292,7 +298,7 @@ async function volunteerContribution(signup, eventCache) {
   if (!slot || (slot.kind ?? 'volunteer') !== 'volunteer') return null;
 
   return {
-    key: leaderboardNameKey(name),
+    key: leaderboardIdentityKey(name, contact),
     name,
     points: volunteerRoleWeight(slot.role),
     role: normalizeName(slot.role) || 'Vagt',
@@ -300,15 +306,17 @@ async function volunteerContribution(signup, eventCache) {
 }
 
 async function rebuildVolunteerLeaderboard() {
-  const [eventsSnap, signupsSnap] = await Promise.all([
+  const [eventsSnap, signupsSnap, contactsSnap] = await Promise.all([
     db.collection('events').get(),
     db.collection('signups').get(),
+    db.collection('signupContacts').get(),
   ]);
   const events = new Map(eventsSnap.docs.map(eventDoc => [eventDoc.id, eventDoc.data()]));
+  const contacts = new Map(contactsSnap.docs.map(contactDoc => [contactDoc.id, contactDoc.data()]));
   const entries = new Map();
 
   for (const signupDoc of signupsSnap.docs) {
-    const contribution = await volunteerContribution(signupDoc.data(), events);
+    const contribution = await volunteerContribution(signupDoc.data(), contacts.get(signupDoc.id), events);
     if (!contribution) continue;
     const current = entries.get(contribution.key) || { name: contribution.name, points: 0, signups: 0, roleCounts: {} };
     current.points += contribution.points;
@@ -317,13 +325,20 @@ async function rebuildVolunteerLeaderboard() {
     entries.set(contribution.key, current);
   }
 
-  const leaderboard = sortedEntries(entries);
-  await leaderboardRef.set({
+  const leaderboard = publicLeaderboardEntries(entries);
+  const batch = db.batch();
+  batch.set(privateLeaderboardRef, {
+    entries: Object.fromEntries(entries),
+    version: VOLUNTEER_LEADERBOARD_VERSION,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  batch.set(leaderboardRef, {
     entries: leaderboard,
     initialized: true,
     version: VOLUNTEER_LEADERBOARD_VERSION,
     updatedAt: FieldValue.serverTimestamp(),
   });
+  await batch.commit();
   return leaderboard;
 }
 
@@ -355,26 +370,32 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
   region: 'europe-west1',
 }, async event => {
   const eventCache = new Map();
+  const contactSnap = await db.collection('signupContacts').doc(event.params.signupId).get();
+  if (event.data.before.exists && !event.data.after.exists && !contactSnap.exists) {
+    await rebuildVolunteerLeaderboard();
+    return;
+  }
+  const contact = contactSnap.data();
   const [before, after] = await Promise.all([
-    volunteerContribution(event.data.before.exists ? event.data.before.data() : null, eventCache),
-    volunteerContribution(event.data.after.exists ? event.data.after.data() : null, eventCache),
+    volunteerContribution(event.data.before.exists ? event.data.before.data() : null, contact, eventCache),
+    volunteerContribution(event.data.after.exists ? event.data.after.data() : null, contact, eventCache),
   ]);
-    if (before?.key === after?.key && before?.points === after?.points) return;
+  if (before?.key === after?.key && before?.points === after?.points && before?.role === after?.role) return;
+
+  const privateSnap = await privateLeaderboardRef.get();
+  if (privateSnap.get('version') !== VOLUNTEER_LEADERBOARD_VERSION) {
+    await rebuildVolunteerLeaderboard();
+    return;
+  }
 
   await db.runTransaction(async transaction => {
-    const leaderboardSnap = await transaction.get(leaderboardRef);
-    const stored = leaderboardSnap.data();
-    if (stored?.version !== VOLUNTEER_LEADERBOARD_VERSION) {
-      await rebuildVolunteerLeaderboard();
-      return;
-    }
-
+    const [privateBoardSnap, leaderboardSnap] = await Promise.all([
+      transaction.get(privateLeaderboardRef),
+      transaction.get(leaderboardRef),
+    ]);
+    const stored = privateBoardSnap.data();
     const entries = new Map(
-      Array.isArray(stored?.entries)
-        ? stored.entries
-          .filter(entry => entry && typeof entry.name === 'string' && typeof entry.points === 'number' && typeof entry.signups === 'number' && entry.roleCounts && typeof entry.roleCounts === 'object')
-          .map(entry => [leaderboardNameKey(entry.name), { name: entry.name, points: entry.points, signups: entry.signups, roleCounts: { ...entry.roleCounts } }])
-        : [],
+      Object.entries(stored?.entries || {}).map(([key, entry]) => [key, { ...entry, roleCounts: { ...entry.roleCounts } }]),
     );
 
     for (const contribution of [before, after]) {
@@ -388,9 +409,14 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
       else entries.delete(contribution.key);
     }
 
+    transaction.set(privateLeaderboardRef, {
+      entries: Object.fromEntries(entries),
+      version: VOLUNTEER_LEADERBOARD_VERSION,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
     transaction.set(leaderboardRef, {
-      entries: sortedEntries(entries),
-      initialized: stored?.initialized === true,
+      entries: publicLeaderboardEntries(entries),
+      initialized: leaderboardSnap.get('initialized') === true,
       version: VOLUNTEER_LEADERBOARD_VERSION,
       updatedAt: FieldValue.serverTimestamp(),
     });

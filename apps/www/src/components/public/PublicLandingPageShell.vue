@@ -1,10 +1,9 @@
 <template>
-  <main class="public-landing-shell" :class="[`public-landing-shell--${heroVariant}`, { 'public-landing-shell--has-image': heroImage && heroVariant !== 'event' }]" :style="shellStyle">
-    <img v-if="heroImage && heroVariant !== 'event'" class="page-image" :src="heroImage" :alt="heroImageAlt || heroTitle" />
+  <main class="public-landing-shell" :class="`public-landing-shell--${heroVariant}`" :style="shellStyle">
     <article class="page">
       <PublicHero
         class="top-header"
-        :image="heroVariant === 'event' ? heroImage : ''"
+        :image="heroImage"
         :image-alt="heroImageAlt || heroTitle"
         :badge="heroBadge"
         :count-label="heroCountLabel"
@@ -91,39 +90,10 @@ const shellStyle = {
   color: var(--text);
 }
 
-.page-image {
-  position: absolute;
-  z-index: 0;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 50svh;
-  object-fit: cover;
-  object-position: center 30%;
-}
-
-.public-landing-shell--has-image::after {
-  position: absolute;
-  z-index: 0;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 50svh;
-  background: linear-gradient(180deg, rgba(0, 34, 71, 0.16) 0%, rgba(0, 34, 71, 0.32) 42%, rgba(0, 34, 71, 0.88) 100%);
-  content: '';
-  pointer-events: none;
-}
-
-/* Standard pages share the same compact landing template as the home page.
-   Event details opt into the image-led hero explicitly. */
+/* Standard pages use a compact hero; event details can grow with content. */
 .public-landing-shell--standard :deep(.hero) {
   min-height: 330px;
   background: linear-gradient(135deg, #0b4378 0%, #0f467b 100%);
-}
-
-.public-landing-shell--standard :deep(.hero-image),
-.public-landing-shell--standard :deep(.hero-scrim) {
-  display: none;
 }
 
 .public-landing-shell--standard :deep(.hero-inner) {

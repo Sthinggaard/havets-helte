@@ -42,7 +42,7 @@
       </div>
 
       <ol v-else class="leaderboard-list" aria-label="Alle frivillighelte">
-        <li v-for="(entry, index) in topEntries" :key="entry.name" class="leaderboard-row" :class="{ 'leaderboard-row--first': leaderboardRank(index) === 1 }">
+        <li v-for="(entry, index) in topEntries" :key="index" class="leaderboard-row" :class="{ 'leaderboard-row--first': leaderboardRank(index) === 1 }">
           <span
             v-if="leaderboardRank(index) <= 3"
             class="leaderboard-rank leaderboard-rank--medal"
