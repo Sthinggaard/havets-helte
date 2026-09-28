@@ -74,4 +74,4 @@ jobs:
       - name: Deploy to Firebase
         env:
           FIREBASE_HOSTING_BUILD_SCRIPT: ${{ inputs.build_script }}
-        run: npx -y firebase-tools@latest deploy --force --project ${{ inputs.firebase_alias }} --only hosting,functions,firestore:rules,storage
+        run: npx -y firebase-tools@latest deploy --project ${{ inputs.firebase_alias }} --only hosting,functions:submitSignup
