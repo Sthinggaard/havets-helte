@@ -55,7 +55,7 @@
             <select v-model="memberTeam" class="field-input" :disabled="!memberTeamOptions.length">
               <option v-if="!memberTeamOptions.length" value="">Opret først et hold</option>
               <option v-for="team in memberTeamOptions" :key="team.id" :value="team.label">
-                {{ team.label }} · {{ team.weekday }}
+                {{ team.label }} · {{ team.weekday }}<template v-if="team.startTime && team.endTime"> · {{ team.startTime }}–{{ team.endTime }}</template><template v-if="team.seasonStartDate && team.seasonEndDate"> · {{ formatSeasonDate(team.seasonStartDate) }}–{{ formatSeasonDate(team.seasonEndDate) }}</template>
               </option>
             </select>
           </label>
@@ -295,6 +295,11 @@ const {
 } = useMembersPage();
 
 const { items, categories, uploadItem } = useLibraryPage();
+
+function formatSeasonDate(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return Number.isFinite(year + month + day) ? `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${year}` : value;
+}
 
 const pickerOpen = ref(false);
 
