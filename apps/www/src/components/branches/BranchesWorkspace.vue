@@ -214,7 +214,8 @@
             </article>
             <div v-if="!branchTeams.length" class="admin-empty">Ingen hold i grenen endnu.</div>
           </div>
-          <div class="team-editor">
+          <button v-if="!showTeamForm" type="button" class="btn-action" @click="startCreateTeam">+ Tilføj hold</button>
+          <div v-if="showTeamForm" class="team-editor">
             <div class="field"><label for="teamName">{{ editingTeamId ? 'Rediger hold' : 'Nyt hold' }}</label><input id="teamName" v-model="draftTeam.label" class="form-input" placeholder="Fx Tirsdagshold" /></div>
             <div class="team-fields">
               <label class="field"><span>Ugedag</span><select :value="draftTeam.weekday" class="form-input" @change="selectTeamWeekday(($event.target as HTMLSelectElement).value)"><option v-for="day in draftMeetingSchedules" :key="day.weekday" :value="day.weekday">{{ day.weekday }}</option></select></label>
@@ -274,8 +275,10 @@ const {
   draftTeam,
   teamError,
   editingTeamId,
+  showTeamForm,
   resetTeamDraft,
   startEditTeam,
+  startCreateTeam,
   selectTeamWeekday,
   saveTeam,
 } = useBranchesPage();

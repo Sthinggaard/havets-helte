@@ -21,6 +21,7 @@ export function useBranchesPage() {
   const draftTeam = reactive({ id: '', label: '', weekday: '', startTime: '', endTime: '', seasonStartDate: '', seasonEndDate: '' });
   const teamError = ref('');
   const editingTeamId = ref('');
+  const showTeamForm = ref(false);
 
   const branchCards = computed<BranchCard[]>(() =>
     rosterBranches.map(branch => ({
@@ -158,8 +159,9 @@ export function useBranchesPage() {
     if (weekday) draftMeetingSchedules.value.push({ weekday, startTime: '', endTime: '' });
   }
   function removeMeetingDay(index: number) { draftMeetingSchedules.value.splice(index, 1); }
-  function resetTeamDraft() { Object.assign(draftTeam, { id: '', label: '', weekday: draftMeetingSchedules.value[0]?.weekday ?? '', startTime: '', endTime: '', seasonStartDate: '', seasonEndDate: '' }); editingTeamId.value = ''; teamError.value = ''; }
-  function startEditTeam(team: RosterTeam) { Object.assign(draftTeam, team); editingTeamId.value = team.id; teamError.value = ''; }
+  function resetTeamDraft() { const day = draftMeetingSchedules.value[0]; Object.assign(draftTeam, { id: '', label: '', weekday: day?.weekday ?? '', startTime: day?.startTime ?? '', endTime: day?.endTime ?? '', seasonStartDate: '', seasonEndDate: '' }); editingTeamId.value = ''; teamError.value = ''; showTeamForm.value = false; }
+  function startCreateTeam() { resetTeamDraft(); showTeamForm.value = true; }
+  function startEditTeam(team: RosterTeam) { Object.assign(draftTeam, team); editingTeamId.value = team.id; teamError.value = ''; showTeamForm.value = true; }
   function selectTeamWeekday(weekday: string) { draftTeam.weekday = weekday; const schedule = draftMeetingSchedules.value.find(day => day.weekday === weekday); draftTeam.startTime = schedule?.startTime ?? ''; draftTeam.endTime = schedule?.endTime ?? ''; }
   function saveTeam() {
     const branchId = editingBranchId.value;
@@ -225,8 +227,10 @@ export function useBranchesPage() {
     draftTeam,
     teamError,
     editingTeamId,
+    showTeamForm,
     resetTeamDraft,
     startEditTeam,
+    startCreateTeam,
     selectTeamWeekday,
     saveTeam,
   };
