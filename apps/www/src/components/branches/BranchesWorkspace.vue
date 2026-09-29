@@ -167,9 +167,10 @@
             <select v-model="day.weekday" class="form-input" aria-label="Ugedag">
               <option v-for="weekday in weekdays" :key="weekday" :value="weekday">{{ weekday }}</option>
             </select>
-            <input v-model="day.startTime" type="time" class="form-input" :aria-label="`${day.weekday} starttid`" />
-            <span>til</span>
-            <input v-model="day.endTime" type="time" class="form-input" :aria-label="`${day.weekday} sluttid`" />
+            <select :value="day.startTime" class="form-input" :aria-label="`${day.weekday} starttid`" @change="updateMeetingStart(day, ($event.target as HTMLSelectElement).value)">
+              <option value="">Vælg starttid</option><option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option>
+            </select>
+            <span>til {{ day.endTime || '—' }}</span>
             <button type="button" class="btn-action" aria-label="Fjern mødedag" @click="removeMeetingDay(index)">Fjern</button>
           </div>
           <button type="button" class="btn-action" @click="addMeetingDay">+ Tilføj mødedag</button>
@@ -217,8 +218,8 @@
             <div class="field"><label for="teamName">{{ editingTeamId ? 'Rediger hold' : 'Nyt hold' }}</label><input id="teamName" v-model="draftTeam.label" class="form-input" placeholder="Fx Tirsdagshold" /></div>
             <div class="team-fields">
               <label class="field"><span>Ugedag</span><select :value="draftTeam.weekday" class="form-input" @change="selectTeamWeekday(($event.target as HTMLSelectElement).value)"><option v-for="day in draftMeetingSchedules" :key="day.weekday" :value="day.weekday">{{ day.weekday }}</option></select></label>
-              <label class="field"><span>Fra</span><input v-model="draftTeam.startTime" type="time" class="form-input" /></label>
-              <label class="field"><span>Til</span><input v-model="draftTeam.endTime" type="time" class="form-input" /></label>
+              <label class="field"><span>Starttid</span><select :value="draftTeam.startTime" class="form-input" @change="updateTeamStart(($event.target as HTMLSelectElement).value)"><option value="">Vælg starttid</option><option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option></select></label>
+              <div class="field"><span>Sluttid</span><output class="form-input generated-time">{{ draftTeam.endTime || 'Vælg starttid' }}</output></div>
               <label class="field"><span>Sæson fra</span><input v-model="draftTeam.seasonStartDate" type="date" class="form-input" /></label>
               <label class="field"><span>Sæson til</span><input v-model="draftTeam.seasonEndDate" type="date" class="form-input" /></label>
             </div>
@@ -280,6 +281,24 @@ const {
 } = useBranchesPage();
 
 const weekdays = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
+const timeOptions = Array.from({ length: 40 }, (_, index) => `${String(Math.floor(index * 30 / 60)).padStart(2, '0')}:${String(index * 30 % 60).padStart(2, '0')}`);
+
+function timeAfterFourHours(start: string) {
+  if (!start) return '';
+  const [hours, minutes] = start.split(':').map(Number);
+  const total = hours * 60 + minutes + 240;
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function updateMeetingStart(day: { startTime: string; endTime: string }, start: string) {
+  day.startTime = start;
+  day.endTime = timeAfterFourHours(start);
+}
+
+function updateTeamStart(start: string) {
+  draftTeam.startTime = start;
+  draftTeam.endTime = timeAfterFourHours(start);
+}
 
 const heroImage = '/og-sankthans.webp';
 
@@ -580,6 +599,8 @@ textarea.form-input {
   align-items: center;
   gap: 10px;
 }
+
+.generated-time { display: flex; align-items: center; color: var(--muted); }
 
 .team-editor {
   display: grid;
