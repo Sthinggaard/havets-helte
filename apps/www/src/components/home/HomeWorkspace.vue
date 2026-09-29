@@ -39,7 +39,7 @@
             <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
             <div class="event-card-body">
               <span class="home-category-badge">
-                {{ item.type === 'event' ? 'Tilmelding for spejderne' : item.type === 'shift' ? 'Forældrehelte-vagt' : 'Forældrehelte-opgave' }}
+                {{ item.type === 'event' ? 'Tilmelding for spejderne' : item.parentTypes?.length === 2 ? 'Forældrehelte-vagt og opgave' : item.type === 'shift' ? 'Forældrehelte-vagt' : 'Forældrehelte-opgave' }}
               </span>
               <div class="event-card-head">
                 <h2 class="row-title">{{ item.title }}</h2>
@@ -49,7 +49,7 @@
               <div class="event-card-meta">
                 <span>{{ item.dateText }}</span>
                 <span>{{ item.location }}</span>
-                <span>{{ typeLabel(item.type) }}</span>
+                <span>{{ item.parentTypes?.length === 2 ? 'Vagt og opgave' : typeLabel(item.type) }}</span>
               </div>
             </div>
           </RouterLink>

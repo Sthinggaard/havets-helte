@@ -6,7 +6,7 @@
 - Added a pnpm workspace build-script allowlist for the three dependency scripts required by the app and generated a pnpm lockfile so `make app` installs consistently.
 - Updated recurring shift planning to select multiple weekdays with checkboxes. Weekly schedules include every selected day; biweekly schedules include the selected days every other week. Existing single-weekday records remain supported.
 - Replaced the shift start-time entry with a 30-minute selector and made the calculated end time visible. End time still follows shift duration; new periods continue from the previous period's end.
-- Categorized arrangement cards by their component slots, so embedded shifts and parent tasks appear under parent tasks and scout signup components remain under scout signups. Mixed arrangements appear in both tabs and link to the same posting.
+- Categorized arrangement cards by their component slots, so embedded shifts and parent tasks share one card under parent tasks while scout signup components appear in one card under scout signups. Mixed arrangements appear in both tabs and link to the same posting.
 
 ## 2026-06-24 (2)
 

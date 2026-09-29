@@ -4,6 +4,7 @@ export type HomeTabId = 'parents' | 'scout-signups';
 
 export interface HomeFeedItem extends EventItem {
   eventId?: string;
+  parentTypes?: Array<'shift' | 'task'>;
   ctaLabel: string;
   ctaRoute: string;
 }
