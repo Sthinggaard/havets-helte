@@ -1269,11 +1269,11 @@ onBeforeUnmount(() => {
 
 .shift-tab.signup {
   border-color: var(--teal);
-  color: var(--teal-deep);
+  color: var(--navy);
 }
 
 .shift-tab.signup .shift-tab-calendar {
-  background: var(--bg);
+  background: var(--teal-light);
 }
 
 .shift-tab.signup.active {
