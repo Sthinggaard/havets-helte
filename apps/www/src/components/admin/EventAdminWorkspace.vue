@@ -235,7 +235,7 @@
               @update-adult="updateShiftAdult"
               @set-start="start => setShiftStart(group.id, start)"
               @update-schedule="(mode, offsetDays) => updateShiftSchedule(group.id, mode, offsetDays)"
-              @update-recurrence="(weekday, startDate, endDate) => updateShiftRecurrence(group.id, weekday, startDate, endDate)"
+              @update-recurrence="(weekdays, startDate, endDate) => updateShiftRecurrence(group.id, weekdays, startDate, endDate)"
             />
             <SectionAddButton tone="shift" icon="ti-copy" label="Kopiér vagtsektion" @click="copyShiftGroup(group.id)" />
             <SectionAddButton tone="shift" label="Tilføj vagtsektion" @click="addAndFocus('shift')" />
@@ -542,16 +542,18 @@ function updateShiftSchedule(groupId: string, mode: 'fixed' | 'weekly' | 'biweek
     if (mode !== 'fixed') {
       slot.date = '';
       slot.recurrenceWeekday = slot.recurrenceWeekday ?? 6;
+      slot.recurrenceWeekdays = slot.recurrenceWeekdays?.length ? slot.recurrenceWeekdays : [slot.recurrenceWeekday];
       slot.recurrenceStartDate = slot.recurrenceStartDate || draft.eventDate || '';
       slot.recurrenceEndDate = slot.recurrenceEndDate || draft.eventDate || '';
     }
   });
 }
 
-function updateShiftRecurrence(groupId: string, weekday: number, startDate: string, endDate: string) {
+function updateShiftRecurrence(groupId: string, weekdays: number[], startDate: string, endDate: string) {
   shiftSlots(groupId).forEach(slot => {
     slot.scheduleMode = slot.scheduleMode === 'biweekly' ? 'biweekly' : 'weekly';
-    slot.recurrenceWeekday = weekday;
+    slot.recurrenceWeekdays = [...weekdays];
+    slot.recurrenceWeekday = weekdays[0];
     slot.recurrenceStartDate = startDate;
     slot.recurrenceEndDate = endDate;
     slot.date = '';

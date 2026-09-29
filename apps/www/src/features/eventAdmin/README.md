@@ -13,6 +13,10 @@ The home feed groups active `task` and `timed` records under **Forældrehelte-op
 category badge. The tabs filter the feed only; they do not change event records or
 signup behavior.
 
+Recurring shifts can select one or more weekdays. Weekly schedules materialize an
+occurrence on each selected weekday; biweekly schedules repeat the selected weekdays
+every other week. Legacy records with a single `recurrenceWeekday` remain editable.
+
 ## Keep This Split Stable
 
 - `EventAdminWorkspace.vue` is the admin list/form shell.

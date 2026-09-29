@@ -45,21 +45,40 @@ export function isValidIsoDate(value: string | undefined): value is string {
   return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
 }
 
-export function calculateRecurringDates(slot: Pick<EventSlot, 'scheduleMode' | 'recurrenceWeekday' | 'recurrenceStartDate' | 'recurrenceEndDate'>): string[] {
+export function calculateRecurringDates(slot: Pick<EventSlot, 'scheduleMode' | 'recurrenceWeekdays' | 'recurrenceWeekday' | 'recurrenceStartDate' | 'recurrenceEndDate'>): string[] {
   if (slot.scheduleMode !== 'weekly' && slot.scheduleMode !== 'biweekly') return [];
   if (!isValidIsoDate(slot.recurrenceStartDate) || !isValidIsoDate(slot.recurrenceEndDate)) return [];
-  const weekday = slot.recurrenceWeekday;
-  if (typeof weekday !== 'number' || !Number.isInteger(weekday) || weekday < 0 || weekday > 6) return [];
+  const weekdays = (slot.recurrenceWeekdays?.length ? slot.recurrenceWeekdays : [slot.recurrenceWeekday])
+    .filter((weekday): weekday is number => typeof weekday === 'number' && Number.isInteger(weekday) && weekday >= 0 && weekday <= 6);
+  if (!weekdays.length) return [];
 
   const start = toUtcDate(slot.recurrenceStartDate);
   const end = toUtcDate(slot.recurrenceEndDate);
-  const first = new Date(start);
-  const daysUntilWeekday = (weekday - first.getUTCDay() + 7) % 7;
-  first.setUTCDate(first.getUTCDate() + daysUntilWeekday);
-  const stepDays = slot.scheduleMode === 'biweekly' ? 14 : 7;
+  const selectedWeekdays = new Set(weekdays);
   const dates: string[] = [];
-  for (const cursor = first; cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + stepDays)) {
-    dates.push(toIsoDate(cursor));
+
+  if (slot.scheduleMode === 'weekly') {
+    for (const cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+      if (selectedWeekdays.has(cursor.getUTCDay())) dates.push(toIsoDate(cursor));
+    }
+    return dates;
+  }
+
+  // Anchor biweekly recurrence on the first selected day on or after the
+  // range start. This preserves the existing single-weekday behavior.
+  const first = new Date(start);
+  while (first <= end && !selectedWeekdays.has(first.getUTCDay())) first.setUTCDate(first.getUTCDate() + 1);
+  if (first > end) return [];
+
+  const anchorWeek = new Date(first);
+  anchorWeek.setUTCDate(anchorWeek.getUTCDate() - ((anchorWeek.getUTCDay() + 6) % 7));
+  for (const cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    const cursorWeek = new Date(cursor);
+    cursorWeek.setUTCDate(cursorWeek.getUTCDate() - ((cursorWeek.getUTCDay() + 6) % 7));
+    const weekOffset = Math.round((cursorWeek.getTime() - anchorWeek.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    if (weekOffset >= 0 && weekOffset % 2 === 0 && selectedWeekdays.has(cursor.getUTCDay())) {
+      dates.push(toIsoDate(cursor));
+    }
   }
   return dates;
 }

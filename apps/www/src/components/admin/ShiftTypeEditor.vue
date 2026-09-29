@@ -2,34 +2,50 @@
   <section class="shift-type" :class="{ 'has-error': invalid || slots.some(slot => invalidTimeIds.has(slot.id)) }">
     <header class="shift-type-header">
       <span class="shift-type-title">Vagttype {{ index + 1 }}</span>
+      <label class="field shift-name-field">
+        <FormControl :model-value="slots[0]?.label ?? ''" placeholder="fx Drinksboden" :aria-invalid="invalid" aria-label="Vagtnavn" @update:model-value="updateCommon('label', $event)" />
+        <span v-if="invalid" class="field-error" role="alert">Udfyld vagtnavn.</span>
+      </label>
       <button type="button" class="remove-button" :aria-label="`Fjern vagttype ${index + 1}`" title="Slet vagttype" @click="emit('remove')">×</button>
     </header>
 
     <div class="shift-type-basics">
-      <label class="field">
-        <span>Vagtnavn *</span>
-        <FormControl :model-value="slots[0]?.label ?? ''" placeholder="fx Drinksboden" :aria-invalid="invalid" @update:model-value="updateCommon('label', $event)" />
-        <span v-if="invalid" class="field-error" role="alert">Udfyld vagtnavn.</span>
-      </label>
-      <label class="field">
+      <div class="field">
         <span>Planlægning</span>
-        <FormControl as="select" :model-value="scheduleValue" @update:model-value="updateSchedule">
+        <FormControl as="select" aria-label="Planlægning" :model-value="scheduleValue" @update:model-value="updateSchedule">
           <option value="fixed">Fast dato</option>
           <option value="weekly">Hver uge</option>
           <option value="biweekly">Hver anden uge</option>
         </FormControl>
-        <FormControl v-if="scheduleValue === 'fixed'" :model-value="slots[0]?.date ?? ''" type="date" @update:model-value="updateCommon('date', $event)" />
+        <FormControl v-if="scheduleValue === 'fixed'" aria-label="Vagtens dato" :model-value="slots[0]?.date ?? ''" type="date" @update:model-value="updateCommon('date', $event)" />
         <div v-else class="recurrence-fields">
-          <FormControl as="select" :model-value="slots[0]?.recurrenceWeekday ?? 6" @update:model-value="updateWeekday">
-            <option v-for="day in weekdays" :key="day.value" :value="day.value">{{ day.label }}</option>
-          </FormControl>
+          <div class="weekday-picker" role="group" aria-label="Vælg ugedage">
+            <span class="weekday-picker-label">Ugedage</span>
+            <div class="weekday-options">
+              <label
+                v-for="day in weekdays"
+                :key="day.value"
+                class="weekday-option"
+                :class="{ 'weekday-option--selected': selectedWeekdays.includes(day.value) }"
+              >
+                <input
+                  type="checkbox"
+                  :checked="selectedWeekdays.includes(day.value)"
+                  :disabled="selectedWeekdays.length === 1 && selectedWeekdays[0] === day.value"
+                  :aria-label="day.fullLabel"
+                  @change="updateWeekday(day.value, $event)"
+                />
+                <span>{{ day.label }}</span>
+              </label>
+            </div>
+          </div>
           <div class="recurrence-range">
-            <FormControl type="date" :model-value="slots[0]?.recurrenceStartDate || eventDate || ''" @update:model-value="updateRecurrenceDate('start', $event)" />
+            <FormControl aria-label="Gentag fra" type="date" :model-value="slots[0]?.recurrenceStartDate || eventDate || ''" @update:model-value="updateRecurrenceDate('start', $event)" />
             <span>til</span>
-            <FormControl type="date" :model-value="slots[0]?.recurrenceEndDate || eventDate || ''" @update:model-value="updateRecurrenceDate('end', $event)" />
+            <FormControl aria-label="Gentag til" type="date" :model-value="slots[0]?.recurrenceEndDate || eventDate || ''" @update:model-value="updateRecurrenceDate('end', $event)" />
           </div>
         </div>
-      </label>
+      </div>
       <label class="field">
         <span>Vagtlængde</span>
         <FormControl as="select" :model-value="slots[0]?.shiftDurationMinutes ?? 60" @update:model-value="updateDuration">
@@ -96,17 +112,23 @@ const emit = defineEmits<{
   'update-adult': [slotId: string, value: boolean];
   'set-start': [start: string];
   'update-schedule': [mode: 'fixed' | 'weekly' | 'biweekly', offsetDays: number];
-  'update-recurrence': [weekday: number, startDate: string, endDate: string];
+  'update-recurrence': [weekdays: number[], startDate: string, endDate: string];
 }>();
 
 const weekdays = [
-  { value: 1, label: 'Mandag' }, { value: 2, label: 'Tirsdag' }, { value: 3, label: 'Onsdag' },
-  { value: 4, label: 'Torsdag' }, { value: 5, label: 'Fredag' }, { value: 6, label: 'Lørdag' }, { value: 0, label: 'Søndag' },
+  { value: 1, label: 'man', fullLabel: 'Mandag' }, { value: 2, label: 'tirs', fullLabel: 'Tirsdag' },
+  { value: 3, label: 'ons', fullLabel: 'Onsdag' }, { value: 4, label: 'tors', fullLabel: 'Torsdag' },
+  { value: 5, label: 'fre', fullLabel: 'Fredag' }, { value: 6, label: 'lør', fullLabel: 'Lørdag' },
+  { value: 0, label: 'søn', fullLabel: 'Søndag' },
 ];
 
 const scheduleValue = computed(() => {
   const slot = props.slots[0];
   return slot?.scheduleMode === 'weekly' || slot?.scheduleMode === 'biweekly' ? slot.scheduleMode : 'fixed';
+});
+const selectedWeekdays = computed(() => {
+  const slot = props.slots[0];
+  return slot?.recurrenceWeekdays?.length ? slot.recurrenceWeekdays : [slot?.recurrenceWeekday ?? 6];
 });
 
 const durationOptions = Array.from({ length: 24 }, (_, index) => (index + 1) * 30);
@@ -120,16 +142,20 @@ function updateSchedule(input: string | number) {
   emit('update-schedule', value as 'fixed' | 'weekly' | 'biweekly', 0);
 }
 
-function updateWeekday(input: string | number) {
+function updateWeekday(day: number, event: Event) {
   const slot = props.slots[0];
-  emit('update-recurrence', Number(input), slot?.recurrenceStartDate || props.eventDate || '', slot?.recurrenceEndDate || props.eventDate || '');
+  const selected = new Set(selectedWeekdays.value);
+  if ((event.target as HTMLInputElement).checked) selected.add(day);
+  else selected.delete(day);
+  const nextWeekdays = weekdays.filter(item => selected.has(item.value)).map(item => item.value);
+  emit('update-recurrence', nextWeekdays, slot?.recurrenceStartDate || props.eventDate || '', slot?.recurrenceEndDate || props.eventDate || '');
 }
 
 function updateRecurrenceDate(kind: 'start' | 'end', value: string | number) {
   const slot = props.slots[0];
   const startDate = kind === 'start' ? String(value) : slot?.recurrenceStartDate || props.eventDate || '';
   const endDate = kind === 'end' ? String(value) : slot?.recurrenceEndDate || props.eventDate || '';
-  emit('update-recurrence', slot?.recurrenceWeekday ?? 6, startDate, endDate);
+  emit('update-recurrence', selectedWeekdays.value, startDate, endDate);
 }
 
 function updateCapacity(slotId: string, input: string | number) {
@@ -189,6 +215,51 @@ function periodTime(period: EventSlot) {
   gap: 8px;
 }
 
+.weekday-picker {
+  display: grid;
+  gap: 5px;
+}
+
+.weekday-picker-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.weekday-options {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.weekday-option {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.weekday-option--selected {
+  border-color: var(--navy);
+  background: var(--navy-soft);
+  color: var(--navy);
+}
+
+.weekday-option input {
+  margin: 0;
+  accent-color: var(--navy);
+}
+
+.weekday-option input:disabled {
+  cursor: not-allowed;
+}
+
 .recurrence-range {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
@@ -209,11 +280,25 @@ function periodTime(period: EventSlot) {
   border-color: #c94853;
 }
 
-.shift-type-header,
 .period-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.shift-type-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.shift-name-field {
+  min-width: 0;
+}
+
+.shift-name-field .form-control {
+  min-height: 45px;
 }
 
 .shift-type-title,
@@ -246,11 +331,15 @@ function periodTime(period: EventSlot) {
   color: #c94853;
 }
 
-.shift-type-basics,
 .period-fields {
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr) minmax(180px, 1fr);
+}
+
+.shift-type-basics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .period-list {
@@ -338,9 +427,16 @@ function periodTime(period: EventSlot) {
 }
 
 @media (max-width: 640px) {
-  .shift-type-basics,
+  .weekday-options {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .period-fields {
     grid-template-columns: 1fr;
+  }
+
+  .shift-type-basics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

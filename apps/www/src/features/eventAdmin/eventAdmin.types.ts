@@ -45,6 +45,8 @@ export interface EventSlot {
   deadlineDate?: string;
   deadlineScheduleMode?: SlotScheduleMode;
   deadlineOffsetDays?: number;
+  recurrenceWeekdays?: number[];
+  // Kept as the first selected day for older clients and saved records.
   recurrenceWeekday?: number;
   recurrenceStartDate?: string;
   recurrenceEndDate?: string;

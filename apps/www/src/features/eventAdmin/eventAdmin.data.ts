@@ -143,6 +143,7 @@ export function createSlot(partial?: Partial<EventSlot>): EventSlot {
     deadlineDate: partial?.deadlineDate,
     deadlineScheduleMode: partial?.deadlineScheduleMode,
     deadlineOffsetDays: partial?.deadlineOffsetDays,
+    recurrenceWeekdays: partial?.recurrenceWeekdays ? [...partial.recurrenceWeekdays] : undefined,
     recurrenceWeekday: partial?.recurrenceWeekday,
     recurrenceStartDate: partial?.recurrenceStartDate,
     recurrenceEndDate: partial?.recurrenceEndDate,
@@ -212,6 +213,9 @@ export function createAdminEventFromRecord(record: { id: string; [key: string]: 
         deadlineDate: typeof slot.deadlineDate === 'string' ? slot.deadlineDate : undefined,
         deadlineScheduleMode: slot.deadlineScheduleMode === 'relative' ? 'relative' : slot.deadlineScheduleMode === 'fixed' ? 'fixed' : undefined,
         deadlineOffsetDays: typeof slot.deadlineOffsetDays === 'number' ? slot.deadlineOffsetDays : undefined,
+        recurrenceWeekdays: Array.isArray(slot.recurrenceWeekdays)
+          ? slot.recurrenceWeekdays.filter((weekday): weekday is number => typeof weekday === 'number' && Number.isInteger(weekday) && weekday >= 0 && weekday <= 6)
+          : undefined,
         recurrenceWeekday: typeof slot.recurrenceWeekday === 'number' ? slot.recurrenceWeekday : undefined,
         recurrenceStartDate: typeof slot.recurrenceStartDate === 'string' ? slot.recurrenceStartDate : undefined,
         recurrenceEndDate: typeof slot.recurrenceEndDate === 'string' ? slot.recurrenceEndDate : undefined,
@@ -254,7 +258,7 @@ function collapseMaterializedShiftSlots(slots: EventSlot[]): EventSlot[] {
       slot.label,
       slot.startTime,
       slot.endTime,
-      slot.recurrenceWeekday,
+      slot.recurrenceWeekdays?.length ? [...slot.recurrenceWeekdays].sort((a, b) => a - b).join(',') : slot.recurrenceWeekday,
       slot.recurrenceStartDate,
       slot.recurrenceEndDate,
     ].join('\u0000');
@@ -324,6 +328,7 @@ export function toEventRecord(event: AdminEvent) {
       ...(slot.deadlineDate ? { deadlineDate: slot.deadlineDate } : {}),
       ...(slot.deadlineScheduleMode ? { deadlineScheduleMode: slot.deadlineScheduleMode as SlotScheduleMode } : {}),
       ...(typeof slot.deadlineOffsetDays === 'number' ? { deadlineOffsetDays: slot.deadlineOffsetDays } : {}),
+      ...(slot.recurrenceWeekdays?.length ? { recurrenceWeekdays: slot.recurrenceWeekdays } : {}),
       ...(typeof slot.recurrenceWeekday === 'number' ? { recurrenceWeekday: slot.recurrenceWeekday } : {}),
       ...(slot.recurrenceStartDate ? { recurrenceStartDate: slot.recurrenceStartDate } : {}),
       ...(slot.recurrenceEndDate ? { recurrenceEndDate: slot.recurrenceEndDate } : {}),
