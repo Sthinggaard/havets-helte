@@ -39,7 +39,7 @@
             <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
             <div class="event-card-body">
               <span class="home-category-badge">
-                {{ item.type === 'event' ? 'Tilmelding for spejderne' : 'Forældrehelte-opgave' }}
+                {{ item.type === 'event' ? 'Tilmelding for spejderne' : item.type === 'shift' ? 'Forældrehelte-vagt' : 'Forældrehelte-opgave' }}
               </span>
               <div class="event-card-head">
                 <h2 class="row-title">{{ item.title }}</h2>
