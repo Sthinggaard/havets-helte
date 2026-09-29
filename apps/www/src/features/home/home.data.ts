@@ -27,10 +27,16 @@ function toCtaRoute(type: EventType) {
   return '/opgaver';
 }
 
-function spotsLabel(event: AdminEvent): string {
-  if (!event.slots.length) return 'Ingen pladser';
-  if (event.slots.some(slot => slot.capacity === 0)) return 'Ubegrænset';
-  const total = event.slots.reduce((sum, slot) => sum + slot.capacity, 0);
+function feedSlots(event: AdminEvent, feedType: HomeFeedItem['type'], parentTypes?: Array<'shift' | 'task'>) {
+  const componentTypes = parentTypes ?? [feedType === 'event' ? 'signup' : feedType];
+  return event.slots.filter(slot => componentTypes.includes(slot.componentType as typeof componentTypes[number]));
+}
+
+function spotsLabel(event: AdminEvent, feedType: HomeFeedItem['type'], parentTypes?: Array<'shift' | 'task'>): string {
+  const slots = feedSlots(event, feedType, parentTypes);
+  if (!slots.length) return 'Ingen pladser';
+  if (slots.some(slot => slot.capacity === 0)) return 'Ubegrænset';
+  const total = slots.reduce((sum, slot) => sum + slot.capacity, 0);
   return `${total} ${total === 1 ? 'plads' : 'pladser'}`;
 }
 
@@ -41,15 +47,22 @@ export function toHomeFeedItem(
   parentTypes?: Array<'shift' | 'task'>,
 ): HomeFeedItem {
   const fallbackImage = eventItems.find(item => item.type === feedType)?.image || '/og-sankthans.webp';
+  const slots = feedSlots(event, feedType, parentTypes);
   return {
     id,
     eventId: event.id,
     parentTypes,
+    capacityCount: slots.some(slot => slot.capacity === 0) ? 0 : slots.reduce((sum, slot) => sum + slot.capacity, 0),
+    signupAudienceLabels: feedType === 'event'
+      ? [...new Set(event.slots
+        .filter(slot => slot.componentType === 'signup')
+        .flatMap(slot => slot.eligibleGroups.map(group => group.label)))]
+      : [],
     type: feedType,
     title: event.title,
     dateText: event.dateText,
     location: event.location,
-    spots: spotsLabel(event),
+    spots: spotsLabel(event, feedType, parentTypes),
     summary: event.description,
     image: event.imageUrl || fallbackImage,
     ctaLabel: toCtaLabel(feedType),

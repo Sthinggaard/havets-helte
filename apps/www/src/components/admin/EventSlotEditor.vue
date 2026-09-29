@@ -51,6 +51,24 @@
         <FormControl v-if="deadlineScheduleValue === 'fixed'" :model-value="slot.deadlineDate ?? ''" type="date" @update:model-value="updateDeadlineDate" />
         <output v-else-if="deadlineScheduleValue !== 'none'" class="schedule-preview">{{ calculatedDeadline || 'Vælg en eventdato først' }}</output>
       </div>
+      <div v-if="slot.componentType === 'signup'" class="si-audience">
+        <span class="si-field-label">Klaner og hold, der kan tilmelde sig</span>
+        <details class="audience-picker">
+          <summary>{{ audienceSelectionSummary }}</summary>
+          <div class="audience-picker-options">
+            <label v-for="group in audienceGroupOptions" :key="group.id" class="audience-picker-option">
+              <input
+                type="checkbox"
+                :checked="slot.eligibleGroups.some(selected => selected.id === group.id)"
+                @change="toggleAudienceGroup(group)"
+              />
+              <span>{{ group.label }}</span>
+            </label>
+            <p v-if="!audienceGroupOptions.length" class="audience-picker-empty">Opret først en gren eller et hold under Grene.</p>
+          </div>
+        </details>
+        <small class="audience-picker-hint">Ingen valg åbner tilmeldingen for alle klaner og hold.</small>
+      </div>
       <div v-if="!hideDate" class="si-date">
         <label class="si-field-label" :for="`${slot.id}-date`">Dato</label>
         <FormControl :id="`${slot.id}-date`" v-model="slot.date" type="date" />
@@ -156,7 +174,8 @@ import FormControl from '@/components/form/FormControl.vue';
 import FormField from '@/components/form/FormField.vue';
 import { SLOT_ROLES, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
-import type { EventSlot, EventTypeConfig, SlotKind } from '@/features/eventAdmin/eventAdmin.types';
+import type { EventSlot, EventTypeConfig, SignupAudienceGroup, SlotKind } from '@/features/eventAdmin/eventAdmin.types';
+import { rosterBranches, rosterTeams } from '@/features/roster/roster.data';
 
 const props = defineProps<{
   slot: EventSlot;
@@ -184,6 +203,33 @@ const kindOptions: Array<{ value: SlotKind; label: string }> = [
 ];
 const visibleKindOptions = computed(() => kindOptions);
 const recommendedGroupSize = computed(() => recommendGroupSize(props.slot.capacity));
+const audienceGroupOptions = computed<SignupAudienceGroup[]>(() => {
+  const groups: SignupAudienceGroup[] = [];
+  for (const team of rosterTeams.filter(item => item.active)) {
+    const branch = rosterBranches.find(item => item.id === team.branchId && item.active);
+    if (!branch) continue;
+    groups.push({
+      id: `team:${encodeURIComponent(branch.id)}:${encodeURIComponent(team.label)}`,
+      label: `${branch.label} · ${team.label}`,
+      branchId: branch.id,
+      branchLabel: branch.label,
+      team: team.label,
+    });
+  }
+  groups.sort((a, b) => a.branchLabel.localeCompare(b.branchLabel, 'da') || a.team.localeCompare(b.team, 'da'));
+  const optionIds = new Set(groups.map(group => group.id));
+  for (const selected of props.slot.eligibleGroups.filter(group => group.team)) {
+    if (!optionIds.has(selected.id)) groups.push(selected);
+  }
+  return groups;
+});
+const audienceSelectionSummary = computed(() => {
+  const selected = props.slot.eligibleGroups;
+  const count = selected.length;
+  if (!count) return 'Alle klaner og hold';
+  if (count <= 2) return selected.map(group => group.label).join(', ');
+  return `${count} hold valgt`;
+});
 
 const isGroup = computed(() => props.slot.groupSize > 1);
 const isShift = computed(() => props.slot.componentType === 'shift' || props.config.timedSlots);
@@ -205,6 +251,13 @@ const calculatedDeadline = computed(() => {
   const date = calculateSlotDeadline(props.eventDate, props.slot);
   return date ? `Tilmeld senest ${formatSlotDate(date)}` : '';
 });
+
+function toggleAudienceGroup(group: SignupAudienceGroup) {
+  const selected = props.slot.eligibleGroups;
+  props.slot.eligibleGroups = selected.some(item => item.id === group.id)
+    ? selected.filter(item => item.id !== group.id)
+    : [...selected, { ...group }];
+}
 
 function onCapacityInput(input: string | number) {
   const value = parseInt(String(input), 10);
@@ -360,6 +413,84 @@ function updateDeadlineDate(input: string | number) {
 .si-deadline {
   display: grid;
   gap: 6px;
+}
+
+.si-audience {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.audience-picker summary {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+}
+
+.audience-picker summary::-webkit-details-marker {
+  display: none;
+}
+
+.audience-picker summary::after {
+  content: '⌄';
+  color: var(--navy);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.audience-picker[open] summary::after {
+  content: '⌃';
+}
+
+.audience-picker-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  z-index: 20;
+  display: grid;
+  width: min(100%, 420px);
+  max-height: 220px;
+  gap: 2px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-lift);
+}
+
+.audience-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.audience-picker-option:hover {
+  background: var(--navy-soft);
+}
+
+.audience-picker-option input {
+  accent-color: var(--navy);
+}
+
+.audience-picker-empty,
+.audience-picker-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .schedule-preview {

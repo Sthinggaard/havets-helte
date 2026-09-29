@@ -1,9 +1,10 @@
 import { computed, reactive } from 'vue';
 
-import type { Branch, Member, BranchId } from './roster.types';
+import type { Branch, Member, BranchId, RosterTeam } from './roster.types';
 
 const rosterBranchStorageKey = 'sankthans.rosterBranches.v1';
 const rosterStorageKey = 'sankthans.rosterMembers.v1';
+const rosterTeamStorageKey = 'sankthans.rosterTeams.v1';
 
 const defaultRosterBranches: Branch[] = [
   {
@@ -214,6 +215,77 @@ function loadRosterMembers(): Member[] {
   }
 }
 
+function teamSlug(label: string) {
+  return label
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32) || 'hold';
+}
+
+export function createRosterTeamId(branchId: string, label: string, teams: RosterTeam[] = rosterTeams) {
+  const base = `${branchId}-${teamSlug(label)}`;
+  let candidate = base;
+  let suffix = 2;
+  while (teams.some(team => team.id === candidate)) {
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  return candidate;
+}
+
+function normalizeRosterTeam(record: Partial<RosterTeam> & { id?: unknown }, branches: Branch[]): RosterTeam | null {
+  const branch = branches.find(item => item.id === record.branchId);
+  if (!branch || typeof record.label !== 'string' || !record.label.trim()) return null;
+  const weekday = typeof record.weekday === 'string' && branch.meetingDays.includes(record.weekday)
+    ? record.weekday
+    : branch.meetingDays[0];
+  if (!weekday) return null;
+  const label = record.label.trim();
+  return {
+    id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : `${branch.id}-${teamSlug(label)}`,
+    branchId: branch.id,
+    label,
+    weekday,
+    active: typeof record.active === 'boolean' ? record.active : true,
+  };
+}
+
+function teamsFromMembers(members: Member[]): RosterTeam[] {
+  const teams: RosterTeam[] = [];
+  for (const member of members) {
+    const label = member.team.trim();
+    if (!label || teams.some(team => team.branchId === member.branchId && team.label.toLocaleLowerCase('da') === label.toLocaleLowerCase('da'))) continue;
+    teams.push({
+      id: `${member.branchId}-${teamSlug(label)}`,
+      branchId: member.branchId,
+      label,
+      weekday: member.weekday,
+      active: true,
+    });
+  }
+  return teams;
+}
+
+function loadRosterTeams(members: Member[]): RosterTeam[] {
+  if (typeof window === 'undefined') return teamsFromMembers(cloneDefaults());
+  try {
+    const raw = window.localStorage.getItem(rosterTeamStorageKey);
+    if (!raw) return teamsFromMembers(members);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return teamsFromMembers(members);
+    const teams = parsed
+      .map(record => normalizeRosterTeam(record, rosterBranches))
+      .filter((team): team is RosterTeam => team !== null);
+    return teams.filter((team, index) => !teams.some((other, otherIndex) => otherIndex < index && other.branchId === team.branchId && other.label.toLocaleLowerCase('da') === team.label.toLocaleLowerCase('da')));
+  } catch {
+    return teamsFromMembers(members);
+  }
+}
+
 export function createRosterMemberId() {
   return `member-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -251,6 +323,7 @@ export function buildMemberTeam(weekday: string) {
 
 export const rosterBranches: Branch[] = reactive(loadRosterBranches());
 export const rosterMembers: Member[] = reactive(loadRosterMembers());
+export const rosterTeams: RosterTeam[] = reactive(loadRosterTeams(rosterMembers));
 export const publicRosterBranches = computed(() => rosterBranches.filter(branch => branch.active));
 
 export function saveRosterBranches(branches: Branch[] = rosterBranches) {
@@ -261,6 +334,11 @@ export function saveRosterBranches(branches: Branch[] = rosterBranches) {
 export function saveRosterMembers(members: Member[] = rosterMembers) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(rosterStorageKey, JSON.stringify(members));
+}
+
+export function saveRosterTeams(teams: RosterTeam[] = rosterTeams) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(rosterTeamStorageKey, JSON.stringify(teams));
 }
 
 export function branchLabel(branchId: string) {

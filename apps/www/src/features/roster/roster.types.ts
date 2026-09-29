@@ -10,6 +10,14 @@ export interface Branch {
   meetingDays: string[];
 }
 
+export interface RosterTeam {
+  id: string;
+  branchId: BranchId;
+  label: string;
+  weekday: string;
+  active: boolean;
+}
+
 export interface Member {
   id: string;
   name: string;

@@ -10,6 +10,7 @@ export type LeaderSignup = {
   dateText: string;
   location: string;
   slotLabel: string;
+  audienceGroupLabel: string;
   waitlist: boolean;
   groupSize: number;
   createdAt: number;
@@ -58,6 +59,7 @@ export async function loadLeaderSignups() {
       dateText: event.dateText || '',
       location: event.location || '',
       slotLabel: slot?.sublabel ? `${slot.label || ''} · ${slot.sublabel}`.trim() : String(slot?.label || ''),
+      audienceGroupLabel: typeof signup.audienceGroupLabel === 'string' ? signup.audienceGroupLabel : '',
       waitlist: signup.waitlist === true,
       groupSize: Math.max(1, Number(signup.groupSize) || 1),
       createdAt: created?.toMillis?.() || 0,

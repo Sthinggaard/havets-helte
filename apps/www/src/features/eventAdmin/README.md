@@ -19,6 +19,8 @@ occurrence on each selected weekday; biweekly schedules repeat the selected week
 every other week. Legacy records with a single `recurrenceWeekday` remain editable.
 Shift start times are selected in 30-minute steps. The end time follows the selected
 shift duration, and each added period starts when the previous one ends.
+Signup slots can optionally target one or more branches or branch teams from the
+roster setup. Leaving the audience empty keeps the signup open to everyone.
 
 ## Keep This Split Stable
 

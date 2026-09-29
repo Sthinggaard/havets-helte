@@ -3,6 +3,9 @@ import type { EventItem, EventFilterType } from '../events/events.types';
 export type HomeTabId = 'parents' | 'scout-signups';
 
 export interface HomeFeedItem extends EventItem {
+  capacityCount?: number;
+  confirmedCount?: number;
+  signupAudienceLabels?: string[];
   eventId?: string;
   parentTypes?: Array<'shift' | 'task'>;
   ctaLabel: string;

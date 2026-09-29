@@ -24,7 +24,7 @@
             <li v-for="row in group.rows" :key="row.id" class="signup-item">
               <div class="signup-details">
                 <strong>{{ row.name }} <span v-if="row.waitlist" class="waitlist-badge">Venteliste</span></strong>
-                <span>{{ row.email }}<template v-if="row.slotDate"> · Vagtdato: {{ row.slotDate }}</template><template v-if="row.slotLabel"> · {{ row.slotLabel }}</template></span>
+                <span>{{ row.email }}<template v-if="row.slotDate"> · Vagtdato: {{ row.slotDate }}</template><template v-if="row.slotLabel"> · {{ row.slotLabel }}</template><template v-if="row.audienceGroupLabel"> · {{ row.audienceGroupLabel }}</template></span>
               </div>
               <div class="signup-actions">
                 <button v-if="row.waitlist" type="button" class="btn-action" :disabled="savingId === row.id" @click="approve(row)">Godkend</button>
@@ -63,7 +63,7 @@ import { getAppFirestore } from '@/lib/firebase';
 
 const route = useRoute();
 const event = ref<AdminEvent | null>(null);
-type SignupRow = { id: string; name: string; email: string; slotId: string; slotLabel: string; slotDate: string; type: 'signup' | 'task' | 'shift'; waitlist: boolean; groupSize: number; adult: boolean };
+type SignupRow = { id: string; name: string; email: string; slotId: string; slotLabel: string; slotDate: string; audienceGroupLabel: string; type: 'signup' | 'task' | 'shift'; waitlist: boolean; groupSize: number; adult: boolean };
 const rows = ref<SignupRow[]>([]);
 const loading = ref(true);
 const error = ref('');
@@ -102,7 +102,7 @@ async function load() {
       const slotDate = slot?.componentType === 'shift'
         ? date ? `${formatSlotDate(date)} ${date.slice(0, 4)}` : event.value?.dateText || ''
         : '';
-      return { id: item.id, name: String(data.name || contact.name || 'Ukendt'), email: String(contact.email || ''), slotId: String(data.slotId || ''), type: slot?.componentType === 'task' || slot?.componentType === 'shift' ? slot.componentType : 'signup', slotLabel: slot ? `${slot.label}${slot.sublabel ? ` · ${slot.sublabel}` : ''}` : 'Ukendt plads', slotDate, waitlist: data.waitlist === true, groupSize: Math.max(1, Number(data.groupSize) || 1), adult: data.adult === true };
+      return { id: item.id, name: String(data.name || contact.name || 'Ukendt'), email: String(contact.email || ''), slotId: String(data.slotId || ''), type: slot?.componentType === 'task' || slot?.componentType === 'shift' ? slot.componentType : 'signup', slotLabel: slot ? `${slot.label}${slot.sublabel ? ` · ${slot.sublabel}` : ''}` : 'Ukendt plads', slotDate, audienceGroupLabel: typeof data.audienceGroupLabel === 'string' ? data.audienceGroupLabel : '', waitlist: data.waitlist === true, groupSize: Math.max(1, Number(data.groupSize) || 1), adult: data.adult === true };
     });
   } catch (err) { console.error('[admin-signups] load failed', err); error.value = 'Kunne ikke hente tilmeldte.'; }
   finally { loading.value = false; }

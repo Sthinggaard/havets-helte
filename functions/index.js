@@ -258,6 +258,7 @@ async function loadParentSignups(email) {
         slotLabel: slotLabel(slot || {}),
         waitlist: signup.waitlist === true,
         groupSize: Math.max(1, Number(signup.groupSize) || 1),
+        audienceGroupLabel: typeof signup.audienceGroupLabel === 'string' ? signup.audienceGroupLabel : '',
         createdAt: contact.get('created')?.toMillis?.() || 0,
       };
     })
@@ -597,6 +598,7 @@ exports.submitSignup = onRequest({
     if (!Number.isInteger(groupSize) || groupSize < 1 || groupSize > 20) {
       throw apiError(400, 'invalid', 'Antal deltagere er ugyldigt.');
     }
+    const audienceGroupId = typeof data.audienceGroupId === 'string' ? data.audienceGroupId.trim() : '';
     const waitlistPreferred = data.waitlistPreferred === true;
     const signupRef = db.collection('signups').doc();
     const contactRef = db.collection('signupContacts').doc(signupRef.id);
@@ -613,6 +615,11 @@ exports.submitSignup = onRequest({
       if (!slot) throw apiError(404, 'not_found', 'Pladsen findes ikke længere.');
       if (slot.registrationMode === 'memberService') {
         throw apiError(409, 'external_registration', 'Tilmeldingen foregår i Medlemsservice.');
+      }
+      const eligibleGroups = Array.isArray(slot.eligibleGroups) ? slot.eligibleGroups : [];
+      const audienceGroup = eligibleGroups.find(group => group && group.id === audienceGroupId);
+      if (eligibleGroups.length && !audienceGroup) {
+        throw apiError(400, 'invalid', 'Vælg en af de klaner eller hold, der kan tilmelde sig.');
       }
       const deadline = signupDeadlineDate(event, slot);
       if (deadline && copenhagenDate() > deadline) {
@@ -648,6 +655,7 @@ exports.submitSignup = onRequest({
         name,
         adult,
         groupSize,
+        ...(audienceGroup ? { audienceGroupId: audienceGroup.id, audienceGroupLabel: audienceGroup.label } : {}),
         created: FieldValue.serverTimestamp(),
         ...(waitlist ? { waitlist: true } : {}),
       });
@@ -670,6 +678,7 @@ exports.submitSignup = onRequest({
         event,
         slot,
         waitlist,
+        audienceGroup,
       };
     });
 
@@ -684,6 +693,7 @@ exports.submitSignup = onRequest({
           email,
           adult: !childMode && data.adult === true,
           groupSize,
+          audienceGroupLabel: outcome.audienceGroup?.label || '',
           location: outcome.event.location || '',
           dateText: outcome.event.dateText || '',
           eventDate: outcome.slot.date || '',

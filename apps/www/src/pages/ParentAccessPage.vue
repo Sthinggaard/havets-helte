@@ -68,7 +68,7 @@
             <button type="button" class="parent-signup__details" @click="openEvent(signup)">
               <strong>{{ signup.eventTitle }}</strong>
               <span>{{ signup.dateText }}<template v-if="signup.location"> · {{ signup.location }}</template></span>
-              <span>{{ signup.slotLabel }}<template v-if="signup.groupSize > 1"> · {{ signup.groupSize }} deltagere</template></span>
+              <span>{{ signup.slotLabel }}<template v-if="signup.groupSize > 1"> · {{ signup.groupSize }} deltagere</template><template v-if="signup.audienceGroupLabel"> · {{ signup.audienceGroupLabel }}</template></span>
               <span v-if="signup.waitlist" class="parent-signup__status">Venteliste</span>
               <span class="parent-signup__link">Se arrangementet →</span>
             </button>

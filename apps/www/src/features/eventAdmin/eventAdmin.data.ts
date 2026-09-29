@@ -155,6 +155,7 @@ export function createSlot(partial?: Partial<EventSlot>): EventSlot {
     cancelDeadlineDays: partial?.cancelDeadlineDays ?? 0,
     registrationMode: partial?.registrationMode ?? 'local',
     memberServiceUrl: partial?.memberServiceUrl ?? '',
+    eligibleGroups: partial?.eligibleGroups ? partial.eligibleGroups.map(group => ({ ...group })) : [],
     groupSize,
     groupMin: partial?.groupMin ?? groupSize,
     groupMax: partial?.groupMax ?? groupSize,
@@ -231,6 +232,15 @@ export function createAdminEventFromRecord(record: { id: string; [key: string]: 
           : slot.kind === 'paid' ? legacyCancelDeadlineDays : 0,
         registrationMode: slot.registrationMode === 'memberService' ? 'memberService' : 'local',
         memberServiceUrl: typeof slot.memberServiceUrl === 'string' ? slot.memberServiceUrl : '',
+        eligibleGroups: Array.isArray(slot.eligibleGroups)
+          ? slot.eligibleGroups.filter((group): group is Record<string, unknown> => !!group && typeof group === 'object').map(group => ({
+              id: typeof group.id === 'string' ? group.id : '',
+              label: typeof group.label === 'string' ? group.label : '',
+              branchId: typeof group.branchId === 'string' ? group.branchId : '',
+              branchLabel: typeof group.branchLabel === 'string' ? group.branchLabel : '',
+              team: typeof group.team === 'string' ? group.team : '',
+            })).filter(group => group.id && group.label && group.branchId && group.branchLabel)
+          : [],
         groupSize: typeof slot.groupSize === 'number' ? slot.groupSize : undefined,
         groupMin: typeof slot.groupMin === 'number' ? slot.groupMin : undefined,
         groupMax: typeof slot.groupMax === 'number' ? slot.groupMax : undefined,
@@ -338,6 +348,9 @@ export function toEventRecord(event: AdminEvent) {
       requiresAdult: slot.requiresAdult,
       ...(slot.componentType === 'signup' && slot.kind === 'paid' && slot.registrationMode === 'memberService'
         ? { registrationMode: 'memberService' as const, memberServiceUrl: slot.memberServiceUrl.trim() }
+        : {}),
+      ...(slot.componentType === 'signup' && slot.eligibleGroups.length
+        ? { eligibleGroups: slot.eligibleGroups.map(group => ({ ...group })) }
         : {}),
     })),
   };

@@ -7,6 +7,15 @@
         { "fieldPath": "eventId", "order": "ASCENDING" },
         { "fieldPath": "slotId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "signups",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "eventId", "order": "ASCENDING" },
+        { "fieldPath": "slotId", "order": "ASCENDING" },
+        { "fieldPath": "waitlist", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

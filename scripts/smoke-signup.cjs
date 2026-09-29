@@ -7,6 +7,7 @@ const {
   doc,
 } = require('../apps/www/node_modules/firebase/firestore');
 
+process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8081';
 const projectId = 'havets-helte';
 
 admin.initializeApp({ projectId });
@@ -35,6 +36,9 @@ async function main() {
         sublabel: '09:00-10:00',
         capacity: 1,
         requiresAdult: true,
+        eligibleGroups: [
+          { id: 'team:ulv:Mandagshold', label: 'Ulv · Mandagshold', branchId: 'ulv', branchLabel: 'Ulv', team: 'Mandagshold' },
+        ],
       },
     ],
   });
@@ -53,8 +57,27 @@ async function main() {
       waitlistPreferred: false,
     }),
   });
-  const result = await response.json();
-  if (!response.ok || result.status !== 'confirmed') {
+  if (response.ok) {
+    throw new Error('signup without an allowed group was accepted');
+  }
+
+  const allowedResponse = await fetch('http://127.0.0.1:5004/havets-helte/europe-west1/submitSignup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      eventId,
+      slotId: 'slot-a',
+      name: signupName,
+      email: signupEmail,
+      adult: true,
+      childMode: false,
+      groupSize: 1,
+      audienceGroupId: 'team:ulv:Mandagshold',
+      waitlistPreferred: false,
+    }),
+  });
+  const result = await allowedResponse.json();
+  if (!allowedResponse.ok || result.status !== 'confirmed') {
     throw new Error(`trusted signup failed: ${JSON.stringify(result)}`);
   }
   const signupId = result.signupId;
@@ -65,7 +88,8 @@ async function main() {
   }
 
   const signup = signupSnap.data() || {};
-  if (signup.eventId !== eventId || signup.slotId !== 'slot-a' || signup.name !== signupName) {
+  if (signup.eventId !== eventId || signup.slotId !== 'slot-a' || signup.name !== signupName
+    || signup.audienceGroupId !== 'team:ulv:Mandagshold' || signup.audienceGroupLabel !== 'Ulv · Mandagshold') {
     throw new Error('signup document content does not match the submitted payload');
   }
 

@@ -8,6 +8,7 @@ export type SignupRequestPayload = {
   adult: boolean;
   childMode: boolean;
   groupSize: number;
+  audienceGroupId?: string;
   waitlistPreferred: boolean;
 };
 
@@ -52,6 +53,7 @@ export async function submitSignupRequest(payload: SignupRequestPayload): Promis
       adult: payload.childMode ? false : payload.adult,
       childMode: payload.childMode,
       groupSize,
+      ...(payload.audienceGroupId ? { audienceGroupId: payload.audienceGroupId.trim() } : {}),
       waitlistPreferred: payload.waitlistPreferred,
     });
   } catch (error) {

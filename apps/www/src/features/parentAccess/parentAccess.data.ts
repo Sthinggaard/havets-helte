@@ -9,6 +9,7 @@ export type ParentSignup = {
   dateText: string;
   location: string;
   slotLabel: string;
+  audienceGroupLabel: string;
   waitlist: boolean;
   groupSize: number;
   createdAt: number;

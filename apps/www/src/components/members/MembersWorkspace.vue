@@ -51,10 +51,11 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Mødedag</span>
-            <select v-model="memberWeekday" class="field-input">
-              <option v-for="weekday in memberWeekdayOptions" :key="weekday" :value="weekday">
-                {{ weekday }}
+            <span class="field-label">Hold</span>
+            <select v-model="memberTeam" class="field-input" :disabled="!memberTeamOptions.length">
+              <option v-if="!memberTeamOptions.length" value="">Opret først et hold</option>
+              <option v-for="team in memberTeamOptions" :key="team.id" :value="team.label">
+                {{ team.label }} · {{ team.weekday }}
               </option>
             </select>
           </label>
@@ -81,6 +82,39 @@
             <button type="submit" class="btn-action btn-action--primary">Opret medlem</button>
           </div>
         </form>
+
+        <div class="team-create-panel">
+          <div class="member-create-head">
+            <div>
+              <p class="eyebrow">Holdopsætning</p>
+              <h2 class="member-create-title">Opret hold</h2>
+            </div>
+            <p class="member-create-copy">Holdene kan vælges, når du opretter medlemmer og bestemmer, hvem der kan tilmelde sig et arrangement.</p>
+          </div>
+          <form class="team-create-form" @submit.prevent="createTeam">
+            <label class="field">
+              <span class="field-label">Gren</span>
+              <select v-model="newTeamBranchId" class="field-input">
+                <option v-for="branch in branchOptions" :key="branch.id" :value="branch.id">{{ branch.label }}</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Holdnavn</span>
+              <input v-model="newTeamName" class="field-input" type="text" placeholder="Fx Tirsdagshold" />
+            </label>
+            <label class="field">
+              <span class="field-label">Mødedag</span>
+              <select v-model="newTeamWeekday" class="field-input" :disabled="!newTeamWeekdayOptions.length">
+                <option v-for="weekday in newTeamWeekdayOptions" :key="weekday" :value="weekday">{{ weekday }}</option>
+              </select>
+            </label>
+            <div class="team-create-actions">
+              <p v-if="teamError" class="member-create-error" role="alert">{{ teamError }}</p>
+              <p v-else-if="teamNotice" class="team-create-notice" role="status">{{ teamNotice }}</p>
+              <button type="submit" class="btn-action btn-action--primary" :disabled="!branchOptions.length">Opret hold</button>
+            </div>
+          </form>
+        </div>
       </section>
 
       <section class="members-toolbar">
@@ -273,6 +307,7 @@ const {
   branchOptions,
   clearMemberImage,
   createMember,
+  createTeam,
   counts,
   filteredMembers,
   memberActive,
@@ -280,8 +315,12 @@ const {
   memberBranchId,
   memberError,
   memberName,
-  memberWeekday,
-  memberWeekdayOptions,
+  memberTeam,
+  memberTeamOptions,
+  newTeamBranchId,
+  newTeamName,
+  newTeamWeekday,
+  newTeamWeekdayOptions,
   searchTerm,
   selectedMember,
   selectMember,
@@ -290,6 +329,8 @@ const {
   setStatusFilter,
   statusFilter,
   timeline,
+  teamError,
+  teamNotice,
 } = useMembersPage();
 
 const { items, categories, uploadItem } = useLibraryPage();
@@ -372,6 +413,36 @@ async function handleImageUpload(file: File, categoryId: string) {
   align-items: end;
 }
 
+.team-create-panel {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(216, 225, 234, 0.92);
+}
+
+.team-create-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.team-create-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+.team-create-notice {
+  margin: 0;
+  color: var(--teal-deep);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -429,10 +500,16 @@ async function handleImageUpload(file: File, categoryId: string) {
   .member-create-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .team-create-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
   .member-create-form {
+    grid-template-columns: 1fr;
+  }
+  .team-create-form {
     grid-template-columns: 1fr;
   }
 

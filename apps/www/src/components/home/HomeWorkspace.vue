@@ -27,13 +27,16 @@
               </span>
               <div class="event-card-head">
                 <h2 class="row-title">{{ item.title }}</h2>
-                <span class="pill pill--soft">{{ item.spots }}</span>
+                <span class="pill pill--soft">{{ item.confirmedCount !== undefined && item.capacityCount ? `${item.confirmedCount}/${item.capacityCount} ${item.parentTypes?.length === 2 ? 'vagter/opgaver' : item.type === 'shift' ? 'vagter' : 'opgaver'}` : item.spots }}</span>
               </div>
               <p class="row-copy">{{ item.summary }}</p>
               <div class="event-card-meta">
-                <span>{{ item.dateText }}</span>
-                <span>{{ item.location }}</span>
-                <span>{{ item.parentTypes?.length === 2 ? 'Vagt og opgave' : typeLabel(item.type) }}</span>
+                <span v-if="item.dateText">{{ item.dateText }}</span>
+                <span v-if="item.location">{{ item.location }}</span>
+                <span v-if="item.parentTypes?.length">{{ item.parentTypes.length === 2 ? 'Vagt og opgave' : typeLabel(item.type) }}</span>
+              </div>
+              <div v-if="item.signupAudienceLabels?.length" class="event-audience-tags">
+                <span v-for="label in item.signupAudienceLabels" :key="label" class="event-audience-tag">{{ label }}</span>
               </div>
             </div>
           </RouterLink>
@@ -95,6 +98,21 @@ const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
 .home-event-card .event-card-head {
   width: 100%;
   align-items: flex-start;
+}
+
+.event-audience-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.event-audience-tag {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #bcebf0;
+  color: #064b5a;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 </style>

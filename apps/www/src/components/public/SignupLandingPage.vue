@@ -33,6 +33,10 @@
         :location="selectedEvent?.location"
         :elements="selectedEvent?.slots.length ?? 0"
       />
+      <div v-if="selectedEventAudienceLabels.length" class="event-audience-list">
+        <span class="event-audience-label">Tilmelding for:</span>
+        <span v-for="label in selectedEventAudienceLabels" :key="label" class="event-audience-chip">{{ label }}</span>
+      </div>
     </template>
 
     <template #body>
@@ -134,6 +138,7 @@
                   <div class="signup-sub">
                     {{ signup.waitlist ? 'Venteliste' : 'Bekræftet' }}
                     <span v-if="signup.adult"> · 18+</span>
+                    <span v-if="signup.audienceGroupLabel"> · {{ signup.audienceGroupLabel }}</span>
                   </div>
                 </div>
               </div>
@@ -193,7 +198,7 @@
                     <span class="signup-av">{{ initials(signup.name) }}</span>
                     <div class="signup-main">
                       <div class="signup-name">{{ signup.name }}<span v-if="signup.groupSize > 1" class="group-badge">× {{ signup.groupSize }}</span></div>
-                      <div class="signup-sub">{{ signup.waitlist ? 'Venteliste' : 'Bekræftet' }}<span v-if="signup.adult"> · 18+</span></div>
+                      <div class="signup-sub">{{ signup.waitlist ? 'Venteliste' : 'Bekræftet' }}<span v-if="signup.adult"> · 18+</span><span v-if="signup.audienceGroupLabel"> · {{ signup.audienceGroupLabel }}</span></div>
                     </div>
                   </div>
                 </div>
@@ -251,6 +256,15 @@
           <span v-if="errors.email" class="field-error" role="alert">{{ errors.email }}</span>
         </label>
 
+        <label v-if="eligibleGroups.length" class="field" :class="{ error: errors.audienceGroup }">
+          <span class="field-label">Klan eller hold</span>
+          <select v-model="form.audienceGroupId" class="field-input">
+            <option value="">Vælg klan eller hold</option>
+            <option v-for="group in eligibleGroups" :key="group.id" :value="group.id">{{ group.label }}</option>
+          </select>
+          <span v-if="errors.audienceGroup" class="field-error" role="alert">{{ errors.audienceGroup }}</span>
+        </label>
+
         <label v-if="showAdultToggle" class="check-row">
           <input v-model="form.adult" type="checkbox" />
           <span>{{ adultLabel }}</span>
@@ -292,7 +306,7 @@ import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.v
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
-import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
+import type { AdminEvent, EventSlot, EventType, SignupAudienceGroup } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
 import { buildMapsEmbedUrl, buildMapsUrl } from '@/lib/maps';
 import HeroMeta from './HeroMeta.vue';
@@ -301,6 +315,7 @@ import { submitSignupRequest } from '@/lib/signupApi';
 type LandingSection = EventType;
 
 type SignupRow = {
+  audienceGroupLabel: string;
   adult: boolean;
   groupSize: number;
   id: string;
@@ -378,10 +393,12 @@ const submitting = ref(false);
 const toastVisible = ref(false);
 const toastText = ref('Du er tilmeldt — tak for hjælpen!');
 const adultLabel = ref('Jeg er 18+ år');
+const eligibleGroups = computed<SignupAudienceGroup[]>(() => modalSlot.value?.eligibleGroups ?? []);
 
 const form = reactive({
   name: '',
   email: '',
+  audienceGroupId: '',
   childMode: false,
   adult: false,
   groupSize: 1,
@@ -390,6 +407,7 @@ const form = reactive({
 const errors = reactive({
   name: '',
   email: '',
+  audienceGroup: '',
   groupSize: '',
   general: '',
 });
@@ -450,6 +468,14 @@ const calendarMonthGroups = computed(() => {
 const visibleSlotGroups = computed(() => {
   const selectedDate = selectedCalendarDate.value || calendarGroups.value[0]?.id;
   return slotGroups.value.filter(group => groupDateKey(group) === selectedDate);
+});
+const selectedEventAudienceLabels = computed(() => {
+  const labels = new Set<string>();
+  for (const slot of selectedEvent.value?.slots ?? []) {
+    if (slot.componentType !== 'signup') continue;
+    for (const group of slot.eligibleGroups) labels.add(group.label);
+  }
+  return [...labels];
 });
 const locationMapUrl = computed(() => buildMapsEmbedUrl(selectedEvent.value?.location));
 
@@ -564,6 +590,7 @@ async function loadSignups(eventId: string) {
         adult: !!data.adult,
         groupSize: Number.isFinite(Number(data.groupSize)) ? Number(data.groupSize) : 1,
         waitlist: !!data.waitlist,
+        audienceGroupLabel: typeof data.audienceGroupLabel === 'string' ? data.audienceGroupLabel : '',
       };
       if (!next[slotId]) next[slotId] = [];
       next[slotId].push(row);
@@ -755,6 +782,7 @@ function initials(name: string) {
 function resetErrors() {
   errors.name = '';
   errors.email = '';
+  errors.audienceGroup = '';
   errors.groupSize = '';
   errors.general = '';
 }
@@ -769,6 +797,7 @@ function openSignup(slot: EventSlot, waitlistPreferred = false) {
   form.childMode = false;
   form.adult = false;
   form.groupSize = slot.groupSize || slot.groupMax || 1;
+  form.audienceGroupId = slot.eligibleGroups.length === 1 ? slot.eligibleGroups[0].id : '';
   form.name = '';
   form.email = '';
   adultLabel.value = `Jeg er ${slot.minAge || 18}+ år`;
@@ -798,6 +827,9 @@ function validateForm() {
   } else if (!form.childMode && !form.email.includes('@')) {
     errors.email = 'Mailadressen ser ikke rigtig ud.';
   }
+  if (eligibleGroups.value.length && !eligibleGroups.value.some(group => group.id === form.audienceGroupId)) {
+    errors.audienceGroup = 'Vælg den klan eller det hold, du tilmelder.';
+  }
   if (showGroupSize.value) {
     const value = Number(form.groupSize);
     if (!Number.isInteger(value) || value < groupMin.value || value > groupMax.value) {
@@ -825,6 +857,7 @@ async function submit() {
       adult: form.childMode ? false : form.adult,
       childMode: form.childMode,
       groupSize: showGroupSize.value ? Number(form.groupSize) : 1,
+      audienceGroupId: form.audienceGroupId,
       waitlistPreferred: waitlistMode.value,
     });
 
@@ -1423,6 +1456,27 @@ onBeforeUnmount(() => {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.event-audience-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.event-audience-label {
+  color: #fff;
+  font-weight: 700;
+}
+
+.event-audience-chip {
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #bcebf0;
+  color: #064b5a;
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .slot-card-chip {

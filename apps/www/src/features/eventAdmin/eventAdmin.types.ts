@@ -11,6 +11,14 @@ export type SignupRegistrationMode = 'local' | 'memberService';
 export type SlotScheduleMode = 'fixed' | 'relative' | 'weekly' | 'biweekly';
 export type SlotRelativeTo = 'event';
 
+export interface SignupAudienceGroup {
+  id: string;
+  label: string;
+  branchId: string;
+  branchLabel: string;
+  team: string;
+}
+
 export interface EventSlot {
   id: string;
   // An arrangement can combine practical tasks and time-bound shifts. This
@@ -62,6 +70,9 @@ export interface EventSlot {
   // Medlemsservice. Local signups remain the default for legacy records.
   registrationMode: SignupRegistrationMode;
   memberServiceUrl: string;
+  // Empty means all branches/teams can sign up. Otherwise signup requires
+  // selecting one of these roster groups.
+  eligibleGroups: SignupAudienceGroup[];
   groupSize: number;
   groupMin: number;
   groupMax: number;
