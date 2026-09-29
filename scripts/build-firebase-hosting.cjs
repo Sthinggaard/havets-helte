@@ -2,7 +2,7 @@ const { spawnSync } = require('node:child_process');
 const { readFileSync } = require('node:fs');
 
 const allowedScripts = new Set(['build', 'build:dev', 'build:stage', 'build:prod']);
-const script = process.env.FIREBASE_HOSTING_BUILD_SCRIPT || 'build';
+const script = process.env.FIREBASE_HOSTING_BUILD_SCRIPT || 'build:prod';
 const envFilesByScript = new Map([
   ['build:dev', 'apps/www/.env.dev'],
   ['build:stage', 'apps/www/.env.stage'],
