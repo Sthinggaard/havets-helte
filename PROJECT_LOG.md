@@ -1,5 +1,10 @@
 # Project Log
 
+## 2026-09-29
+
+- Ported the requested home-feed tabs to current `main`: `task`/`timed` items appear under “Forældrehelte-opgaver”, `event` items under “Spejdertilmeldinger”, counts are shown, and each card has a matching badge. Removed the redundant “Arrangementer, opgaver og vagter” heading. Filtering does not change event or signup data.
+- Added a pnpm workspace build-script allowlist for the three dependency scripts required by the app and generated a pnpm lockfile so `make app` installs consistently.
+
 ## 2026-06-24 (2)
 
 - Confirmed TODO #5 ("move public events read to Firestore") was already implemented in the working tree: `useEventsPage` reads live events via `fetchAllAdminEvents()` against the publicly-readable `events` collection, maps `timed → shift`, and only falls back to the static seed when the collection is empty.

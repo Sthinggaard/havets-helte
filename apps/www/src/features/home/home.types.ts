@@ -1,6 +1,6 @@
 import type { EventItem, EventFilterType } from '../events/events.types';
 
-export type HomeTabId = EventFilterType | 'mine';
+export type HomeTabId = 'parents' | 'scout-signups';
 
 export interface HomeFeedItem extends EventItem {
   ctaLabel: string;

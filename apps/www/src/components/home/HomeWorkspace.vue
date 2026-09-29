@@ -13,10 +13,20 @@
 
     <div class="page-shell home-shell">
       <div class="content home-content">
-        <div class="section-head section-head--compact">
-          <div>
-            <h2 class="section-title">Arrangementer, opgaver og vagter</h2>
-          </div>
+        <div class="filter-tabs home-filter-tabs" role="tablist" aria-label="Vælg opslagstype">
+          <button
+            v-for="tab in homeTabs"
+            :key="tab.id"
+            type="button"
+            class="filter-tab"
+            role="tab"
+            :aria-selected="activeTab === tab.id"
+            :class="{ active: activeTab === tab.id }"
+            @click="selectTab(tab.id)"
+          >
+            {{ tab.label }}
+            <span class="filter-tab-count">{{ counts[tab.id] }}</span>
+          </button>
         </div>
 
         <div class="events-grid home-events-grid">
@@ -28,6 +38,9 @@
           >
             <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
             <div class="event-card-body">
+              <span class="home-category-badge">
+                {{ item.type === 'event' ? 'Tilmelding for spejderne' : 'Forældrehelte-opgave' }}
+              </span>
               <div class="event-card-head">
                 <h2 class="row-title">{{ item.title }}</h2>
                 <span class="pill pill--soft">{{ item.spots }}</span>
@@ -51,13 +64,30 @@ import { RouterLink } from 'vue-router';
 
 import { useHomePage } from '@/features/home/useHomePage';
 
-const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
+const { activeTab, counts, homeFeedItems, homeHero, homeTabs, feedHref, selectTab, typeLabel } = useHomePage();
 </script>
 
 <style scoped>
 .home-events-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
   justify-content: center;
+}
+
+.home-filter-tabs {
+  margin: 0 0 20px;
+}
+
+.home-category-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--navy-soft);
+  color: var(--navy);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .home-event-card {

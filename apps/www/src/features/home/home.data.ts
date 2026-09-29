@@ -4,19 +4,8 @@ import type { EventFilterType } from '../events/events.types';
 import type { HomeFeedItem, HomeSignupItem, HomeTabId } from './home.types';
 
 export const homeTabs: Array<{ id: HomeTabId; label: string }> = [
-  { id: 'all', label: 'Alle' },
-  { id: 'task', label: 'Opgaver' },
-  { id: 'shift', label: 'Vagter' },
-  { id: 'event', label: 'Events' },
-  { id: 'mine', label: 'Min tilmeldinger' },
-];
-
-export const homeMineTabs: Array<{ id: HomeTabId; label: string }> = [
-  { id: 'all', label: 'Alle' },
-  { id: 'task', label: 'Opgaver' },
-  { id: 'shift', label: 'Vagter' },
-  { id: 'event', label: 'Events' },
-  { id: 'mine', label: 'Min tilmeldinger' },
+  { id: 'parents', label: 'Forældrehelte-opgaver' },
+  { id: 'scout-signups', label: 'Spejdertilmeldinger' },
 ];
 
 export const homeHero = {

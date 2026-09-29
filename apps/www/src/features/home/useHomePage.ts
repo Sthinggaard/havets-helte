@@ -1,13 +1,13 @@
 import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent } from '@/features/eventAdmin/eventAdmin.types';
 
-import { homeHero, toHomeFeedItem } from './home.data';
+import { homeHero, homeTabs, toHomeFeedItem } from './home.data';
 import type { HomeFeedItem, HomeTabId } from './home.types';
 
-function typeLabel(type: HomeTabId) {
+function typeLabel(type: HomeFeedItem['type']) {
   if (type === 'event') return 'Event';
   if (type === 'shift') return 'Vagt';
   if (type === 'task') return 'Opgave';
@@ -15,9 +15,17 @@ function typeLabel(type: HomeTabId) {
 }
 
 export function useHomePage() {
+  const route = useRoute();
   const router = useRouter();
   const items = ref<HomeFeedItem[]>([]);
   const loading = ref(true);
+  const activeTab = computed<HomeTabId>(() =>
+    route.query.tab === 'scout-signups' || route.query.tab === 'event' ? 'scout-signups' : 'parents',
+  );
+  const counts = computed<Record<HomeTabId, number>>(() => ({
+    parents: items.value.filter(item => item.type !== 'event').length,
+    'scout-signups': items.value.filter(item => item.type === 'event').length,
+  }));
 
   function isLivePublic(event: AdminEvent) {
     return event.active;
@@ -45,11 +53,21 @@ export function useHomePage() {
     }).href;
   }
 
+  function selectTab(tab: HomeTabId) {
+    router.replace({ query: { ...route.query, tab } });
+  }
+
   return {
-    homeFeedItems: computed(() => items.value),
+    activeTab,
+    counts,
+    homeFeedItems: computed(() => items.value.filter(item =>
+      activeTab.value === 'scout-signups' ? item.type === 'event' : item.type !== 'event',
+    )),
     homeHero,
     feedHref,
+    homeTabs,
     loading,
+    selectTab,
     typeLabel,
   };
 }
