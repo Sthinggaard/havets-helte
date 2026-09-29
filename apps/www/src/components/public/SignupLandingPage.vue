@@ -66,7 +66,7 @@
                 type="button"
                 role="tab"
                 class="shift-tab"
-                :class="{ active: day.id === selectedCalendarDate, full: calendarDayIsFull(day), task: calendarDayHasTask(day) && !calendarDayHasShift(day) }"
+                :class="{ active: day.id === selectedCalendarDate, full: calendarDayIsFull(day), task: calendarDayHasTask(day) && !calendarDayHasShift(day) && !calendarDayHasSignup(day), signup: calendarDayHasSignup(day) && !calendarDayHasShift(day) }"
                 :aria-selected="day.id === selectedCalendarDate"
                 :aria-label="`${calendarDayLabel(day)}, ${calendarDayIsFull(day) ? 'fyldt' : 'ledige pladser'}`"
                 @click="selectedCalendarDate = day.id"
@@ -683,7 +683,11 @@ function updateCalendarTabsOverflow() {
 }
 
 function calendarDayHasTask(day: SlotGroup) {
-  return day.slots.some(slot => slot.componentType === 'task' || slot.componentType === 'signup');
+  return day.slots.some(slot => slot.componentType === 'task');
+}
+
+function calendarDayHasSignup(day: SlotGroup) {
+  return day.slots.some(slot => slot.componentType === 'signup');
 }
 
 function calendarDayHasShift(day: SlotGroup) {
@@ -1261,6 +1265,20 @@ onBeforeUnmount(() => {
 .shift-tab.task.active {
   border-color: #c79d25;
   box-shadow: 0 0 0 3px rgba(199, 157, 37, 0.18);
+}
+
+.shift-tab.signup {
+  border-color: var(--teal);
+  color: var(--teal-deep);
+}
+
+.shift-tab.signup .shift-tab-calendar {
+  background: var(--bg);
+}
+
+.shift-tab.signup.active {
+  border-color: var(--teal-deep);
+  box-shadow: 0 0 0 3px rgba(20, 110, 136, 0.16);
 }
 
 .shift-tab:focus-visible {
