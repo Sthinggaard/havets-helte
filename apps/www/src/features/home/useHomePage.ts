@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent } from '@/features/eventAdmin/eventAdmin.types';
 
-import { homeHero, homeTabs, toHomeFeedItem } from './home.data';
+import { homeHero, homeTabs, toHomeFeedItems } from './home.data';
 import type { HomeFeedItem, HomeTabId } from './home.types';
 
 function typeLabel(type: HomeFeedItem['type']) {
@@ -36,7 +36,7 @@ export function useHomePage() {
       const live = (await fetchAllAdminEvents()).filter(isLivePublic);
       items.value = live
         .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || a.title.localeCompare(b.title, 'da'))
-        .map(toHomeFeedItem);
+        .flatMap(toHomeFeedItems);
     } catch (error) {
       console.error('[home] live load failed', error);
     } finally {
@@ -44,12 +44,10 @@ export function useHomePage() {
     }
   });
 
-  function feedHref(itemId: string) {
-    const item = items.value.find(feed => feed.id === itemId);
-    if (!item) return '/';
+  function feedHref(item: HomeFeedItem) {
     return router.resolve({
       path: item.ctaRoute,
-      query: item.id ? { event: item.id } : undefined,
+      query: item.eventId || item.id ? { event: item.eventId || item.id } : undefined,
     }).href;
   }
 

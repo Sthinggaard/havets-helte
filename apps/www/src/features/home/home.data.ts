@@ -39,11 +39,11 @@ function spotsLabel(event: AdminEvent): string {
   return `${total} ${total === 1 ? 'plads' : 'pladser'}`;
 }
 
-export function toHomeFeedItem(event: AdminEvent): HomeFeedItem {
-  const feedType = toFeedType(event.type);
+export function toHomeFeedItem(event: AdminEvent, feedType = toFeedType(event.type), id = event.id): HomeFeedItem {
   const fallbackImage = eventItems.find(item => item.type === feedType)?.image || '/og-sankthans.webp';
   return {
-    id: event.id,
+    id,
+    eventId: event.id,
     type: feedType,
     title: event.title,
     dateText: event.dateText,
@@ -54,6 +54,18 @@ export function toHomeFeedItem(event: AdminEvent): HomeFeedItem {
     ctaLabel: toCtaLabel(feedType),
     ctaRoute: toCtaRoute(event.type),
   };
+}
+
+export function toHomeFeedItems(event: AdminEvent): HomeFeedItem[] {
+  if (event.type !== 'event') return [toHomeFeedItem(event)];
+
+  const componentTypes = new Set(event.slots.map(slot => slot.componentType));
+  const feedTypes = (['shift', 'task', 'event'] as const).filter(type =>
+    type === 'event' ? componentTypes.has('signup') : componentTypes.has(type),
+  );
+  const types = feedTypes.length ? feedTypes : [toFeedType(event.type)];
+
+  return types.map(type => toHomeFeedItem(event, type, `${event.id}:${type}`));
 }
 
 export const homeFeedItems: HomeFeedItem[] = eventItems.map(item => ({

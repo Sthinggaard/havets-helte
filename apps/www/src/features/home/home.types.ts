@@ -3,6 +3,7 @@ import type { EventItem, EventFilterType } from '../events/events.types';
 export type HomeTabId = 'parents' | 'scout-signups';
 
 export interface HomeFeedItem extends EventItem {
+  eventId?: string;
   ctaLabel: string;
   ctaRoute: string;
 }

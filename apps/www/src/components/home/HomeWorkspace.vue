@@ -34,7 +34,7 @@
             v-for="item in homeFeedItems"
             :key="item.id"
             class="event-card home-event-card"
-            :to="feedHref(item.id)"
+            :to="feedHref(item)"
           >
             <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
             <div class="event-card-body">
