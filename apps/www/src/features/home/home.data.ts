@@ -1,12 +1,7 @@
 import type { AdminEvent, EventType } from '../eventAdmin/eventAdmin.types';
 import { eventItems } from '../events/events.data';
 import type { EventFilterType } from '../events/events.types';
-import type { HomeFeedItem, HomeSignupItem, HomeTabId } from './home.types';
-
-export const homeTabs: Array<{ id: HomeTabId; label: string }> = [
-  { id: 'parents', label: 'Forældrehelte-opgaver' },
-  { id: 'scout-signups', label: 'Spejdertilmeldinger' },
-];
+import type { HomeFeedItem, HomeSignupItem } from './home.types';
 
 export const homeHero = {
   badge: 'Havets Helte',

@@ -13,22 +13,6 @@
 
     <div class="page-shell home-shell">
       <div class="content home-content">
-        <div class="filter-tabs home-filter-tabs" role="tablist" aria-label="Vælg opslagstype">
-          <button
-            v-for="tab in homeTabs"
-            :key="tab.id"
-            type="button"
-            class="filter-tab"
-            role="tab"
-            :aria-selected="activeTab === tab.id"
-            :class="{ active: activeTab === tab.id }"
-            @click="selectTab(tab.id)"
-          >
-            {{ tab.label }}
-            <span class="filter-tab-count">{{ counts[tab.id] }}</span>
-          </button>
-        </div>
-
         <div class="events-grid home-events-grid">
           <RouterLink
             v-for="item in homeFeedItems"
@@ -64,17 +48,13 @@ import { RouterLink } from 'vue-router';
 
 import { useHomePage } from '@/features/home/useHomePage';
 
-const { activeTab, counts, homeFeedItems, homeHero, homeTabs, feedHref, selectTab, typeLabel } = useHomePage();
+const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
 </script>
 
 <style scoped>
 .home-events-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
   justify-content: center;
-}
-
-.home-filter-tabs {
-  margin: 0 0 20px;
 }
 
 .home-category-badge {

@@ -36,7 +36,8 @@
           :key="item.path"
           class="app-navigation__link"
           :to="item.path"
-          exact-active-class="app-navigation__link--active"
+          :exact-active-class="isHomeCategory(item.path) ? '' : 'app-navigation__link--active'"
+          :class="{ 'app-navigation__link--active': isHomeCategory(item.path) && isHomeCategoryActive(item.path) }"
           @click="menuOpen = false"
         >
           {{ item.label }}
@@ -84,6 +85,17 @@ const visibleNavigationItems = computed(() => {
   const publicItems = publicNavigationItems.filter(item => item.path !== '/admin' && item.path !== '/mine');
   return [...publicItems, ...adminNavigationItems];
 });
+
+function isHomeCategory(path: string) {
+  return path.startsWith('/?tab=');
+}
+
+function isHomeCategoryActive(path: string) {
+  if (route.path !== '/') return false;
+  const selectedCategory = path.split('tab=')[1];
+  const scoutSignupsSelected = route.query.tab === 'scout-signups' || route.query.tab === 'event';
+  return selectedCategory === 'scout-signups' ? scoutSignupsSelected : !scoutSignupsSelected;
+}
 
 async function handleLogout() {
   try {

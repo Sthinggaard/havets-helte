@@ -2,7 +2,7 @@
 
 ## Next steps
 
-- **DONE — split the home feed into two tabs.** Parent volunteer tasks/shifts and scout signup events are separated, cards are labeled by type, and the redundant “Arrangementer, opgaver og vagter” heading is removed. Implemented 2026-09-29.
+- **DONE — split the home feed into two menu destinations.** Parent volunteer tasks/shifts and scout signup events have separate links in the main menu, cards are labeled by type, and the redundant “Arrangementer, opgaver og vagter” heading is removed. Implemented 2026-09-29.
 - **DONE — allow multiple recurrence weekdays for shifts.** The planning form accepts any combination of Monday through Sunday; weekly and every-other-week schedules create occurrences for the selected weekdays. Implemented 2026-09-29.
 - **DONE — make shift start time selectable.** Start times use 30-minute steps; end times follow the selected shift duration and each added period begins at the previous period's end. Implemented 2026-09-29.
 - **DONE — categorize mixed arrangement components on the home feed.** Shift and parent-task components share one card under parent tasks; scout signup components appear in a card under scout signups. Mixed arrangements appear once in each relevant tab. Implemented 2026-09-29.

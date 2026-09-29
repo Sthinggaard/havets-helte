@@ -1,5 +1,6 @@
 export const publicNavigationItems = [
-  { path: '/', label: 'Forældreopgaver' },
+  { path: '/?tab=parents', label: 'Forældreopgaver' },
+  { path: '/?tab=scout-signups', label: 'Spejdertilmeldinger' },
   { path: '/frivillighelte', label: 'Frivillighelte' },
   { path: '/mine', label: 'Mine tilmeldinger' },
   { path: '/admin', label: 'Leder-login' },

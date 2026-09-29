@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent } from '@/features/eventAdmin/eventAdmin.types';
 
-import { homeHero, homeTabs, toHomeFeedItems } from './home.data';
+import { homeHero, toHomeFeedItems } from './home.data';
 import type { HomeFeedItem, HomeTabId } from './home.types';
 
 function typeLabel(type: HomeFeedItem['type']) {
@@ -22,11 +22,6 @@ export function useHomePage() {
   const activeTab = computed<HomeTabId>(() =>
     route.query.tab === 'scout-signups' || route.query.tab === 'event' ? 'scout-signups' : 'parents',
   );
-  const counts = computed<Record<HomeTabId, number>>(() => ({
-    parents: items.value.filter(item => item.type !== 'event').length,
-    'scout-signups': items.value.filter(item => item.type === 'event').length,
-  }));
-
   function isLivePublic(event: AdminEvent) {
     return event.active;
   }
@@ -51,21 +46,14 @@ export function useHomePage() {
     }).href;
   }
 
-  function selectTab(tab: HomeTabId) {
-    router.replace({ query: { ...route.query, tab } });
-  }
-
   return {
     activeTab,
-    counts,
     homeFeedItems: computed(() => items.value.filter(item =>
       activeTab.value === 'scout-signups' ? item.type === 'event' : item.type !== 'event',
     )),
     homeHero,
     feedHref,
-    homeTabs,
     loading,
-    selectTab,
     typeLabel,
   };
 }

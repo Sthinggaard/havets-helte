@@ -30,7 +30,8 @@
           :key="item.path"
           class="public-navigation__link"
           :to="item.path"
-          exact-active-class="public-navigation__link--active"
+          :exact-active-class="isHomeCategory(item.path) ? '' : 'public-navigation__link--active'"
+          :class="{ 'public-navigation__link--active': isHomeCategory(item.path) && isHomeCategoryActive(item.path) }"
           @click="menuOpen = false"
         >
           {{ item.label }}
@@ -42,11 +43,23 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 
 import { publicNavigationItems } from '@/content/navigation';
 
 const menuOpen = ref(false);
+const route = useRoute();
+
+function isHomeCategory(path: string) {
+  return path.startsWith('/?tab=');
+}
+
+function isHomeCategoryActive(path: string) {
+  if (route.path !== '/') return false;
+  const selectedCategory = path.split('tab=')[1];
+  const scoutSignupsSelected = route.query.tab === 'scout-signups' || route.query.tab === 'event';
+  return selectedCategory === 'scout-signups' ? scoutSignupsSelected : !scoutSignupsSelected;
+}
 </script>
 
 <style scoped>
