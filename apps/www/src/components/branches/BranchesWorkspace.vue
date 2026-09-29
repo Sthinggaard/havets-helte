@@ -70,7 +70,7 @@
                 </div>
                 <div class="admin-card-meta">
                   <span>{{ branch.ageRangeLabel }}</span>
-                  <span>· {{ branch.meetingDays.join(', ') }}</span>
+                <span>· {{ branch.meetingSchedules?.map(day => `${day.weekday}${day.startTime && day.endTime ? ` ${day.startTime}–${day.endTime}` : ''}`).join(', ') ?? branch.meetingDays.join(', ') }}</span>
                 </div>
                 <div class="admin-card-copy">{{ branch.focus }}</div>
               </div>
@@ -161,10 +161,19 @@
           />
         </div>
 
-        <div class="field">
-          <label for="branchDays">Mødedage</label>
-          <input id="branchDays" v-model="draftMeetingDays" type="text" class="form-input" placeholder="Mandag, Onsdag" />
-        </div>
+        <section class="branch-members">
+          <div class="divider">Mødedage og tid</div>
+          <div v-for="(day, index) in draftMeetingSchedules" :key="`${day.weekday}-${index}`" class="schedule-row">
+            <select v-model="day.weekday" class="form-input" aria-label="Ugedag">
+              <option v-for="weekday in weekdays" :key="weekday" :value="weekday">{{ weekday }}</option>
+            </select>
+            <input v-model="day.startTime" type="time" class="form-input" :aria-label="`${day.weekday} starttid`" />
+            <span>til</span>
+            <input v-model="day.endTime" type="time" class="form-input" :aria-label="`${day.weekday} sluttid`" />
+            <button type="button" class="btn-action" aria-label="Fjern mødedag" @click="removeMeetingDay(index)">Fjern</button>
+          </div>
+          <button type="button" class="btn-action" @click="addMeetingDay">+ Tilføj mødedag</button>
+        </section>
 
         <div v-if="draftError" class="field-error" role="alert">{{ draftError }}</div>
 
@@ -191,6 +200,32 @@
             <div v-if="!branchMembers.length" class="admin-empty">Ingen medlemmer i denne gren endnu.</div>
           </div>
         </section>
+
+        <section v-if="formBranch" class="branch-members">
+          <div class="divider">Hold i grenen</div>
+          <div class="stacked-list">
+            <article v-for="team in branchTeams" :key="team.id" class="member-compact-row">
+              <div class="member-card-main">
+                <div class="member-card-title">{{ team.label }}</div>
+                <div class="member-card-meta"><span>{{ team.weekday }} · {{ team.startTime }}–{{ team.endTime }}</span><span>{{ team.seasonStartDate || '—' }} til {{ team.seasonEndDate || '—' }}</span></div>
+              </div>
+              <button type="button" class="btn-action" @click="startEditTeam(team)">Rediger</button>
+            </article>
+            <div v-if="!branchTeams.length" class="admin-empty">Ingen hold i grenen endnu.</div>
+          </div>
+          <div class="team-editor">
+            <div class="field"><label for="teamName">{{ editingTeamId ? 'Rediger hold' : 'Nyt hold' }}</label><input id="teamName" v-model="draftTeam.label" class="form-input" placeholder="Fx Tirsdagshold" /></div>
+            <div class="team-fields">
+              <label class="field"><span>Ugedag</span><select :value="draftTeam.weekday" class="form-input" @change="selectTeamWeekday(($event.target as HTMLSelectElement).value)"><option v-for="day in draftMeetingSchedules" :key="day.weekday" :value="day.weekday">{{ day.weekday }}</option></select></label>
+              <label class="field"><span>Fra</span><input v-model="draftTeam.startTime" type="time" class="form-input" /></label>
+              <label class="field"><span>Til</span><input v-model="draftTeam.endTime" type="time" class="form-input" /></label>
+              <label class="field"><span>Sæson fra</span><input v-model="draftTeam.seasonStartDate" type="date" class="form-input" /></label>
+              <label class="field"><span>Sæson til</span><input v-model="draftTeam.seasonEndDate" type="date" class="form-input" /></label>
+            </div>
+            <p v-if="teamError" class="field-error" role="alert">{{ teamError }}</p>
+            <div class="form-footer"><button type="button" class="btn-action btn-action--primary" @click="onSaveTeam">{{ editingTeamId ? 'Gem hold' : 'Opret hold' }}</button><button v-if="editingTeamId" type="button" class="btn-action" @click="resetTeamDraft">Annuller</button></div>
+          </div>
+        </section>
       </form>
     </template>
 
@@ -209,6 +244,8 @@ import { useBranchesPage } from '@/features/branches/useBranchesPage';
 const {
   branchCards,
   branchMembers,
+  branchTeams,
+  addMeetingDay,
   cancelBranchEditing,
   draftActive,
   draftError,
@@ -218,6 +255,7 @@ const {
   draftMaxAgePercent,
   draftMaxAge,
   draftMeetingDays,
+  draftMeetingSchedules,
   draftMinAgePercent,
   draftMinAge,
   draftUpperAge,
@@ -231,7 +269,17 @@ const {
   saveBranch,
   startCreateBranch,
   startEditBranch,
+  removeMeetingDay,
+  draftTeam,
+  teamError,
+  editingTeamId,
+  resetTeamDraft,
+  startEditTeam,
+  selectTeamWeekday,
+  saveTeam,
 } = useBranchesPage();
+
+const weekdays = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
 
 const heroImage = '/og-sankthans.webp';
 
@@ -286,6 +334,11 @@ function onSaveBranch() {
   if (!saved) return;
   showToast(wasCreating ? `Gren oprettet: ${branchName}` : `Gren gemt: ${branchName}`);
   cancelBranchEditing();
+}
+
+function onSaveTeam() {
+  const wasEditing = Boolean(editingTeamId.value);
+  if (saveTeam()) showToast(wasEditing ? 'Holdet er gemt' : 'Holdet er oprettet');
 }
 
 onBeforeUnmount(() => {
@@ -520,6 +573,27 @@ textarea.form-input {
   gap: 14px;
 }
 
+.schedule-row,
+.team-fields {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(110px, 0.8fr) auto minmax(110px, 0.8fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-editor {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--row-bg);
+}
+
+.team-fields {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .field-error {
   color: var(--danger);
   font-size: 0.84rem;
@@ -719,5 +793,12 @@ textarea.form-input {
     flex-direction: column;
     align-items: stretch;
   }
+
+  .schedule-row,
+  .team-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .schedule-row > span { display: none; }
 }
 </style>

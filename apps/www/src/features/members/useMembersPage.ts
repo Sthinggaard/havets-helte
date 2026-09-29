@@ -2,14 +2,12 @@ import { computed, ref, watch } from 'vue';
 
 import {
   buildMemberInitials,
-  createRosterTeamId,
   createRosterMemberId,
   publicRosterBranches,
   rosterBranches,
   rosterMembers,
   rosterTeams,
   saveRosterMembers,
-  saveRosterTeams,
 } from '../roster/roster.data';
 import type { BranchId } from '../roster/roster.types';
 import type { MemberProfile, MemberStatusFilter } from './members.types';
@@ -32,15 +30,9 @@ export function useMembersPage() {
   const memberBirthYear = ref(2015);
   const memberActive = ref(true);
   const memberError = ref('');
-  const newTeamBranchId = ref<BranchId>(publicRosterBranches.value[0]?.id ?? rosterBranches[0]?.id ?? 'junior');
-  const newTeamName = ref('');
-  const newTeamWeekday = ref(publicRosterBranches.value[0]?.meetingDays[0] ?? rosterBranches[0]?.meetingDays[0] ?? 'Mandag');
-  const teamError = ref('');
-  const teamNotice = ref('');
 
   const branchOptions = computed(() => publicRosterBranches.value);
   const memberTeamOptions = computed(() => rosterTeams.filter(team => team.active && team.branchId === memberBranchId.value));
-  const newTeamWeekdayOptions = computed(() => branchOptions.value.find(branch => branch.id === newTeamBranchId.value)?.meetingDays ?? []);
   const memberWeekday = computed(() => memberTeamOptions.value.find(team => team.label === memberTeam.value)?.weekday ?? '');
   const visibleBranchIds = computed(() => new Set(branchOptions.value.map(branch => branch.id)));
 
@@ -56,10 +48,6 @@ export function useMembersPage() {
 
   watch(memberTeamOptions, teams => {
     if (!teams.some(team => team.label === memberTeam.value)) memberTeam.value = teams[0]?.label ?? '';
-  }, { immediate: true });
-
-  watch(newTeamBranchId, nextBranchId => {
-    newTeamWeekday.value = branchOptions.value.find(branch => branch.id === nextBranchId)?.meetingDays[0] ?? '';
   }, { immediate: true });
 
   watch(
@@ -85,10 +73,6 @@ export function useMembersPage() {
     },
     { deep: true },
   );
-
-  watch(rosterTeams, teams => {
-    saveRosterTeams(teams);
-  }, { deep: true });
 
   const filteredMembers = computed(() => {
     const term = searchTerm.value.trim().toLowerCase();
@@ -192,41 +176,11 @@ export function useMembersPage() {
     return true;
   }
 
-  function createTeam() {
-    const branch = branchOptions.value.find(option => option.id === newTeamBranchId.value);
-    const label = newTeamName.value.trim();
-    const weekday = newTeamWeekday.value;
-    if (!branch) {
-      teamError.value = 'Vælg en gren.';
-      return false;
-    }
-    if (!label) {
-      teamError.value = 'Skriv et navn på holdet.';
-      return false;
-    }
-    if (rosterTeams.some(team => team.branchId === branch.id && team.label.toLocaleLowerCase('da') === label.toLocaleLowerCase('da'))) {
-      teamError.value = 'Holdet findes allerede under denne gren.';
-      return false;
-    }
-    if (!branch.meetingDays.includes(weekday)) {
-      teamError.value = 'Vælg en gyldig mødedag for grenen.';
-      return false;
-    }
-    const newTeam = { id: createRosterTeamId(branch.id, label), branchId: branch.id, label, weekday, active: true };
-    rosterTeams.push(newTeam);
-    teamError.value = '';
-    teamNotice.value = `${branch.label} · ${label} oprettet.`;
-    newTeamName.value = '';
-    if (memberBranchId.value === branch.id) memberTeam.value = label;
-    return true;
-  }
-
   return {
     branchFilter,
     branchOptions,
     clearMemberImage,
     createMember,
-    createTeam,
     counts,
     filteredMembers,
     memberActive,
@@ -236,10 +190,6 @@ export function useMembersPage() {
     memberName,
     memberTeam,
     memberTeamOptions,
-    newTeamBranchId,
-    newTeamName,
-    newTeamWeekday,
-    newTeamWeekdayOptions,
     searchTerm,
     selectedMember,
     selectedMemberId,
@@ -249,7 +199,5 @@ export function useMembersPage() {
     setStatusFilter,
     statusFilter,
     timeline,
-    teamError,
-    teamNotice,
   };
 }

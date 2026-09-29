@@ -1,5 +1,11 @@
 export type BranchId = string;
 
+export interface BranchMeetingDay {
+  weekday: string;
+  startTime: string;
+  endTime: string;
+}
+
 export interface Branch {
   id: BranchId;
   label: string;
@@ -8,6 +14,7 @@ export interface Branch {
   maxAge: number;
   focus: string;
   meetingDays: string[];
+  meetingSchedules?: BranchMeetingDay[];
 }
 
 export interface RosterTeam {
@@ -15,6 +22,10 @@ export interface RosterTeam {
   branchId: BranchId;
   label: string;
   weekday: string;
+  startTime: string;
+  endTime: string;
+  seasonStartDate: string;
+  seasonEndDate: string;
   active: boolean;
 }
 

@@ -1,6 +1,6 @@
 import { computed, reactive } from 'vue';
 
-import type { Branch, Member, BranchId, RosterTeam } from './roster.types';
+import type { Branch, Member, BranchId, BranchMeetingDay, RosterTeam } from './roster.types';
 
 const rosterBranchStorageKey = 'sankthans.rosterBranches.v1';
 const rosterStorageKey = 'sankthans.rosterMembers.v1';
@@ -84,7 +84,11 @@ function cloneDefaults(): Member[] {
 }
 
 function cloneDefaultBranches(): Branch[] {
-  return defaultRosterBranches.map(branch => ({ ...branch, meetingDays: [...branch.meetingDays] }));
+  return defaultRosterBranches.map(branch => ({
+    ...branch,
+    meetingDays: [...branch.meetingDays],
+    meetingSchedules: branch.meetingDays.map(weekday => ({ weekday, startTime: '', endTime: '' })),
+  }));
 }
 
 function parseLegacyAgeRange(ageRange: string) {
@@ -121,6 +125,16 @@ function normalizeBranch(record: Partial<Branch> & { id?: unknown }): Branch | n
     .filter(Boolean);
 
   if (!meetingDays.length) return null;
+  const meetingSchedules: BranchMeetingDay[] = meetingDays.map(weekday => {
+    const schedule = Array.isArray(record.meetingSchedules)
+      ? record.meetingSchedules.find(item => !!item && typeof item === 'object' && (item as Partial<BranchMeetingDay>).weekday === weekday) as Partial<BranchMeetingDay> | undefined
+      : undefined;
+    return {
+      weekday,
+      startTime: typeof schedule?.startTime === 'string' ? schedule.startTime : '',
+      endTime: typeof schedule?.endTime === 'string' ? schedule.endTime : '',
+    };
+  });
 
   let minAge =
     typeof record.minAge === 'number' && Number.isFinite(record.minAge)
@@ -152,6 +166,7 @@ function normalizeBranch(record: Partial<Branch> & { id?: unknown }): Branch | n
     maxAge,
     focus: record.focus.trim(),
     meetingDays,
+    meetingSchedules,
   };
 }
 
@@ -250,6 +265,10 @@ function normalizeRosterTeam(record: Partial<RosterTeam> & { id?: unknown }, bra
     branchId: branch.id,
     label,
     weekday,
+    startTime: typeof record.startTime === 'string' ? record.startTime : branch.meetingSchedules?.find(day => day.weekday === weekday)?.startTime ?? '',
+    endTime: typeof record.endTime === 'string' ? record.endTime : branch.meetingSchedules?.find(day => day.weekday === weekday)?.endTime ?? '',
+    seasonStartDate: typeof record.seasonStartDate === 'string' ? record.seasonStartDate : '',
+    seasonEndDate: typeof record.seasonEndDate === 'string' ? record.seasonEndDate : '',
     active: typeof record.active === 'boolean' ? record.active : true,
   };
 }
@@ -259,11 +278,16 @@ function teamsFromMembers(members: Member[]): RosterTeam[] {
   for (const member of members) {
     const label = member.team.trim();
     if (!label || teams.some(team => team.branchId === member.branchId && team.label.toLocaleLowerCase('da') === label.toLocaleLowerCase('da'))) continue;
+    const schedule = rosterBranches.find(branch => branch.id === member.branchId)?.meetingSchedules?.find(day => day.weekday === member.weekday);
     teams.push({
       id: `${member.branchId}-${teamSlug(label)}`,
       branchId: member.branchId,
       label,
       weekday: member.weekday,
+      startTime: schedule?.startTime ?? '',
+      endTime: schedule?.endTime ?? '',
+      seasonStartDate: '',
+      seasonEndDate: '',
       active: true,
     });
   }
