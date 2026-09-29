@@ -1,7 +1,7 @@
-import { computed, reactive, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import { createBranchId, createRosterTeamId, formatBranchAgeRange, rosterBranches, rosterMembers, rosterTeams, saveRosterBranches, saveRosterMembers, saveRosterTeams } from '../roster/roster.data';
-import type { Branch, BranchId, BranchMeetingDay, RosterTeam } from '../roster/roster.types';
+import type { Branch, BranchId, BranchMeetingDay } from '../roster/roster.types';
 import type { BranchCard } from './branches.types';
 
 const AGE_MIN = 0;
@@ -16,12 +16,10 @@ export function useBranchesPage() {
   const draftMaxAge = ref(11);
   const draftFocus = ref('');
   const draftMeetingSchedules = ref<BranchMeetingDay[]>([]);
+  const draftSeasonStartDate = ref('');
+  const draftSeasonEndDate = ref('');
   const draftError = ref('');
   const editingBranchId = ref<BranchId | null>(null);
-  const draftTeam = reactive({ id: '', label: '', weekday: '', startTime: '', endTime: '', seasonStartDate: '', seasonEndDate: '' });
-  const teamError = ref('');
-  const editingTeamId = ref('');
-  const showTeamForm = ref(false);
 
   const branchCards = computed<BranchCard[]>(() =>
     rosterBranches.map(branch => ({
@@ -42,7 +40,6 @@ export function useBranchesPage() {
   const draftLowerAge = computed(() => Math.min(draftMinAge.value, draftMaxAge.value));
   const draftUpperAge = computed(() => Math.max(draftMinAge.value, draftMaxAge.value));
   const draftMeetingDays = computed(() => draftMeetingSchedules.value.map(day => day.weekday).join(', '));
-  const branchTeams = computed(() => rosterTeams.filter(team => team.branchId === editingBranchId.value));
   const draftMinAgePercent = computed(() => ((draftLowerAge.value - AGE_MIN) / (AGE_MAX - AGE_MIN)) * 100);
   const draftMaxAgePercent = computed(() => ((draftUpperAge.value - AGE_MIN) / (AGE_MAX - AGE_MIN)) * 100);
 
@@ -63,6 +60,8 @@ export function useBranchesPage() {
     draftMaxAge.value = Math.min(Math.max(branch?.maxAge ?? 11, AGE_MIN), AGE_MAX);
     draftFocus.value = branch?.focus ?? '';
     draftMeetingSchedules.value = (branch?.meetingSchedules ?? branch?.meetingDays.map(weekday => ({ weekday, startTime: '', endTime: '' })) ?? []).map(day => ({ ...day }));
+    draftSeasonStartDate.value = branch?.seasonStartDate ?? '';
+    draftSeasonEndDate.value = branch?.seasonEndDate ?? '';
     draftError.value = '';
   }
 
@@ -79,7 +78,6 @@ export function useBranchesPage() {
     editingBranchId.value = branch.id;
     selectedBranchId.value = branch.id;
     fillDraft(branch);
-    resetTeamDraft();
   }
 
   function cancelBranchEditing() {
@@ -114,7 +112,8 @@ export function useBranchesPage() {
       return false;
     }
     if (new Set(meetingDays).size !== meetingDays.length) { draftError.value = 'En mødedag kan kun tilføjes én gang.'; return false; }
-    if (meetingSchedules.some(day => (!!day.startTime !== !!day.endTime) || (day.startTime && day.endTime && day.endTime <= day.startTime))) { draftError.value = 'Angiv både start- og sluttid, og sørg for at sluttiden er senere.'; return false; }
+    if (meetingSchedules.some(day => !day.startTime || !day.endTime || day.endTime <= day.startTime)) { draftError.value = 'Vælg start- og sluttid for hver mødedag.'; return false; }
+    if (!draftSeasonStartDate.value || !draftSeasonEndDate.value || draftSeasonEndDate.value < draftSeasonStartDate.value) { draftError.value = 'Vælg sæsonens start- og slutdato.'; return false; }
 
     if (editingBranchId.value) {
       const branch = rosterBranches.find(item => item.id === editingBranchId.value);
@@ -129,6 +128,8 @@ export function useBranchesPage() {
       branch.focus = focus;
       branch.meetingDays = meetingDays;
       branch.meetingSchedules = meetingSchedules;
+      branch.seasonStartDate = draftSeasonStartDate.value;
+      branch.seasonEndDate = draftSeasonEndDate.value;
       selectedBranchId.value = branch.id;
     } else {
       const branch: Branch = {
@@ -140,16 +141,49 @@ export function useBranchesPage() {
         focus,
         meetingDays,
         meetingSchedules,
+        seasonStartDate: draftSeasonStartDate.value,
+        seasonEndDate: draftSeasonEndDate.value,
       };
       rosterBranches.unshift(branch);
       selectedBranchId.value = branch.id;
       editingBranchId.value = branch.id;
     }
 
+    const branchId = selectedBranchId.value;
+    const existingBranchTeams = rosterTeams.filter(team => team.branchId === branchId);
+    for (const team of existingBranchTeams) {
+      const matchingDay = meetingSchedules.find(day => day.weekday === team.weekday);
+      if (!matchingDay) team.active = false;
+    }
+    for (const day of meetingSchedules) {
+      const label = `${day.weekday}shold`;
+      const team = rosterTeams.find(item => item.branchId === branchId && item.weekday === day.weekday)
+        ?? rosterTeams.find(item => item.branchId === branchId && item.label.toLocaleLowerCase('da') === label.toLocaleLowerCase('da'));
+      if (team) {
+        const previousLabel = team.label;
+        team.label = label;
+        team.weekday = day.weekday;
+        team.startTime = day.startTime;
+        team.endTime = day.endTime;
+        team.seasonStartDate = draftSeasonStartDate.value;
+        team.seasonEndDate = draftSeasonEndDate.value;
+        team.active = active;
+        rosterMembers.forEach(member => {
+          if (member.branchId === branchId && (member.team === previousLabel || member.weekday === day.weekday)) member.team = label;
+        });
+      } else {
+        rosterTeams.push({
+          id: createRosterTeamId(branchId, label), branchId, label, weekday: day.weekday,
+          startTime: day.startTime, endTime: day.endTime,
+          seasonStartDate: draftSeasonStartDate.value, seasonEndDate: draftSeasonEndDate.value, active,
+        });
+      }
+    }
     saveRosterBranches();
+    saveRosterTeams();
+    saveRosterMembers();
     draftError.value = '';
     fillDraft(rosterBranches.find(branch => branch.id === selectedBranchId.value) ?? null);
-    resetTeamDraft();
     return true;
   }
 
@@ -159,24 +193,6 @@ export function useBranchesPage() {
     if (weekday) draftMeetingSchedules.value.push({ weekday, startTime: '', endTime: '' });
   }
   function removeMeetingDay(index: number) { draftMeetingSchedules.value.splice(index, 1); }
-  function resetTeamDraft() { const day = draftMeetingSchedules.value[0]; Object.assign(draftTeam, { id: '', label: '', weekday: day?.weekday ?? '', startTime: day?.startTime ?? '', endTime: day?.endTime ?? '', seasonStartDate: '', seasonEndDate: '' }); editingTeamId.value = ''; teamError.value = ''; showTeamForm.value = false; }
-  function startCreateTeam() { resetTeamDraft(); showTeamForm.value = true; }
-  function startEditTeam(team: RosterTeam) { Object.assign(draftTeam, team); editingTeamId.value = team.id; teamError.value = ''; showTeamForm.value = true; }
-  function selectTeamWeekday(weekday: string) { draftTeam.weekday = weekday; const schedule = draftMeetingSchedules.value.find(day => day.weekday === weekday); draftTeam.startTime = schedule?.startTime ?? ''; draftTeam.endTime = schedule?.endTime ?? ''; }
-  function saveTeam() {
-    const branchId = editingBranchId.value;
-    const label = draftTeam.label.trim();
-    if (!branchId || !label || !draftMeetingSchedules.value.some(day => day.weekday === draftTeam.weekday)) { teamError.value = 'Udfyld holdnavn og vælg en mødedag.'; return false; }
-    if (!draftTeam.startTime || !draftTeam.endTime || draftTeam.endTime <= draftTeam.startTime) { teamError.value = 'Vælg et gyldigt tidsrum for holdet.'; return false; }
-    if (!draftTeam.seasonStartDate || !draftTeam.seasonEndDate || draftTeam.seasonEndDate < draftTeam.seasonStartDate) { teamError.value = 'Vælg sæsonens start- og slutdato.'; return false; }
-    if (rosterTeams.some(team => team.branchId === branchId && team.id !== editingTeamId.value && team.label.toLocaleLowerCase('da') === label.toLocaleLowerCase('da'))) { teamError.value = 'Holdet findes allerede i grenen.'; return false; }
-    const previous = rosterTeams.find(team => team.id === editingTeamId.value);
-    const next: RosterTeam = { id: previous?.id ?? createRosterTeamId(branchId, label), branchId, label, weekday: draftTeam.weekday, startTime: draftTeam.startTime, endTime: draftTeam.endTime, seasonStartDate: draftTeam.seasonStartDate, seasonEndDate: draftTeam.seasonEndDate, active: previous?.active ?? true };
-    if (previous) { rosterMembers.forEach(member => { if (member.branchId === previous.branchId && member.team === previous.label) { member.branchId = next.branchId; member.team = next.label; member.weekday = next.weekday; } }); Object.assign(previous, next); }
-    else rosterTeams.push(next);
-    saveRosterTeams(); saveRosterMembers(); resetTeamDraft(); return true;
-  }
-
   if (selectedBranch.value) {
     fillDraft(selectedBranch.value);
   }
@@ -194,7 +210,6 @@ export function useBranchesPage() {
   return {
     branchCards,
     branchMembers,
-    branchTeams,
     cancelBranchEditing,
     draftActive,
     draftError,
@@ -205,6 +220,8 @@ export function useBranchesPage() {
     draftMaxAge,
     draftMeetingDays,
     draftMeetingSchedules,
+    draftSeasonStartDate,
+    draftSeasonEndDate,
     draftMinAgePercent,
     draftMinAge,
     draftUpperAge,
@@ -224,14 +241,5 @@ export function useBranchesPage() {
     startEditBranch,
     addMeetingDay,
     removeMeetingDay,
-    draftTeam,
-    teamError,
-    editingTeamId,
-    showTeamForm,
-    resetTeamDraft,
-    startEditTeam,
-    startCreateTeam,
-    selectTeamWeekday,
-    saveTeam,
   };
 }

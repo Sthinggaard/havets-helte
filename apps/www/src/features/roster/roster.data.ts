@@ -88,6 +88,8 @@ function cloneDefaultBranches(): Branch[] {
     ...branch,
     meetingDays: [...branch.meetingDays],
     meetingSchedules: branch.meetingDays.map(weekday => ({ weekday, startTime: '', endTime: '' })),
+    seasonStartDate: '',
+    seasonEndDate: '',
   }));
 }
 
@@ -167,6 +169,8 @@ function normalizeBranch(record: Partial<Branch> & { id?: unknown }): Branch | n
     focus: record.focus.trim(),
     meetingDays,
     meetingSchedules,
+    seasonStartDate: typeof record.seasonStartDate === 'string' ? record.seasonStartDate : '',
+    seasonEndDate: typeof record.seasonEndDate === 'string' ? record.seasonEndDate : '',
   };
 }
 

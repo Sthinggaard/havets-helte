@@ -167,13 +167,25 @@
             <select v-model="day.weekday" class="form-input" aria-label="Ugedag">
               <option v-for="weekday in weekdays" :key="weekday" :value="weekday">{{ weekday }}</option>
             </select>
-            <select :value="day.startTime" class="form-input" :aria-label="`${day.weekday} starttid`" @change="updateMeetingStart(day, ($event.target as HTMLSelectElement).value)">
+            <select v-model="day.startTime" class="form-input" :aria-label="`${day.weekday} starttid`">
               <option value="">Vælg starttid</option><option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option>
             </select>
-            <span>til {{ day.endTime || '—' }}</span>
+            <span>til</span>
+            <select v-model="day.endTime" class="form-input" :aria-label="`${day.weekday} sluttid`">
+              <option value="">Vælg sluttid</option><option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option>
+            </select>
             <button type="button" class="btn-action" aria-label="Fjern mødedag" @click="removeMeetingDay(index)">Fjern</button>
           </div>
           <button type="button" class="btn-action" @click="addMeetingDay">+ Tilføj mødedag</button>
+        </section>
+
+        <section class="branch-members">
+          <div class="divider">Sæson for alle hold</div>
+          <div class="season-fields">
+            <label class="field"><span>Sæson fra</span><input v-model="draftSeasonStartDate" type="date" class="form-input" /></label>
+            <label class="field"><span>Sæson til</span><input v-model="draftSeasonEndDate" type="date" class="form-input" /></label>
+          </div>
+          <p class="season-note">Hver mødedag bliver automatisk et hold, fx Tirsdagshold. Holdene bruger mødetiden og sæsonen ovenfor.</p>
         </section>
 
         <div v-if="draftError" class="field-error" role="alert">{{ draftError }}</div>
@@ -202,32 +214,6 @@
           </div>
         </section>
 
-        <section v-if="formBranch" class="branch-members">
-          <div class="divider">Hold i grenen</div>
-          <div class="stacked-list">
-            <article v-for="team in branchTeams" :key="team.id" class="member-compact-row">
-              <div class="member-card-main">
-                <div class="member-card-title">{{ team.label }}</div>
-                <div class="member-card-meta"><span>{{ team.weekday }} · {{ team.startTime }}–{{ team.endTime }}</span><span>{{ team.seasonStartDate || '—' }} til {{ team.seasonEndDate || '—' }}</span></div>
-              </div>
-              <button type="button" class="btn-action" @click="startEditTeam(team)">Rediger</button>
-            </article>
-            <div v-if="!branchTeams.length" class="admin-empty">Ingen hold i grenen endnu.</div>
-          </div>
-          <button v-if="!showTeamForm" type="button" class="btn-action" @click="startCreateTeam">+ Tilføj hold</button>
-          <div v-if="showTeamForm" class="team-editor">
-            <div class="field"><label for="teamName">{{ editingTeamId ? 'Rediger hold' : 'Nyt hold' }}</label><input id="teamName" v-model="draftTeam.label" class="form-input" placeholder="Fx Tirsdagshold" /></div>
-            <div class="team-fields">
-              <label class="field"><span>Ugedag</span><select :value="draftTeam.weekday" class="form-input" @change="selectTeamWeekday(($event.target as HTMLSelectElement).value)"><option v-for="day in draftMeetingSchedules" :key="day.weekday" :value="day.weekday">{{ day.weekday }}</option></select></label>
-              <label class="field"><span>Starttid</span><select :value="draftTeam.startTime" class="form-input" @change="updateTeamStart(($event.target as HTMLSelectElement).value)"><option value="">Vælg starttid</option><option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option></select></label>
-              <div class="field"><span>Sluttid</span><output class="form-input generated-time">{{ draftTeam.endTime || 'Vælg starttid' }}</output></div>
-              <label class="field"><span>Sæson fra</span><input v-model="draftTeam.seasonStartDate" type="date" class="form-input" /></label>
-              <label class="field"><span>Sæson til</span><input v-model="draftTeam.seasonEndDate" type="date" class="form-input" /></label>
-            </div>
-            <p v-if="teamError" class="field-error" role="alert">{{ teamError }}</p>
-            <div class="form-footer"><button type="button" class="btn-action btn-action--primary" @click="onSaveTeam">{{ editingTeamId ? 'Gem hold' : 'Opret hold' }}</button><button v-if="editingTeamId" type="button" class="btn-action" @click="resetTeamDraft">Annuller</button></div>
-          </div>
-        </section>
       </form>
     </template>
 
@@ -246,7 +232,6 @@ import { useBranchesPage } from '@/features/branches/useBranchesPage';
 const {
   branchCards,
   branchMembers,
-  branchTeams,
   addMeetingDay,
   cancelBranchEditing,
   draftActive,
@@ -258,6 +243,8 @@ const {
   draftMaxAge,
   draftMeetingDays,
   draftMeetingSchedules,
+  draftSeasonStartDate,
+  draftSeasonEndDate,
   draftMinAgePercent,
   draftMinAge,
   draftUpperAge,
@@ -272,36 +259,10 @@ const {
   startCreateBranch,
   startEditBranch,
   removeMeetingDay,
-  draftTeam,
-  teamError,
-  editingTeamId,
-  showTeamForm,
-  resetTeamDraft,
-  startEditTeam,
-  startCreateTeam,
-  selectTeamWeekday,
-  saveTeam,
 } = useBranchesPage();
 
 const weekdays = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag'];
-const timeOptions = Array.from({ length: 40 }, (_, index) => `${String(Math.floor(index * 30 / 60)).padStart(2, '0')}:${String(index * 30 % 60).padStart(2, '0')}`);
-
-function timeAfterFourHours(start: string) {
-  if (!start) return '';
-  const [hours, minutes] = start.split(':').map(Number);
-  const total = hours * 60 + minutes + 240;
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-}
-
-function updateMeetingStart(day: { startTime: string; endTime: string }, start: string) {
-  day.startTime = start;
-  day.endTime = timeAfterFourHours(start);
-}
-
-function updateTeamStart(start: string) {
-  draftTeam.startTime = start;
-  draftTeam.endTime = timeAfterFourHours(start);
-}
+const timeOptions = Array.from({ length: 48 }, (_, index) => `${String(Math.floor(index * 30 / 60)).padStart(2, '0')}:${String(index * 30 % 60).padStart(2, '0')}`);
 
 const heroImage = '/og-sankthans.webp';
 
@@ -356,11 +317,6 @@ function onSaveBranch() {
   if (!saved) return;
   showToast(wasCreating ? `Gren oprettet: ${branchName}` : `Gren gemt: ${branchName}`);
   cancelBranchEditing();
-}
-
-function onSaveTeam() {
-  const wasEditing = Boolean(editingTeamId.value);
-  if (saveTeam()) showToast(wasEditing ? 'Holdet er gemt' : 'Holdet er oprettet');
 }
 
 onBeforeUnmount(() => {
@@ -596,27 +552,15 @@ textarea.form-input {
 }
 
 .schedule-row,
-.team-fields {
+.season-fields {
   display: grid;
   grid-template-columns: minmax(130px, 1fr) minmax(110px, 0.8fr) auto minmax(110px, 0.8fr) auto;
   align-items: center;
   gap: 10px;
 }
 
-.generated-time { display: flex; align-items: center; color: var(--muted); }
-
-.team-editor {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--row-bg);
-}
-
-.team-fields {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
+.season-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.season-note { margin: -4px 0 0; color: var(--muted); font-size: 0.88rem; }
 
 .field-error {
   color: var(--danger);
@@ -819,7 +763,7 @@ textarea.form-input {
   }
 
   .schedule-row,
-  .team-fields {
+  .season-fields {
     grid-template-columns: 1fr 1fr;
   }
 

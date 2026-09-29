@@ -15,6 +15,8 @@ export interface Branch {
   focus: string;
   meetingDays: string[];
   meetingSchedules?: BranchMeetingDay[];
+  seasonStartDate?: string;
+  seasonEndDate?: string;
 }
 
 export interface RosterTeam {
