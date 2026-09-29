@@ -22,7 +22,7 @@
           >
             <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
             <div class="event-card-body">
-              <span class="home-category-badge" :class="{ 'home-category-badge--task': item.type === 'task' || item.parentTypes?.includes('task') }">
+              <span class="home-category-badge" :class="{ 'home-category-badge--task': item.type === 'task', 'home-category-badge--shift': item.type === 'shift' }">
                 {{ item.type === 'event' ? 'Tilmelding for spejderne' : item.parentTypes?.length === 2 ? 'Forældrehelte-vagt og opgave' : item.type === 'shift' ? 'Forældrehelte-vagt' : 'Forældrehelte-opgave' }}
               </span>
               <div class="event-card-head">
@@ -73,6 +73,11 @@ const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
 .home-category-badge--task {
   background: #fff1b8;
   color: #765600;
+}
+
+.home-category-badge--shift {
+  background: #dcecff;
+  color: #174d7d;
 }
 
 .home-event-card {
