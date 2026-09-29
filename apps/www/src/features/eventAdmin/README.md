@@ -17,6 +17,8 @@ records or signup behavior.
 Recurring shifts can select one or more weekdays. Weekly schedules materialize an
 occurrence on each selected weekday; biweekly schedules repeat the selected weekdays
 every other week. Legacy records with a single `recurrenceWeekday` remain editable.
+Shift start times are selected in 30-minute steps. The end time follows the selected
+shift duration, and each added period starts when the previous one ends.
 
 ## Keep This Split Stable
 

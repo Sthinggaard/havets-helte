@@ -5,6 +5,7 @@
 - Ported the requested home-feed tabs to current `main`: `task`/`timed` items appear under “Forældrehelte-opgaver”, `event` items under “Spejdertilmeldinger”, counts are shown, and cards distinguish parent tasks, parent shifts, and scout signups with separate badges. Removed the redundant “Arrangementer, opgaver og vagter” heading. Filtering does not change event or signup data.
 - Added a pnpm workspace build-script allowlist for the three dependency scripts required by the app and generated a pnpm lockfile so `make app` installs consistently.
 - Updated recurring shift planning to select multiple weekdays with checkboxes. Weekly schedules include every selected day; biweekly schedules include the selected days every other week. Existing single-weekday records remain supported.
+- Replaced the shift start-time entry with a 30-minute selector and made the calculated end time visible. End time still follows shift duration; new periods continue from the previous period's end.
 
 ## 2026-06-24 (2)
 

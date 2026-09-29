@@ -65,17 +65,28 @@
             <span>Antal personer</span>
             <FormControl type="number" min="1" max="999" :model-value="period.capacity" @update:model-value="updateCapacity(period.id, $event)" />
           </label>
-          <label v-if="periodIndex === 0" class="field field--time">
-            <span>Starttid</span>
-            <FormControl type="time" :model-value="period.startTime" :aria-invalid="invalidTimeIds.has(period.id)" @update:model-value="emitStart" />
+          <div v-if="periodIndex === 0" class="field field--time">
+            <span>Tidspunkt</span>
+            <div class="period-time-pickers">
+              <label class="field">
+                <span>Starttid</span>
+                <FormControl as="select" aria-label="Starttid" :model-value="period.startTime" :aria-invalid="invalidTimeIds.has(period.id)" @update:model-value="emitStart">
+                  <option value="">Vælg tid</option>
+                  <option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option>
+                </FormControl>
+              </label>
+              <div class="field">
+                <span>Sluttid</span>
+                <output class="generated-time">{{ period.endTime || 'Vælg starttid' }}</output>
+              </div>
+            </div>
             <span v-if="invalidTimeIds.has(period.id)" class="field-error" role="alert">Vælg en starttid.</span>
-          </label>
+          </div>
           <div v-else class="field field--time">
             <span>Tidsrum</span>
             <output class="generated-time">{{ periodTime(period) }}</output>
           </div>
         </div>
-        <output v-if="periodIndex === 0 && period.endTime" class="period-end">Slutter {{ period.endTime }}</output>
         <label class="adult-toggle">
           <input :checked="period.requiresAdult" type="checkbox" @change="updateAdult(period.id, $event)" />
           <span>Kræver 18+ år</span>
@@ -132,6 +143,15 @@ const selectedWeekdays = computed(() => {
 });
 
 const durationOptions = Array.from({ length: 24 }, (_, index) => (index + 1) * 30);
+const timeOptions = computed(() => {
+  const values = Array.from({ length: 48 }, (_, index) => {
+    const minutes = index * 30;
+    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  });
+  const currentStart = props.slots[0]?.startTime;
+  if (currentStart && !values.includes(currentStart)) values.unshift(currentStart);
+  return values;
+});
 
 function updateCommon(field: 'label' | 'date', value: string | number) {
   emit('update-common', field, String(value));
@@ -336,6 +356,12 @@ function periodTime(period: EventSlot) {
   gap: 12px;
 }
 
+.period-time-pickers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .shift-type-basics {
   display: grid;
   gap: 12px;
@@ -372,8 +398,7 @@ function periodTime(period: EventSlot) {
   outline-offset: 2px;
 }
 
-.generated-time,
-.period-end {
+.generated-time {
   color: var(--text);
   font-size: 15px;
 }
@@ -386,11 +411,6 @@ function periodTime(period: EventSlot) {
   border: 1px solid var(--border);
   border-radius: 9px;
   background: #f4f6f9;
-}
-
-.period-end {
-  margin-top: -4px;
-  color: var(--muted);
 }
 
 .adult-toggle {
@@ -432,6 +452,10 @@ function periodTime(period: EventSlot) {
   }
 
   .period-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .period-time-pickers {
     grid-template-columns: 1fr;
   }
 
