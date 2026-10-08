@@ -54,8 +54,8 @@
       <fieldset v-if="slot.componentType === 'signup'" class="si-target-audience">
         <legend class="si-field-label">Hvem henvender tilmeldingen sig til?</legend>
         <div class="kind-pills">
-          <label v-for="option in signupAudienceOptions" :key="option.value" class="kind-pill" :class="{ active: slot.signupAudience === option.value }">
-            <input v-model="slot.signupAudience" type="radio" :name="`${slot.id}-signup-audience`" :value="option.value" />
+          <label v-for="option in signupAudienceOptions" :key="option.value" class="kind-pill" :class="{ active: signupAudienceSelected(option.value) }">
+            <input type="checkbox" :checked="signupAudienceSelected(option.value)" @change="toggleSignupAudience(option.value, $event)" />
             <span>{{ option.label }}</span>
           </label>
         </div>
@@ -211,10 +211,9 @@ const kindOptions: Array<{ value: SlotKind; label: string }> = [
   { value: 'paid', label: 'Betalt tilmelding' },
 ];
 const visibleKindOptions = computed(() => kindOptions);
-const signupAudienceOptions: Array<{ value: SignupAudience; label: string }> = [
+const signupAudienceOptions: Array<{ value: Exclude<SignupAudience, 'both'>; label: string }> = [
   { value: 'scouts', label: 'Spejdertilmeldinger' },
   { value: 'parents', label: 'Forældrehelte' },
-  { value: 'both', label: 'Begge' },
 ];
 const recommendedGroupSize = computed(() => recommendGroupSize(props.slot.capacity));
 const audienceGroupOptions = computed<SignupAudienceGroup[]>(() => {
@@ -265,6 +264,24 @@ const calculatedDeadline = computed(() => {
   const date = calculateSlotDeadline(props.eventDate, props.slot);
   return date ? `Tilmeld senest ${formatSlotDate(date)}` : '';
 });
+
+function signupAudienceSelected(audience: Exclude<SignupAudience, 'both'>) {
+  return props.slot.signupAudience === audience || props.slot.signupAudience === 'both';
+}
+
+function toggleSignupAudience(audience: Exclude<SignupAudience, 'both'>, event: Event) {
+  const checkbox = event.target as HTMLInputElement;
+  let scouts = signupAudienceSelected('scouts');
+  let parents = signupAudienceSelected('parents');
+  if (audience === 'scouts') scouts = checkbox.checked;
+  if (audience === 'parents') parents = checkbox.checked;
+
+  if (!scouts && !parents) {
+    checkbox.checked = true;
+    return;
+  }
+  props.slot.signupAudience = scouts && parents ? 'both' : scouts ? 'scouts' : 'parents';
+}
 
 function toggleAudienceGroup(group: SignupAudienceGroup) {
   const selected = props.slot.eligibleGroups;
