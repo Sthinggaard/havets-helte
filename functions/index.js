@@ -591,9 +591,6 @@ exports.submitSignup = onRequest({
     if (!childMode && !isValidEmail(email)) {
       throw apiError(400, 'invalid', 'Mailadressen er ugyldig.');
     }
-    if (!childMode && isAdminEmail(email)) {
-      throw apiError(400, 'invalid', 'Ledere tilmelder sig via lederportalen.');
-    }
     const groupSize = Number(data.groupSize);
     if (!Number.isInteger(groupSize) || groupSize < 1 || groupSize > 20) {
       throw apiError(400, 'invalid', 'Antal deltagere er ugyldigt.');

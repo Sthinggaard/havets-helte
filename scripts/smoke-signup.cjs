@@ -20,8 +20,8 @@ connectFirestoreEmulator(clientDb, '127.0.0.1', 8081);
 
 async function main() {
   const eventId = `smoke-${Date.now()}`;
-  const signupName = 'Smoke Test Parent';
-  const signupEmail = 'smoke@example.com';
+  const signupName = 'Smoke Test Leader';
+  const signupEmail = 'smoke@havetshelte.dk';
 
   await adminDb.collection('events').doc(eventId).set({
     title: 'Smoke test event',
