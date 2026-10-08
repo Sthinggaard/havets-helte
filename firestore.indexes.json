@@ -5,7 +5,8 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "eventId", "order": "ASCENDING" },
-        { "fieldPath": "slotId", "order": "ASCENDING" }
+        { "fieldPath": "slotId", "order": "ASCENDING" },
+        { "fieldPath": "groupSize", "order": "ASCENDING" }
       ]
     },
     {
@@ -14,7 +15,8 @@
       "fields": [
         { "fieldPath": "eventId", "order": "ASCENDING" },
         { "fieldPath": "slotId", "order": "ASCENDING" },
-        { "fieldPath": "waitlist", "order": "ASCENDING" }
+        { "fieldPath": "waitlist", "order": "ASCENDING" },
+        { "fieldPath": "groupSize", "order": "ASCENDING" }
       ]
     }
   ],
