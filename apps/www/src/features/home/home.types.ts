@@ -8,6 +8,7 @@ export interface HomeFeedItem extends EventItem {
   signupAudienceLabels?: string[];
   eventId?: string;
   parentTypes?: Array<'shift' | 'task'>;
+  tabs?: HomeTabId[];
   ctaLabel: string;
   ctaRoute: string;
 }

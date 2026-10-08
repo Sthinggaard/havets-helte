@@ -11,8 +11,9 @@ The admin surface is the source of truth for creating, editing, and deleting eve
 The home feed groups active `task` and `timed` records under **Forældrehelte-opgaver**;
 `event` records appear under **Spejdertilmeldinger**. Parent `task` cards are labeled
 **Forældrehelte-opgave**, `timed` cards **Forældrehelte-vagt**, and `event` cards
-**Tilmelding for spejderne**. The tabs filter the feed only; they do not change event
-records or signup behavior.
+**Tilmelding for spejderne** by default. Each signup section can instead target
+**Forældrehelte** or both home tabs. This audience controls discovery only; it does
+not replace the signup section's branch/team eligibility rules.
 
 Recurring shifts can select one or more weekdays. Weekly schedules materialize an
 occurrence on each selected weekday; biweekly schedules repeat the selected weekdays

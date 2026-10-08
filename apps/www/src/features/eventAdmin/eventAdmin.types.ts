@@ -8,6 +8,7 @@ export type EventSection = 'vagter' | 'opgaver' | 'arrangementer';
 export type SlotKind = 'volunteer' | 'attend' | 'paid';
 export type SlotComponentType = 'task' | 'shift' | 'signup';
 export type SignupRegistrationMode = 'local' | 'memberService';
+export type SignupAudience = 'scouts' | 'parents' | 'both';
 export type SlotScheduleMode = 'fixed' | 'relative' | 'weekly' | 'biweekly';
 export type SlotRelativeTo = 'event';
 
@@ -70,6 +71,9 @@ export interface EventSlot {
   // Medlemsservice. Local signups remain the default for legacy records.
   registrationMode: SignupRegistrationMode;
   memberServiceUrl: string;
+  // Controls which public home tab advertises this signup. Existing records
+  // default to scouts to preserve the previous behaviour.
+  signupAudience: SignupAudience;
   // Empty means all branches/teams can sign up. Otherwise signup requires
   // selecting one of these roster groups.
   eligibleGroups: SignupAudienceGroup[];

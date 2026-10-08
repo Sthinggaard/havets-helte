@@ -1,7 +1,7 @@
 import type { AdminEvent, EventType } from '../eventAdmin/eventAdmin.types';
 import { eventItems } from '../events/events.data';
 import type { EventFilterType } from '../events/events.types';
-import type { HomeFeedItem, HomeSignupItem } from './home.types';
+import type { HomeFeedItem, HomeSignupItem, HomeTabId } from './home.types';
 
 export const homeHero = {
   badge: 'Havets Helte',
@@ -32,6 +32,11 @@ function feedSlots(event: AdminEvent, feedType: HomeFeedItem['type'], parentType
   return event.slots.filter(slot => componentTypes.includes(slot.componentType as typeof componentTypes[number]));
 }
 
+function signupAppearsInTab(slot: AdminEvent['slots'][number], tab: HomeTabId) {
+  if (slot.signupAudience === 'both') return true;
+  return tab === 'parents' ? slot.signupAudience === 'parents' : slot.signupAudience === 'scouts';
+}
+
 function spotsLabel(event: AdminEvent, feedType: HomeFeedItem['type'], parentTypes?: Array<'shift' | 'task'>): string {
   const slots = feedSlots(event, feedType, parentTypes);
   if (!slots.length) return 'Ingen pladser';
@@ -45,18 +50,21 @@ export function toHomeFeedItem(
   feedType = toFeedType(event.type),
   id = event.id,
   parentTypes?: Array<'shift' | 'task'>,
+  tabs?: HomeTabId[],
 ): HomeFeedItem {
   const fallbackImage = eventItems.find(item => item.type === feedType)?.image || '/og-sankthans.webp';
-  const slots = feedSlots(event, feedType, parentTypes);
+  const targetTabs = tabs ?? (feedType === 'event' ? ['scout-signups'] : ['parents']);
+  const slots = feedSlots(event, feedType, parentTypes).filter(slot =>
+    feedType !== 'event' || targetTabs.length !== 1 || signupAppearsInTab(slot, targetTabs[0]),
+  );
   return {
     id,
     eventId: event.id,
     parentTypes,
+    tabs: targetTabs,
     capacityCount: slots.some(slot => slot.capacity === 0) ? 0 : slots.reduce((sum, slot) => sum + slot.capacity, 0),
     signupAudienceLabels: feedType === 'event'
-      ? [...new Set(event.slots
-        .filter(slot => slot.componentType === 'signup')
-        .flatMap(slot => slot.eligibleGroups.map(group => group.label)))]
+      ? [...new Set(slots.flatMap(slot => slot.eligibleGroups.map(group => group.label)))]
       : [],
     type: feedType,
     title: event.title,
@@ -78,9 +86,17 @@ export function toHomeFeedItems(event: AdminEvent): HomeFeedItem[] {
   const items: HomeFeedItem[] = [];
 
   if (parentTypes.length) {
-    items.push(toHomeFeedItem(event, parentTypes.includes('shift') ? 'shift' : 'task', `${event.id}:parents`, parentTypes));
+    items.push(toHomeFeedItem(event, parentTypes.includes('shift') ? 'shift' : 'task', `${event.id}:parents`, parentTypes, ['parents']));
   }
-  if (componentTypes.has('signup')) items.push(toHomeFeedItem(event, 'event', `${event.id}:scouts`));
+  const signupSlots = event.slots.filter(slot => slot.componentType === 'signup');
+  if (signupSlots.length) {
+    if (signupSlots.some(slot => signupAppearsInTab(slot, 'scout-signups'))) {
+      items.push(toHomeFeedItem(event, 'event', `${event.id}:signups:scouts`, undefined, ['scout-signups']));
+    }
+    if (signupSlots.some(slot => signupAppearsInTab(slot, 'parents'))) {
+      items.push(toHomeFeedItem(event, 'event', `${event.id}:signups:parents`, undefined, ['parents']));
+    }
+  }
 
   return items.length ? items : [toHomeFeedItem(event)];
 }

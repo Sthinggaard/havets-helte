@@ -97,7 +97,8 @@ export function useHomePage() {
   return {
     activeTab,
     homeFeedItems: computed(() => items.value.filter(item =>
-      activeTab.value === 'scout-signups' ? item.type === 'event' : item.type !== 'event',
+      item.tabs?.includes(activeTab.value)
+        ?? (activeTab.value === 'scout-signups' ? item.type === 'event' : item.type !== 'event'),
     )),
     homeHero,
     feedHref,

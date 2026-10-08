@@ -155,6 +155,7 @@ export function createSlot(partial?: Partial<EventSlot>): EventSlot {
     cancelDeadlineDays: partial?.cancelDeadlineDays ?? 0,
     registrationMode: partial?.registrationMode ?? 'local',
     memberServiceUrl: partial?.memberServiceUrl ?? '',
+    signupAudience: partial?.signupAudience ?? 'scouts',
     eligibleGroups: partial?.eligibleGroups ? partial.eligibleGroups.map(group => ({ ...group })) : [],
     groupSize,
     groupMin: partial?.groupMin ?? groupSize,
@@ -232,6 +233,7 @@ export function createAdminEventFromRecord(record: { id: string; [key: string]: 
           : slot.kind === 'paid' ? legacyCancelDeadlineDays : 0,
         registrationMode: slot.registrationMode === 'memberService' ? 'memberService' : 'local',
         memberServiceUrl: typeof slot.memberServiceUrl === 'string' ? slot.memberServiceUrl : '',
+        signupAudience: slot.signupAudience === 'parents' || slot.signupAudience === 'both' ? slot.signupAudience : 'scouts',
         eligibleGroups: Array.isArray(slot.eligibleGroups)
           ? slot.eligibleGroups.filter((group): group is Record<string, unknown> => !!group && typeof group === 'object').map(group => ({
               id: typeof group.id === 'string' ? group.id : '',
@@ -346,6 +348,7 @@ export function toEventRecord(event: AdminEvent) {
       capacity: slot.capacity,
       minAge: slot.requiresAdult ? 18 : 0,
       requiresAdult: slot.requiresAdult,
+      ...(slot.componentType === 'signup' ? { signupAudience: slot.signupAudience } : {}),
       ...(slot.componentType === 'signup' && slot.kind === 'paid' && slot.registrationMode === 'memberService'
         ? { registrationMode: 'memberService' as const, memberServiceUrl: slot.memberServiceUrl.trim() }
         : {}),

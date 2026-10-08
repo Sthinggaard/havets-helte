@@ -51,6 +51,15 @@
         <FormControl v-if="deadlineScheduleValue === 'fixed'" :model-value="slot.deadlineDate ?? ''" type="date" @update:model-value="updateDeadlineDate" />
         <output v-else-if="deadlineScheduleValue !== 'none'" class="schedule-preview">{{ calculatedDeadline || 'Vælg en eventdato først' }}</output>
       </div>
+      <fieldset v-if="slot.componentType === 'signup'" class="si-target-audience">
+        <legend class="si-field-label">Hvem henvender tilmeldingen sig til?</legend>
+        <div class="kind-pills">
+          <label v-for="option in signupAudienceOptions" :key="option.value" class="kind-pill" :class="{ active: slot.signupAudience === option.value }">
+            <input v-model="slot.signupAudience" type="radio" :name="`${slot.id}-signup-audience`" :value="option.value" />
+            <span>{{ option.label }}</span>
+          </label>
+        </div>
+      </fieldset>
       <div v-if="slot.componentType === 'signup'" class="si-audience">
         <span class="si-field-label">Klaner og hold, der kan tilmelde sig</span>
         <details class="audience-picker">
@@ -174,7 +183,7 @@ import FormControl from '@/components/form/FormControl.vue';
 import FormField from '@/components/form/FormField.vue';
 import { SLOT_ROLES, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
-import type { EventSlot, EventTypeConfig, SignupAudienceGroup, SlotKind } from '@/features/eventAdmin/eventAdmin.types';
+import type { EventSlot, EventTypeConfig, SignupAudience, SignupAudienceGroup, SlotKind } from '@/features/eventAdmin/eventAdmin.types';
 import { rosterBranches, rosterTeams } from '@/features/roster/roster.data';
 
 const props = defineProps<{
@@ -202,6 +211,11 @@ const kindOptions: Array<{ value: SlotKind; label: string }> = [
   { value: 'paid', label: 'Betalt tilmelding' },
 ];
 const visibleKindOptions = computed(() => kindOptions);
+const signupAudienceOptions: Array<{ value: SignupAudience; label: string }> = [
+  { value: 'scouts', label: 'Spejdertilmeldinger' },
+  { value: 'parents', label: 'Forældrehelte' },
+  { value: 'both', label: 'Begge' },
+];
 const recommendedGroupSize = computed(() => recommendGroupSize(props.slot.capacity));
 const audienceGroupOptions = computed<SignupAudienceGroup[]>(() => {
   const groups: SignupAudienceGroup[] = [];
@@ -408,6 +422,13 @@ function updateDeadlineDate(input: string | number) {
   padding: 0;
   margin: 0;
   grid-column: 1 / -1;
+}
+
+.si-target-audience {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .si-deadline {

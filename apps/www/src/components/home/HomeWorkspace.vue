@@ -23,7 +23,7 @@
             <img class="event-card-image" :src="item.image" :alt="item.title" loading="lazy" decoding="async" />
             <div class="event-card-body">
               <span class="home-category-badge" :class="{ 'home-category-badge--task': item.type === 'task', 'home-category-badge--shift': item.type === 'shift' }">
-                {{ item.type === 'event' ? 'Tilmelding for spejderne' : item.parentTypes?.length === 2 ? 'Forældrehelte-vagt og opgave' : item.type === 'shift' ? 'Forældrehelte-vagt' : 'Forældrehelte-opgave' }}
+                {{ item.type === 'event' ? activeTab === 'parents' ? 'Tilmelding for forældrehelte' : 'Tilmelding for spejderne' : item.parentTypes?.length === 2 ? 'Forældrehelte-vagt og opgave' : item.type === 'shift' ? 'Forældrehelte-vagt' : 'Forældrehelte-opgave' }}
               </span>
               <div class="event-card-head">
                 <h2 class="row-title">{{ item.title }}</h2>
@@ -51,7 +51,7 @@ import { RouterLink } from 'vue-router';
 
 import { useHomePage } from '@/features/home/useHomePage';
 
-const { homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
+const { activeTab, homeFeedItems, homeHero, feedHref, typeLabel } = useHomePage();
 </script>
 
 <style scoped>
