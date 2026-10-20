@@ -464,6 +464,31 @@ exports.getEventLeaders = onRequest({ region: 'europe-west1', cors: true, invoke
   }
 });
 
+exports.updateEventLeaderName = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST') {
+    res.status(405).json({ status: 'method_not_allowed', message: 'Kun POST er tilladt.' });
+    return;
+  }
+  try {
+    await verifyAdminIdentity(req);
+    const body = requestBody(req);
+    const id = requiredString(body.id, 'Lederen', 128);
+    if (typeof body.name !== 'string') throw apiError(400, 'invalid', 'Skriv lederens navn på højst 120 tegn.');
+    const name = requiredString(body.name.replace(/\s+/g, ' '), 'Navnet', 120);
+    const user = await admin.auth().getUser(id);
+    if (user.disabled || !isAdminEmail(user.email)) throw apiError(404, 'not_found', 'Lederkontoen findes ikke.');
+    if (user.displayName !== name) await admin.auth().updateUser(id, { displayName: name });
+    res.status(200).json({ leader: { id, name, email: normalizeEmail(user.email) } });
+  } catch (error) {
+    if (error?.code === 'auth/user-not-found') {
+      res.status(404).json({ status: 'not_found', message: 'Lederkontoen findes ikke.' });
+      return;
+    }
+    sendApiError(res, error, 'Kunne ikke gemme lederens navn. Prøv igen.');
+  }
+});
+
 exports.manageVolunteerSignup = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).json({ status: 'method_not_allowed', message: 'Kun POST er tilladt.' }); return; }

@@ -1,4 +1,4 @@
-import { getFunction } from '@/lib/functionApi';
+import { getFunction, postFunction } from '@/lib/functionApi';
 import { getAppAuth } from '@/lib/firebase';
 
 export type EventLeader = { id: string; name: string };
@@ -32,4 +32,13 @@ export async function fetchAvailableEventLeaders(): Promise<AvailableEventLeader
     if ((error as { status?: number })?.status !== 401) throw error;
     return request(true);
   }
+}
+
+export async function saveEventLeaderName(id: string, name: string): Promise<AvailableEventLeader> {
+  const auth = await getAppAuth();
+  if (!auth.currentUser) throw new Error('Log ind som leder for at gemme navnet.');
+  const response = await postFunction<{ leader: AvailableEventLeader }>(
+    'updateEventLeaderName', '/api/event-leader-name', { id, name }, await auth.currentUser.getIdToken(true),
+  );
+  return response.leader;
 }

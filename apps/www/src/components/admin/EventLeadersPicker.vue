@@ -23,6 +23,14 @@
             @update:model-value="rename(leader.id, String($event))"
             @keydown.enter.prevent
           />
+          <button
+            v-if="available.some(item => item.id === leader.id)"
+            type="button"
+            class="btn-action leader-picker__save-name"
+            :disabled="!!savingNameId || !leader.name.trim()"
+            @click="saveName(leader)"
+          >{{ savingNameId === leader.id ? 'Gemmer…' : 'Gem navn til næste gang' }}</button>
+          <p v-if="nameFeedbackId === leader.id && nameFeedback" :class="{ 'leader-picker__name-error': nameSaveFailed }" :role="nameSaveFailed ? 'alert' : 'status'">{{ nameFeedback }}</p>
         </div>
       </div>
     </div>
@@ -52,7 +60,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useId } from 'vue';
 import FormControl from '@/components/form/FormControl.vue';
-import { fetchAvailableEventLeaders, type AvailableEventLeader, type EventLeader } from '@/features/eventAdmin/eventLeaders';
+import { fetchAvailableEventLeaders, saveEventLeaderName, type AvailableEventLeader, type EventLeader } from '@/features/eventAdmin/eventLeaders';
 
 const props = defineProps<{ modelValue: EventLeader[] }>();
 const emit = defineEmits<{ 'update:modelValue': [value: EventLeader[]] }>();
@@ -63,6 +71,10 @@ const manualId = useId();
 const manualName = ref('');
 const manualError = ref('');
 const manualNotice = ref('');
+const savingNameId = ref('');
+const nameFeedbackId = ref('');
+const nameFeedback = ref('');
+const nameSaveFailed = ref(false);
 // Keep saved selections visible even if the account has since been removed.
 const options = computed(() => {
   const leaders = new Map<string, EventLeader & { email?: string }>(available.value.map(leader => [leader.id, leader]));
@@ -92,7 +104,31 @@ function toggle(leader: EventLeader) {
 }
 
 function rename(id: string, name: string) {
+  if (nameFeedbackId.value === id) nameFeedback.value = '';
   emit('update:modelValue', props.modelValue.map(leader => leader.id === id ? { ...leader, name } : leader));
+}
+
+async function saveName(leader: EventLeader) {
+  if (savingNameId.value) return;
+  savingNameId.value = leader.id;
+  nameFeedbackId.value = leader.id;
+  nameFeedback.value = '';
+  nameSaveFailed.value = false;
+  const requestedName = leader.name;
+  try {
+    const saved = await saveEventLeaderName(leader.id, requestedName);
+    available.value = available.value.map(item => item.id === saved.id ? saved : item);
+    // Do not replace edits made while the request was in flight.
+    if (props.modelValue.find(item => item.id === saved.id)?.name === requestedName) {
+      rename(saved.id, saved.name);
+      nameFeedback.value = 'Navnet er gemt til næste gang.';
+    }
+  } catch (cause) {
+    nameSaveFailed.value = true;
+    nameFeedback.value = cause instanceof Error ? cause.message : 'Navnet kunne ikke gemmes. Prøv igen.';
+  } finally {
+    savingNameId.value = '';
+  }
 }
 
 function addManualLeader() {
@@ -128,6 +164,8 @@ onMounted(load);
 .leader-picker__name { display: grid; gap: 6px; margin: 8px 0 0 32px; }
 .leader-picker__name label { font-size: 14px; font-weight: 700; color: var(--navy); }
 .leader-picker__name :deep(.form-control) { min-height: 44px; font-size: 16px; }
+.leader-picker__save-name { justify-self: start; min-height: 44px; }
+.leader-picker__name .leader-picker__name-error { color: var(--danger); }
 .leader-picker__option span { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .leader-picker__option strong { font-size: 16px; }
 .leader-picker__option small { color: var(--muted); font-size: 14px; }
