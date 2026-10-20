@@ -57,6 +57,7 @@
           <button type="button" class="parent-access-logout" @click="logout">Log ud</button>
         </template>
 
+        <p v-if="cancelNotice" class="parent-access-status" role="status">{{ cancelNotice }}</p>
         <div v-if="loading" class="parent-access-status" aria-live="polite">Henter dine tilmeldinger…</div>
         <div v-else-if="error" class="parent-access-error" role="alert">{{ error }}</div>
         <div v-else-if="signups.length === 0" class="parent-access-empty">
@@ -84,10 +85,27 @@
         :open="!!cancelTarget"
         title="Afmeld tilmelding?"
         :message="cancelTarget ? `Du afmeldes fra ${cancelTarget.eventTitle}.` : ''"
-        confirm-label="Afmeld"
+        :confirm-label="cancelling ? 'Afmelder…' : 'Afmeld'"
+        :busy="!!cancelling"
         @confirm="confirmCancel"
         @cancel="cancelTarget = null"
-      />
+      >
+        <div class="cancellation-reason">
+          <label for="cancellation-reason">Hvorfor melder du fra?</label>
+          <textarea
+            id="cancellation-reason"
+            ref="reasonInput"
+            v-model="cancelReason"
+            rows="4"
+            maxlength="1000"
+            required
+            :disabled="!!cancelling"
+            :aria-invalid="!!cancelError"
+            :aria-describedby="cancelError ? 'cancellation-error' : undefined"
+          />
+          <p v-if="cancelError" id="cancellation-error" class="form-error" role="alert">{{ cancelError }}</p>
+        </div>
+      </ConfirmDialog>
     </template>
   </PublicLandingPageShell>
 </template>
@@ -118,6 +136,10 @@ const redeeming = ref(false);
 const loading = ref(false);
 const cancelling = ref('');
 const cancelTarget = ref<ParentSignup | null>(null);
+const cancelReason = ref('');
+const cancelError = ref('');
+const cancelNotice = ref('');
+const reasonInput = ref<HTMLTextAreaElement | null>(null);
 const signups = ref<ParentSignup[]>([]);
 let unsubscribe: (() => void) | null = null;
 
@@ -184,6 +206,9 @@ async function load() {
 }
 
 function cancel(signup: ParentSignup) {
+  cancelReason.value = '';
+  cancelError.value = '';
+  cancelNotice.value = '';
   cancelTarget.value = signup;
 }
 
@@ -194,16 +219,24 @@ function openEvent(signup: ParentSignup) {
 
 async function confirmCancel() {
   const signup = cancelTarget.value;
-  if (!signup) return;
-  cancelTarget.value = null;
+  if (!signup || cancelling.value) return;
+  if (!cancelReason.value.trim() || cancelReason.value.trim().length > 1000) {
+    cancelError.value = 'Skriv en årsag på højst 1000 tegn.';
+    reasonInput.value?.focus();
+    return;
+  }
   cancelling.value = signup.id;
-  error.value = '';
+  cancelError.value = '';
   try {
-    await cancelParentSignup(signup.id);
+    const response = await cancelParentSignup(signup.id, cancelReason.value.trim());
     signups.value = signups.value.filter(item => item.id !== signup.id);
+    cancelTarget.value = null;
+    cancelNotice.value = response.notificationSent
+      ? 'Du er afmeldt. Lederen har fået besked med din årsag.'
+      : 'Du er afmeldt, men mailen til lederen kunne ikke sendes. Giv besked på laerke@havetshelte.dk.';
   } catch (err) {
     console.error('[parent-access] cancellation failed', err);
-    error.value = 'Tilmeldingen kunne ikke afmeldes. Prøv igen.';
+    cancelError.value = 'Tilmeldingen kunne ikke afmeldes. Prøv igen.';
   } finally {
     cancelling.value = '';
   }
@@ -252,6 +285,12 @@ onBeforeUnmount(() => unsubscribe?.());
 .parent-access-form label { font-weight: 700; }
 .parent-access-form input { min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font: inherit; }
 .parent-access-form button { margin-top: 8px; justify-self: start; }
+.cancellation-reason { display: grid; gap: 8px; margin-bottom: 22px; }
+.cancellation-reason label { font-weight: 700; color: var(--navy); }
+.cancellation-reason textarea { box-sizing: border-box; width: 100%; min-height: 112px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
+.cancellation-reason textarea:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.cancellation-reason textarea[aria-invalid="true"] { border-color: var(--danger); }
+.cancellation-reason .form-error { margin: 0; }
 .form-error, .parent-access-error { color: var(--danger); font-weight: 700; }
 .parent-access-success, .parent-access-empty { display: grid; gap: 4px; margin-top: 18px; padding: 14px; border-left: 4px solid var(--teal); background: var(--navy-soft); }
 .parent-access-status { color: var(--muted); }

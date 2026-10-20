@@ -37,11 +37,11 @@ export async function loadParentSignups() {
   );
 }
 
-export async function cancelParentSignup(signupId: string) {
-  return postFunction<{ status: 'cancelled' }>(
+export async function cancelParentSignup(signupId: string, reason: string) {
+  return postFunction<{ status: 'cancelled'; notificationSent: boolean }>(
     'cancelParentSignup',
     '/api/cancel-signup',
-    { signupId },
+    { signupId, reason },
     await idToken(),
   );
 }

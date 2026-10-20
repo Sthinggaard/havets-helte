@@ -7,20 +7,22 @@
       aria-modal="true"
       :aria-labelledby="titleId"
       :aria-describedby="messageId"
-      @click.self="emit('cancel')"
+      @click.self="cancel"
     >
-      <div class="confirm-dialog">
+      <div ref="dialog" class="confirm-dialog">
         <h2 :id="titleId" class="confirm-title">{{ title }}</h2>
         <p :id="messageId" class="confirm-message">{{ message }}</p>
+        <slot />
         <div class="confirm-actions">
-          <button type="button" class="confirm-btn confirm-btn--cancel" @click="emit('cancel')">
+          <button type="button" class="confirm-btn confirm-btn--cancel" :disabled="busy" @click="cancel">
             {{ cancelLabel }}
           </button>
           <button
             ref="confirmButton"
             type="button"
             class="confirm-btn confirm-btn--confirm"
-            @click="emit('confirm')"
+            :disabled="busy"
+            @click="!busy && emit('confirm')"
           >
             {{ confirmLabel }}
           </button>
@@ -40,10 +42,12 @@ const props = withDefaults(
     message: string;
     confirmLabel?: string;
     cancelLabel?: string;
+    busy?: boolean;
   }>(),
   {
     confirmLabel: 'Slet',
     cancelLabel: 'Annuller',
+    busy: false,
   },
 );
 
@@ -57,19 +61,44 @@ const id = ++sequence;
 const titleId = `confirm-title-${id}`;
 const messageId = `confirm-message-${id}`;
 const confirmButton = ref<HTMLButtonElement | null>(null);
+const dialog = ref<HTMLElement | null>(null);
+let previousFocus: HTMLElement | null = null;
 
 watch(
   () => props.open,
   async isOpen => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      previousFocus?.focus();
+      return;
+    }
+    previousFocus = document.activeElement as HTMLElement | null;
     await nextTick();
-    confirmButton.value?.focus();
+    (dialog.value?.querySelector<HTMLElement>('textarea, input') || confirmButton.value)?.focus();
   },
 );
 
+function cancel() {
+  if (!props.busy) emit('cancel');
+}
+
 function handleKeydown(event: KeyboardEvent) {
-  if (!props.open || event.key !== 'Escape') return;
-  emit('cancel');
+  if (!props.open) return;
+  if (event.key === 'Escape') cancel();
+  if (event.key !== 'Tab') return;
+  const controls = dialog.value?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href]');
+  if (!controls?.length) {
+    event.preventDefault();
+    return;
+  }
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last?.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first?.focus();
+  }
 }
 
 onMounted(() => window.addEventListener('keydown', handleKeydown));
@@ -90,6 +119,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown));
 .confirm-dialog {
   width: 100%;
   max-width: 420px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
   padding: 28px 24px 22px;
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -144,6 +175,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown));
 .confirm-btn--cancel:hover {
   opacity: 0.88;
 }
+
+.confirm-btn:disabled { opacity: 0.6; cursor: wait; }
 
 .confirm-btn:focus-visible {
   outline: 2px solid var(--navy);

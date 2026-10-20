@@ -732,7 +732,9 @@ exports.getParentSignups = onRequest({ region: 'europe-west1', cors: true, invok
   }
 });
 
-exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
+exports.cancelParentSignup = onRequest({
+  region: 'europe-west1', cors: true, invoker: 'public', secrets: [parentAccessAppsScriptSecret],
+}, async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
@@ -745,10 +747,15 @@ exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true, inv
   try {
     const parent = await verifyParentIdentity(req);
     const signupId = requiredString(requestBody(req).signupId, 'Tilmeldingen', 160);
+    const reasonValue = requestBody(req).reason;
+    if (typeof reasonValue !== 'string' || !reasonValue.trim() || reasonValue.trim().length > 1000) {
+      throw apiError(400, 'invalid_reason', 'Skriv en årsag på højst 1000 tegn.');
+    }
+    const reason = reasonValue.trim();
     const contactRef = db.collection('signupContacts').doc(signupId);
     const signupRef = db.collection('signups').doc(signupId);
 
-    await db.runTransaction(async transaction => {
+    const notification = await db.runTransaction(async transaction => {
       const [contactSnap, signupSnap] = await Promise.all([
         transaction.get(contactRef),
         transaction.get(signupRef),
@@ -761,6 +768,10 @@ exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true, inv
       if (!owner || owner !== parent.email) {
         throw apiError(404, 'not_found', 'Tilmeldingen findes ikke længere.');
       }
+
+      const eventSnap = await transaction.get(db.collection('events').doc(signupSnap.get('eventId')));
+      const event = eventSnap.data() || {};
+      const slot = (Array.isArray(event.slots) ? event.slots.find(item => item?.id === signupSnap.get('slotId')) : null) || {};
 
       const usageRef = eventSlotUsageRef(signupSnap.get('eventId'), signupSnap.get('slotId'));
       await transaction.get(usageRef);
@@ -777,10 +788,28 @@ exports.cancelParentSignup = onRequest({ region: 'europe-west1', cors: true, inv
       }
       transaction.delete(signupRef);
       transaction.delete(contactRef);
+      return {
+        type: 'cancellation',
+        eventTitle: event.title || contactSnap.get('eventTitle') || 'Arrangement',
+        slotLabel: slotLabel(slot),
+        dateText: signupDateText(event, slot),
+        name: contactSnap.get('name') || signupSnap.get('name') || '',
+        email: owner,
+        groupSize: Math.max(1, Number(signupSnap.get('groupSize')) || 1),
+        waitlist: signupSnap.get('waitlist') === true,
+        reason,
+      };
     });
 
+    let notificationSent = false;
+    try {
+      await sendAppsScriptMail(notification);
+      notificationSent = true;
+    } catch (error) {
+      logger.error('cancellation notification delivery failed', { signupId, errorMessage: error?.message || 'unknown error' });
+    }
     logger.info('parent signup cancelled', { signupId, uid: parent.uid });
-    res.status(200).json({ status: 'cancelled' });
+    res.status(200).json({ status: 'cancelled', notificationSent });
   } catch (error) {
     sendApiError(res, error, 'Kunne ikke afmelde tilmeldingen. Prøv igen.');
   }

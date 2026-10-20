@@ -9,10 +9,9 @@
  *    - Who has access: Anyone
  * 4. Kopiér web-app URL'en ind i index.html (APPS_SCRIPT_URL)
  *
- * Afmelding via cancel-link kræver at PROJECT_ID er sat korrekt.
- * Apps Script skal have Firestore-adgang: tilføj scope i appsscript.json:
- *   "oauthScopes": ["https://www.googleapis.com/auth/datastore",
- *                   "https://www.googleapis.com/auth/spreadsheets",
+ * Afmelding sker under /mine med en obligatorisk årsag.
+ * Apps Script leverer kun mails. Tilføj scopes i appsscript.json:
+ *   "oauthScopes": ["https://www.googleapis.com/auth/spreadsheets",
  *                   "https://www.googleapis.com/auth/script.external_request",
  *                   "https://www.googleapis.com/auth/gmail.send"]
  */
@@ -21,7 +20,6 @@
 const NOTIFY_EMAIL  = 'laerke@havetshelte.dk';
 const SHARED_SECRET = PropertiesService.getScriptProperties()
   .getProperty('PARENT_ACCESS_APPS_SCRIPT_SECRET') || '';
-const PROJECT_ID    = 'havets-helte';
 const SHEET_ID      = '';   // valgfri Google Sheet-log — tom = spring over
 const FROM_NAME     = 'Havets Helte';
 const SITE_URL      = 'https://havets-helte.web.app';
@@ -31,6 +29,27 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     if (data.secret !== SHARED_SECRET) return text('unauthorized');
+
+    if (data.type === 'cancellation') {
+      if (typeof data.reason !== 'string' || !data.reason.trim() || data.reason.trim().length > 1000) return text('invalid');
+      MailApp.sendEmail({
+        to: NOTIFY_EMAIL, name: FROM_NAME,
+        subject: 'Afmelding: ' + (data.eventTitle || 'Arrangement'),
+        htmlBody:
+          '<div style="font-family:Arial,sans-serif;color:#1a2535;line-height:1.6">' +
+          '<p><strong>' + esc(data.name) + '</strong> har afmeldt sig.</p>' +
+          '<table style="border-collapse:collapse;font-size:14px">' +
+          row('Arrangement', data.eventTitle) +
+          row('Vagt / opgave', data.slotLabel) +
+          row('Dato', data.dateText) +
+          row('Mail', data.email) +
+          ((data.groupSize || 1) > 1 ? row('Antal deltagere', String(data.groupSize)) : '') +
+          (data.waitlist ? row('Status', 'Afmeldt fra venteliste') : '') +
+          '</table><p><strong>Årsag til afmelding</strong></p>' +
+          '<p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(data.reason.trim()) + '</p></div>'
+      });
+      return text('ok');
+    }
 
     // Functions asks Apps Script to deliver the passwordless parent link.
     // The Firebase action code is generated server-side; Apps Script only
@@ -125,68 +144,12 @@ function doPost(e) {
   }
 }
 
-// ── Afmelding via cancel-link (GET fra bekræftelsesmail) ──────────────────
+// Gamle afmeldingslinks går gennem samme formular med login og årsag.
 function doGet(e) {
-  const token = (e.parameter || {}).cancel;
-  if (!token) return page('Ugyldigt link', 'Dette afmeldings-link er ikke gyldigt.');
-  if (!PROJECT_ID || PROJECT_ID.indexOf('SKIFT') > -1) {
-    return page('Ikke konfigureret', 'Kontakt os på <a href="mailto:' + NOTIFY_EMAIL + '">' + NOTIFY_EMAIL + '</a>.');
-  }
-
-  try {
-    const oauthToken = ScriptApp.getOAuthToken();
-    const fsBase = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID + '/databases/(default)/documents';
-    const headers = { Authorization: 'Bearer ' + oauthToken, 'Content-Type': 'application/json' };
-
-    // Find signupContacts med dette cancelToken
-    const qResp = UrlFetchApp.fetch(fsBase + ':runQuery', {
-      method: 'POST', headers,
-      payload: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: 'signupContacts' }],
-          where: { fieldFilter: {
-            field: { fieldPath: 'cancelToken' }, op: 'EQUAL',
-            value: { stringValue: token }
-          }},
-          limit: 1
-        }
-      }),
-      muteHttpExceptions: true
-    });
-
-    const results = JSON.parse(qResp.getContentText());
-    if (!results[0] || !results[0].document) {
-      return page('Allerede afmeldt', 'Denne tilmelding er allerede fjernet. Tak fordi du gav besked!');
-    }
-
-    const docPath = results[0].document.name;          // …/signupContacts/{id}
-    const docId   = docPath.split('/').pop();
-    const fields  = results[0].document.fields || {};
-
-    // Slet begge dokumenter (signup + signupContacts)
-    const delHeaders = { Authorization: 'Bearer ' + oauthToken };
-    UrlFetchApp.fetch('https://firestore.googleapis.com/v1/' + docPath,
-      { method: 'DELETE', headers: delHeaders, muteHttpExceptions: true });
-    UrlFetchApp.fetch(fsBase + '/signups/' + docId,
-      { method: 'DELETE', headers: delHeaders, muteHttpExceptions: true });
-
-    // Notificér leder om afmeldingen
-    try {
-      const name       = (fields.name       || {}).stringValue || '';
-      const eventTitle = (fields.eventTitle  || {}).stringValue || '';
-      MailApp.sendEmail({
-        to: NOTIFY_EMAIL, name: FROM_NAME,
-        subject: 'Afmelding: ' + (eventTitle || 'Opgave'),
-        body: name + ' har afmeldt sig' + (eventTitle ? ' fra "' + eventTitle + '"' : '') + '.'
-      });
-    } catch (mailErr) { console.error('Afmeldings-mail fejlede: ' + mailErr); }
-
-    return page('Afmeldingen er modtaget', 'Du er nu afmeldt. Tak fordi du gav os besked!');
-  } catch (err) {
-    console.error(err);
-    return page('Noget gik galt',
-      'Prøv igen eller skriv til <a href="mailto:' + NOTIFY_EMAIL + '">' + NOTIFY_EMAIL + '</a>.');
-  }
+  if (!(e.parameter || {}).cancel) return page('Ugyldigt link', 'Dette afmeldings-link er ikke gyldigt.');
+  return page('Afmeld din tilmelding',
+    'Åbn dine tilmeldinger for at vælge tilmeldingen og skrive, hvorfor du melder fra.' +
+    '<br><a href="' + SITE_URL + '/mine">Se mine tilmeldinger</a>');
 }
 
 // ── Hjælpefunktioner ───────────────────────────────────────────────────────
