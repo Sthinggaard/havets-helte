@@ -479,6 +479,27 @@ exports.updateEventLeaderName = onRequest({ region: 'europe-west1', cors: true, 
     const user = await admin.auth().getUser(id);
     if (user.disabled || !isAdminEmail(user.email)) throw apiError(404, 'not_found', 'Lederkontoen findes ikke.');
     if (user.displayName !== name) await admin.auth().updateUser(id, { displayName: name });
+    // Names are stored with each event to avoid extra public directory reads.
+    // Refresh those snapshots only when a leader explicitly saves a name.
+    const events = await db.collection('events').get();
+    const affected = events.docs.filter(event => {
+      const leaders = event.get('responsibleLeaders');
+      return Array.isArray(leaders) && leaders.some(leader => leader?.id === id && leader.name !== name);
+    });
+    for (let offset = 0; offset < affected.length; offset += 400) {
+      const refs = affected.slice(offset, offset + 400).map(event => event.ref);
+      await db.runTransaction(async transaction => {
+        const currentEvents = await transaction.getAll(...refs);
+        for (const event of currentEvents) {
+          if (!event.exists) continue;
+          const leaders = event.get('responsibleLeaders');
+          if (!Array.isArray(leaders) || !leaders.some(leader => leader?.id === id && leader.name !== name)) continue;
+          transaction.update(event.ref, {
+            responsibleLeaders: leaders.map(leader => leader?.id === id ? { ...leader, name } : leader),
+          });
+        }
+      });
+    }
     res.status(200).json({ leader: { id, name, email: normalizeEmail(user.email) } });
   } catch (error) {
     if (error?.code === 'auth/user-not-found') {

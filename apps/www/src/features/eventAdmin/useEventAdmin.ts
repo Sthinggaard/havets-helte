@@ -13,7 +13,7 @@ import {
   toEventRecord,
 } from './eventAdmin.data';
 import type { AdminEvent, EventSection, EventSlot, SlotComponentType } from './eventAdmin.types';
-import { normalizeEventLeaders } from './eventLeaders';
+import { normalizeEventLeaders, saveEventLeaderName } from './eventLeaders';
 
 type FormMode = 'list' | 'form';
 
@@ -48,6 +48,7 @@ export function useEventAdmin(section: EventSection) {
   const mode = ref<FormMode>('list');
   const editingId = ref('');
   const draft = reactive<AdminEvent>(emptyDraft(config.type));
+  const changedLeaderNames = new Set<string>();
 
   // Validation surface: title + slot-level errors, mirroring the legacy
   // has-error / aria-invalid flags but expressed declaratively.
@@ -58,6 +59,7 @@ export function useEventAdmin(section: EventSection) {
   const invalidMemberServiceUrlIds = ref<Set<string>>(new Set());
 
   function applyDraft(source: AdminEvent) {
+    changedLeaderNames.clear();
     draft.id = source.id;
     draft.title = source.title;
     draft.description = source.description;
@@ -125,6 +127,7 @@ export function useEventAdmin(section: EventSection) {
   }
 
   function cancel() {
+    changedLeaderNames.clear();
     clearErrors();
     mode.value = 'list';
     editingId.value = '';
@@ -167,6 +170,11 @@ export function useEventAdmin(section: EventSection) {
       valid = false;
     }
 
+    if (draft.responsibleLeaders.some(leader => !leader.name.trim() || leader.name.trim().length > 120)) {
+      saveError.value = 'Skriv lederens navn på højst 120 tegn.';
+      valid = false;
+    }
+
     if (draft.slots.length === 0) {
       slotsError.value = true;
       valid = false;
@@ -204,12 +212,21 @@ export function useEventAdmin(section: EventSection) {
   }
 
   async function save(): Promise<boolean> {
+    if (saving.value) return false;
     if (!validate()) return false;
     saving.value = true;
     saveError.value = '';
+    let savingLeaderNames = false;
     try {
       const db = await getAppFirestore();
       const record = toEventRecord(draft);
+      savingLeaderNames = true;
+      for (const leader of record.responsibleLeaders) {
+        if (!changedLeaderNames.has(leader.id)) continue;
+        const savedLeader = await saveEventLeaderName(leader.id, leader.name);
+        leader.name = savedLeader.name;
+      }
+      savingLeaderNames = false;
       if (editingId.value) {
         await updateDoc(doc(db, EVENTS_COLLECTION, editingId.value), {
           ...record,
@@ -233,7 +250,9 @@ export function useEventAdmin(section: EventSection) {
       return true;
     } catch (error) {
       console.error('[event-admin] save failed', error);
-      saveError.value = 'Gemning fejlede — tjek din forbindelse og prøv igen.';
+      saveError.value = savingLeaderNames
+        ? 'Lederens navn kunne ikke gemmes. Arrangementet er ikke gemt. Prøv igen.'
+        : 'Gemning fejlede — tjek din forbindelse og prøv igen.';
       return false;
     } finally {
       saving.value = false;
@@ -254,6 +273,10 @@ export function useEventAdmin(section: EventSection) {
   }
 
   const formTitle = computed(() => (editingId.value ? config.formEdit : config.formNew));
+
+  function markLeaderNameChanged(id: string) {
+    changedLeaderNames.add(id);
+  }
 
   return {
     config,
@@ -281,6 +304,7 @@ export function useEventAdmin(section: EventSection) {
     setSlotTime,
     toggleSlotUnlimited,
     save,
+    markLeaderNameChanged,
     remove,
   };
 }

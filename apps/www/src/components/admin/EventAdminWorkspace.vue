@@ -111,7 +111,7 @@
           <FormControl id="evDesc" v-model="draft.description" as="textarea" rows="3" placeholder="Kort beskrivelse til forældrene…" />
         </div>
 
-        <EventLeadersPicker v-model="draft.responsibleLeaders" />
+        <EventLeadersPicker v-model="draft.responsibleLeaders" @name-change="markLeaderNameChanged" />
 
         <div class="form-row">
           <div class="field">
@@ -346,6 +346,7 @@ const {
   addSlot,
   removeSlot,
   save,
+  markLeaderNameChanged,
   remove,
 } = useEventAdmin(props.section);
 
