@@ -19,8 +19,17 @@ export function normalizeEventLeaders(value: unknown): EventLeader[] {
 export async function fetchAvailableEventLeaders(): Promise<AvailableEventLeader[]> {
   const auth = await getAppAuth();
   if (!auth.currentUser) throw new Error('Log ind som leder for at vælge ansvarlige.');
-  const response = await getFunction<{ leaders: AvailableEventLeader[] }>(
-    'getEventLeaders', '/api/event-leaders', await auth.currentUser.getIdToken(),
-  );
-  return response.leaders;
+  const user = auth.currentUser;
+  const request = async (refresh = false) => {
+    const response = await getFunction<{ leaders: AvailableEventLeader[] }>(
+      'getEventLeaders', '/api/event-leaders', await user.getIdToken(refresh),
+    );
+    return response.leaders;
+  };
+  try {
+    return await request();
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 401) throw error;
+    return request(true);
+  }
 }

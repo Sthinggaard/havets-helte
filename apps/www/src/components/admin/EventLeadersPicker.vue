@@ -61,8 +61,11 @@ async function load() {
   error.value = '';
   try {
     available.value = await fetchAvailableEventLeaders();
-  } catch {
-    error.value = 'Lederne kunne ikke hentes.';
+  } catch (cause) {
+    const code = (cause as { code?: string })?.code;
+    error.value = code?.startsWith('auth/')
+      ? 'Dit login er udløbet. Log ud og ind igen for at hente lederne.'
+      : cause instanceof Error ? cause.message : 'Lederne kunne ikke hentes.';
   } finally {
     loading.value = false;
   }
