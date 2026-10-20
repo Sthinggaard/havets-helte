@@ -4,6 +4,7 @@ const logger = require('firebase-functions/logger');
 const { onRequest } = require('firebase-functions/v2/https');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { defineSecret, defineString } = require('firebase-functions/params');
+const { isIsoDate, signupDate, signupDateText } = require('./signupDates');
 
 const {
   hashValue,
@@ -189,13 +190,6 @@ function eventSlotUsageRef(eventId, slotId) {
   return db.collection('eventSlotUsage').doc(slotUsageId(eventId, slotId));
 }
 
-function isIsoDate(value) {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-}
-
 function signupDeadlineDate(event, slot) {
   if (slot.componentType !== 'signup') return '';
   if (isIsoDate(slot.deadlineDate)) return slot.deadlineDate;
@@ -253,7 +247,7 @@ async function loadParentSignups(email) {
         eventId: signup.eventId,
         eventType: event.type || 'event',
         eventTitle: event.title || contact.get('eventTitle') || 'Arrangement',
-        dateText: event.dateText || '',
+        dateText: signupDateText(event, slot || {}),
         location: event.location || '',
         slotLabel: slotLabel(slot || {}),
         waitlist: signup.waitlist === true,
@@ -692,8 +686,8 @@ exports.submitSignup = onRequest({
           groupSize,
           audienceGroupLabel: outcome.audienceGroup?.label || '',
           location: outcome.event.location || '',
-          dateText: outcome.event.dateText || '',
-          eventDate: outcome.slot.date || '',
+          dateText: signupDateText(outcome.event, outcome.slot),
+          eventDate: signupDate(outcome.event, outcome.slot),
           timeText: outcome.slot.sublabel || '',
           manageUrl: manageLink,
           waitlist: outcome.waitlist,

@@ -1,6 +1,7 @@
 import { collection, documentId, getDocs, query, where } from 'firebase/firestore';
 
 import { getAppAuth, getAppFirestore } from '@/lib/firebase';
+import { signupDateText } from '@/features/eventAdmin/eventScheduling';
 
 export type LeaderSignup = {
   id: string;
@@ -56,7 +57,7 @@ export async function loadLeaderSignups() {
       eventId: String(signup.eventId || ''),
       eventType: event.type || 'event',
       eventTitle: event.title || 'Arrangement',
-      dateText: event.dateText || '',
+      dateText: signupDateText(event, slot),
       location: event.location || '',
       slotLabel: slot?.sublabel ? `${slot.label || ''} · ${slot.sublabel}`.trim() : String(slot?.label || ''),
       audienceGroupLabel: typeof signup.audienceGroupLabel === 'string' ? signup.audienceGroupLabel : '',

@@ -34,6 +34,18 @@ export function calculateSlotDeadline(eventDate: string | undefined, slot: Pick<
   });
 }
 
+export function signupDateText(
+  event: { eventDate?: string; dateText?: string },
+  slot?: Pick<EventSlot, 'date' | 'scheduleMode' | 'offsetDays'> | null,
+): string {
+  const date = slot ? calculateSlotDate(event.eventDate, slot) : undefined;
+  return date
+    ? new Date(`${date}T00:00:00Z`).toLocaleDateString('da-DK', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+    })
+    : event.dateText || '';
+}
+
 export function isValidIsoDate(value: string | undefined): value is string {
   if (!value) return false;
   const match = value.match(ISO_DATE_PATTERN);
