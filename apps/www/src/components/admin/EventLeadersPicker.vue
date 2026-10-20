@@ -13,11 +13,31 @@
       </label>
     </div>
     <p v-else-if="!loading && !error">Ingen lederkonti fundet.</p>
+    <div class="leader-picker__manual">
+      <label :for="manualId">Leder uden login</label>
+      <div class="leader-picker__manual-row">
+        <FormControl
+          :id="manualId"
+          v-model="manualName"
+          placeholder="Lederens navn"
+          maxlength="120"
+          autocomplete="off"
+          :aria-invalid="!!manualError"
+          :aria-describedby="manualError ? `${manualId}-error` : undefined"
+          @update:model-value="manualError = ''"
+          @keydown.enter.prevent="addManualLeader"
+        />
+        <button type="button" class="btn-action" @click="addManualLeader">Tilføj</button>
+      </div>
+      <p v-if="manualError" :id="`${manualId}-error`" class="leader-picker__manual-error" role="alert">{{ manualError }}</p>
+      <span class="leader-picker__announcement" role="status">{{ manualNotice }}</span>
+    </div>
   </fieldset>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, useId } from 'vue';
+import FormControl from '@/components/form/FormControl.vue';
 import { fetchAvailableEventLeaders, type AvailableEventLeader, type EventLeader } from '@/features/eventAdmin/eventLeaders';
 
 const props = defineProps<{ modelValue: EventLeader[] }>();
@@ -25,6 +45,10 @@ const emit = defineEmits<{ 'update:modelValue': [value: EventLeader[]] }>();
 const available = ref<AvailableEventLeader[]>([]);
 const loading = ref(false);
 const error = ref('');
+const manualId = useId();
+const manualName = ref('');
+const manualError = ref('');
+const manualNotice = ref('');
 // Keep saved selections visible even if the account has since been removed.
 const options = computed(() => {
   const leaders = new Map<string, EventLeader & { email?: string }>(available.value.map(leader => [leader.id, leader]));
@@ -50,6 +74,22 @@ function toggle(leader: EventLeader) {
     : [...props.modelValue, { id: leader.id, name: leader.name }]);
 }
 
+function addManualLeader() {
+  const name = manualName.value.trim().replace(/\s+/g, ' ');
+  manualError.value = '';
+  manualNotice.value = '';
+  if (!name || name.length > 120) {
+    manualError.value = 'Skriv lederens navn på højst 120 tegn.';
+  } else if (props.modelValue.some(leader => leader.name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('da') === name.toLocaleLowerCase('da'))) {
+    manualError.value = 'En leder med dette navn er allerede valgt.';
+  } else {
+    emit('update:modelValue', [...props.modelValue, { id: `manual:${crypto.randomUUID()}`, name }]);
+    manualName.value = '';
+    manualNotice.value = `${name} er tilføjet.`;
+  }
+  document.getElementById(manualId)?.focus();
+}
+
 onMounted(load);
 </script>
 
@@ -67,4 +107,11 @@ onMounted(load);
 .leader-picker__option strong { font-size: 16px; }
 .leader-picker__option small { color: var(--muted); font-size: 14px; }
 .leader-picker__error { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; color: var(--danger); }
+.leader-picker__manual { display: grid; gap: 8px; margin-top: 16px; }
+.leader-picker__manual > label { color: var(--navy); font-weight: 700; }
+.leader-picker__manual-row { display: flex; align-items: start; gap: 8px; }
+.leader-picker__manual-row :deep(.form-control) { min-width: 0; min-height: 44px; font-size: 16px; }
+.leader-picker__manual-row button { flex-shrink: 0; min-height: 44px; }
+.leader-picker__manual .leader-picker__manual-error { color: var(--danger); }
+.leader-picker__announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 </style>
