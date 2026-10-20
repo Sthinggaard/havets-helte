@@ -13,6 +13,7 @@ import {
   toEventRecord,
 } from './eventAdmin.data';
 import type { AdminEvent, EventSection, EventSlot, SlotComponentType } from './eventAdmin.types';
+import { normalizeEventLeaders } from './eventLeaders';
 
 type FormMode = 'list' | 'form';
 
@@ -21,6 +22,7 @@ function emptyDraft(type: AdminEvent['type']): AdminEvent {
     id: '',
     title: '',
     description: '',
+    responsibleLeaders: [],
     dateText: '',
     eventDate: '',
     planYear: new Date().getFullYear(),
@@ -59,6 +61,7 @@ export function useEventAdmin(section: EventSection) {
     draft.id = source.id;
     draft.title = source.title;
     draft.description = source.description;
+    draft.responsibleLeaders = normalizeEventLeaders(source.responsibleLeaders);
     draft.dateText = source.dateText;
     draft.eventDate = source.eventDate ?? '';
     draft.planYear = source.planYear;

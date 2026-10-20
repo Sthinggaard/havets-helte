@@ -111,6 +111,8 @@
           <FormControl id="evDesc" v-model="draft.description" as="textarea" rows="3" placeholder="Kort beskrivelse til forældrene…" />
         </div>
 
+        <EventLeadersPicker v-model="draft.responsibleLeaders" />
+
         <div class="form-row">
           <div class="field">
             <label for="evEventDate">Eventdato</label>
@@ -304,6 +306,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EventSlotEditor from '@/components/admin/EventSlotEditor.vue';
+import EventLeadersPicker from '@/components/admin/EventLeadersPicker.vue';
 import ShiftTypeEditor from '@/components/admin/ShiftTypeEditor.vue';
 import TaskTypeEditor from '@/components/admin/TaskTypeEditor.vue';
 import SectionAddButton from '@/components/admin/SectionAddButton.vue';

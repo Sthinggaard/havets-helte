@@ -3,6 +3,8 @@
 // persist to the same Firestore `events` collection and share one form, keyed
 // by `type`. Mirrors the legacy admin.html EVENT_TYPES config and doc shape.
 
+import type { EventLeader } from './eventLeaders';
+
 export type EventType = 'timed' | 'task' | 'event';
 export type EventSection = 'vagter' | 'opgaver' | 'arrangementer';
 export type SlotKind = 'volunteer' | 'attend' | 'paid';
@@ -88,6 +90,7 @@ export interface AdminEvent {
   id: string;
   title: string;
   description: string;
+  responsibleLeaders: EventLeader[];
   dateText: string;
   // Normalized local event date for year-wheel calculations. `dateText` stays
   // as the legacy/display value for existing records.

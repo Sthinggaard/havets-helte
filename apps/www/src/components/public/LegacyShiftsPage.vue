@@ -69,6 +69,7 @@
 
     <template #body>
       <section v-if="selectedEvent" ref="roleTabsSection" class="shift-body">
+        <EventLeaders :leaders="selectedEvent.responsibleLeaders" />
         <div v-if="locationMapUrl" class="location-map-wrap">
           <iframe class="location-map" :src="locationMapUrl" loading="lazy" title="Kort over valgt sted"></iframe>
         </div>
@@ -208,6 +209,7 @@ import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/fire
 
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
+import EventLeaders from '@/components/public/EventLeaders.vue';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
@@ -226,6 +228,7 @@ type SignupRow = {
 };
 
 type PublicEvent = {
+  responsibleLeaders: AdminEvent['responsibleLeaders'];
   active: boolean;
   dateText: string;
   description: string;
@@ -331,6 +334,7 @@ function normalizeLiveEvent(event: AdminEvent): PublicEvent {
     dateText: event.dateText,
     location: event.location,
     description: event.description,
+    responsibleLeaders: event.responsibleLeaders,
     imageUrl: event.imageUrl || '/og-sankthans.webp',
     slots: event.slots,
     active: event.active,

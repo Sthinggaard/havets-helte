@@ -36,6 +36,10 @@
     ],
     "rewrites": [
       {
+        "source": "/api/event-leaders",
+        "run": { "serviceId": "geteventleaders", "region": "europe-west1" }
+      },
+      {
         "source": "/api/volunteer-leaderboard",
         "run": {
           "serviceId": "volunteerleaderboard",

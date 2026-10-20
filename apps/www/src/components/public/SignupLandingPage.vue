@@ -41,6 +41,7 @@
 
     <template #body>
       <div v-if="selectedEvent" ref="signupSection">
+        <EventLeaders :leaders="selectedEvent.responsibleLeaders" />
         <div v-if="locationMapUrl" class="location-map-wrap">
           <iframe class="location-map" :src="locationMapUrl" loading="lazy" title="Kort over valgt sted"></iframe>
         </div>
@@ -305,6 +306,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
+import EventLeaders from '@/components/public/EventLeaders.vue';
 import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
 import type { AdminEvent, EventSlot, EventType, SignupAudienceGroup } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
@@ -329,6 +331,7 @@ type SlotGroup = {
 };
 
 type PublicEvent = {
+  responsibleLeaders: AdminEvent['responsibleLeaders'];
   active: boolean;
   dateText: string;
   eventDate?: string;
@@ -512,6 +515,7 @@ function normalizeLiveEvent(event: AdminEvent): PublicEvent {
     eventDate: event.eventDate,
     location: event.location,
     description: event.description,
+    responsibleLeaders: event.responsibleLeaders,
     imageUrl: event.imageUrl || '/og-sankthans.webp',
     slots: event.slots,
     active: event.active,

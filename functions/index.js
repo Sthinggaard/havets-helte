@@ -434,6 +434,36 @@ exports.updateVolunteerLeaderboard = onDocumentWritten({
   });
 });
 
+exports.getEventLeaders = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'GET') {
+    res.status(405).json({ status: 'method_not_allowed', message: 'Kun GET er tilladt.' });
+    return;
+  }
+  try {
+    await verifyAdminIdentity(req);
+    const leaders = [];
+    let pageToken;
+    do {
+      const page = await admin.auth().listUsers(1000, pageToken);
+      for (const user of page.users) {
+        if (user.disabled || !isAdminEmail(user.email)) continue;
+        const email = normalizeEmail(user.email);
+        leaders.push({ id: user.uid, name: user.displayName?.trim() || email.split('@')[0], email });
+      }
+      pageToken = page.pageToken;
+    } while (pageToken);
+    leaders.sort((a, b) => a.name.localeCompare(b.name, 'da'));
+    res.set('Cache-Control', 'private, no-store');
+    res.status(200).json({ leaders });
+  } catch (error) {
+    sendApiError(res, error, 'Kunne ikke hente lederne. Prøv igen.');
+  }
+});
+
 exports.manageVolunteerSignup = onRequest({ region: 'europe-west1', cors: true, invoker: 'public' }, async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).json({ status: 'method_not_allowed', message: 'Kun POST er tilladt.' }); return; }

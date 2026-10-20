@@ -2,6 +2,7 @@ import { collection, getDocs } from 'firebase/firestore';
 
 import { getAppFirestore } from '@/lib/firebase';
 import { calculateRecurringDates } from './eventScheduling';
+import { normalizeEventLeaders } from './eventLeaders';
 import type { AdminEvent, EventSection, EventSlot, EventType, EventTypeConfig, SlotComponentType, SlotKind, SlotScheduleMode, SlotRelativeTo } from './eventAdmin.types';
 
 export const EVENTS_COLLECTION = 'events';
@@ -186,6 +187,7 @@ export function createAdminEventFromRecord(record: { id: string; [key: string]: 
     id: record.id,
     title: String(record.title ?? ''),
     description: String(record.description ?? ''),
+    responsibleLeaders: normalizeEventLeaders(record.responsibleLeaders),
     dateText: String(record.dateText ?? ''),
     eventDate: typeof record.eventDate === 'string' ? record.eventDate : undefined,
     planYear: typeof record.planYear === 'number' ? record.planYear : undefined,
@@ -296,6 +298,7 @@ export function toEventRecord(event: AdminEvent) {
   return {
     title: event.title.trim(),
     description: event.description.trim(),
+    responsibleLeaders: normalizeEventLeaders(event.responsibleLeaders),
     dateText: event.dateText.trim(),
     ...(event.eventDate ? { eventDate: event.eventDate } : {}),
     ...(typeof derivedPlanYear === 'number' ? { planYear: derivedPlanYear } : {}),
