@@ -13,6 +13,7 @@ import {
   toEventRecord,
 } from './eventAdmin.data';
 import type { AdminEvent, EventSection, EventSlot, SlotComponentType } from './eventAdmin.types';
+import { isValidIsoDate } from './eventScheduling';
 import { normalizeEventLeaders, saveEventLeaderName } from './eventLeaders';
 
 type FormMode = 'list' | 'form';
@@ -53,6 +54,7 @@ export function useEventAdmin(section: EventSection) {
   // Validation surface: title + slot-level errors, mirroring the legacy
   // has-error / aria-invalid flags but expressed declaratively.
   const titleError = ref(false);
+  const eventDateError = ref(false);
   const slotsError = ref(false);
   const invalidSlotIds = ref<Set<string>>(new Set());
   const invalidSlotTimeIds = ref<Set<string>>(new Set());
@@ -78,6 +80,7 @@ export function useEventAdmin(section: EventSection) {
 
   function clearErrors() {
     titleError.value = false;
+    eventDateError.value = false;
     slotsError.value = false;
     invalidSlotIds.value = new Set();
     invalidSlotTimeIds.value = new Set();
@@ -167,6 +170,11 @@ export function useEventAdmin(section: EventSection) {
 
     if (!draft.title.trim()) {
       titleError.value = true;
+      valid = false;
+    }
+
+    if (!isValidIsoDate(draft.eventDate)) {
+      eventDateError.value = true;
       valid = false;
     }
 
@@ -289,6 +297,7 @@ export function useEventAdmin(section: EventSection) {
     editingId,
     draft,
     titleError,
+    eventDateError,
     slotsError,
     invalidSlotIds,
     invalidSlotTimeIds,

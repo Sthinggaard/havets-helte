@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { isValidIsoDate } from '../eventAdmin/eventScheduling';
 import { fetchAllAdminEvents } from '../eventAdmin/eventAdmin.data';
 import { calendarEventOccurrences, type CalendarEvent } from './attendance.events';
 
@@ -27,7 +28,7 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
     eventsLoading.value = true;
     eventsError.value = '';
     try {
-      calendarEvents.value = calendarEventOccurrences(await fetchEvents());
+      calendarEvents.value = calendarEventOccurrences((await fetchEvents()).filter(event => isValidIsoDate(event.eventDate)));
       eventsLoaded = true;
     } catch {
       eventsError.value = 'Arrangementerne kunne ikke hentes.';

@@ -114,16 +114,16 @@
         <EventLeadersPicker v-model="draft.responsibleLeaders" @name-change="markLeaderNameChanged" />
 
         <div class="form-row">
-          <div class="field">
-            <label for="evEventDate">Eventdato</label>
+          <div class="field" :class="{ 'has-error': eventDateError }">
+            <label for="evEventDate">Eventdato (obligatorisk)</label>
             <div class="input-action-row">
-              <FormControl id="evEventDate" v-model="draft.eventDate" type="date" @update:model-value="syncEventDateText" />
+              <FormControl id="evEventDate" v-model="draft.eventDate" type="date" required :aria-invalid="eventDateError" aria-describedby="event-date-error" @update:model-value="syncEventDateText" />
               <button type="button" class="field-icon-button" aria-label="Vælg dato" title="Vælg dato" @click="openDatePicker">
                 <i class="ti ti-calendar" aria-hidden="true"></i>
               </button>
               <input ref="datePicker" class="native-date-picker" type="date" tabindex="-1" aria-hidden="true" @change="applyPickedDate" />
             </div>
-            <small class="field-help">Året til årshjulet udledes automatisk fra eventdatoen.</small>
+            <div v-if="eventDateError" id="event-date-error" class="field-error" role="alert">Vælg en gyldig dato for arrangementet.</div>
           </div>
           <div class="field location-field">
             <label for="evLoc">Sted</label>
@@ -334,6 +334,7 @@ const {
   editingId,
   draft,
   titleError,
+  eventDateError,
   slotsError,
   invalidSlotIds,
   invalidSlotTimeIds,

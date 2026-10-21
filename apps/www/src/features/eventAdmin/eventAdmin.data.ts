@@ -1,7 +1,7 @@
 import { collection, getDocs } from 'firebase/firestore';
 
 import { getAppFirestore } from '@/lib/firebase';
-import { calculateRecurringDates } from './eventScheduling';
+import { calculateRecurringDates, isValidIsoDate } from './eventScheduling';
 import { normalizeEventLeaders } from './eventLeaders';
 import type { AdminEvent, EventSection, EventSlot, EventType, EventTypeConfig, SlotComponentType, SlotKind, SlotScheduleMode, SlotRelativeTo } from './eventAdmin.types';
 
@@ -292,6 +292,7 @@ function collapseMaterializedShiftSlots(slots: EventSlot[]): EventSlot[] {
 // caller adds). Payment settings stay on each paid signup group, so separate
 // groups can use separate payment links.
 export function toEventRecord(event: AdminEvent) {
+  if (!isValidIsoDate(event.eventDate)) throw new Error('Vælg en gyldig dato for arrangementet.');
   const derivedPlanYear = event.eventDate && /^\d{4}-\d{2}-\d{2}$/.test(event.eventDate)
     ? Number(event.eventDate.slice(0, 4))
     : event.planYear;

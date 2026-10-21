@@ -210,6 +210,7 @@ import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/fire
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
 import EventLeaders from '@/components/public/EventLeaders.vue';
+import { isValidIsoDate } from '@/features/eventAdmin/eventScheduling';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import type { AdminEvent, EventSlot, EventType } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
@@ -346,7 +347,7 @@ function normalizeLiveEvent(event: AdminEvent): PublicEvent {
 async function loadEvents() {
   loading.value = true;
   try {
-    const live = (await fetchAllAdminEvents()).map(normalizeLiveEvent);
+    const live = (await fetchAllAdminEvents()).filter(event => isValidIsoDate(event.eventDate)).map(normalizeLiveEvent);
     allEvents.value = live.filter(event => event.type === 'timed' && event.active);
   } catch (error) {
     console.error('[vagter-legacy] failed to load live events', error);

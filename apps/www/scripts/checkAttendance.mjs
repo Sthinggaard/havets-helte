@@ -304,6 +304,17 @@ try {
   assert.ok(unifiedCalendar.recentRecords.value.length <= 5);
   signupOnlyCalendar.setCalendarView('day'); signupOnlyCalendar.shiftPeriod(-1);
   assert.equal(signupOnlyCalendar.calendarSummary.value.events,0, 'period count follows the selected view');
+  const {useEventAdmin} = await server.ssrLoadModule('/src/features/eventAdmin/useEventAdmin.ts');
+  const {toEventRecord} = await server.ssrLoadModule('/src/features/eventAdmin/eventAdmin.data.ts');
+  const editor = useEventAdmin('arrangementer');
+  for (const date of ['', '2026-02-30']) {
+    editor.draft.eventDate = date;
+    assert.equal(await editor.save(),false);
+    assert.equal(editor.eventDateError.value,true);
+    assert.throws(() => toEventRecord(editor.draft), /gyldig dato/);
+  }
+  editor.draft.eventDate='2026-10-31';
+  assert.equal(toEventRecord(editor.draft).eventDate,'2026-10-31');
   console.log('PASS: signup check-in, confirmed-only lists, groups, cancellations, retry, ISO weeks, event occurrences, schedule days/times/seasons, inclusive boundaries, DST/year change, schedule edits, historical snapshots, attendance rates, absence streaks, filters, drafts, team eligibility, transfers, correction, failed saves, reload and synchronization between tabs.');
 } finally {
   await server.close();

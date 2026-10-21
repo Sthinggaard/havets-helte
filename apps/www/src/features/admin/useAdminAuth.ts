@@ -26,11 +26,15 @@ const error = ref('');
 
 let unsubscribe: (() => void) | null = null;
 let listenerStarted = false;
+let subscribers = 0;
+let listenerGeneration = 0;
 
 async function ensureAuthListener() {
   if (listenerStarted) return;
   listenerStarted = true;
+  const generation = ++listenerGeneration;
   const auth = await getAppAuth();
+  if (generation !== listenerGeneration) return;
   unsubscribe = onAuthStateChanged(auth, nextUser => {
     user.value = nextUser;
     ready.value = true;
@@ -86,11 +90,17 @@ async function logout() {
 const isAdmin = computed(() => isAdminEmail(user.value?.email));
 
 export function useAdminAuth() {
+  subscribers += 1;
   void ensureAuthListener();
   onBeforeUnmount(() => {
+    subscribers -= 1;
+    if (subscribers) return;
+    listenerGeneration += 1;
     unsubscribe?.();
     unsubscribe = null;
     listenerStarted = false;
+    ready.value = false;
+    user.value = null;
   });
 
   return {
