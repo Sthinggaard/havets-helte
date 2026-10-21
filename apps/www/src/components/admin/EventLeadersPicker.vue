@@ -42,7 +42,7 @@
           @update:model-value="manualError = ''"
           @keydown.enter.prevent="addManualLeader"
         />
-        <button type="button" class="btn-action" @click="addManualLeader">Tilføj</button>
+        <button type="button" class="btn-action" :disabled="!manualName.trim()" @click="addManualLeader">Tilføj</button>
       </div>
       <p v-if="manualError" :id="`${manualId}-error`" class="leader-picker__manual-error" role="alert">{{ manualError }}</p>
       <span class="leader-picker__announcement" role="status">{{ manualNotice }}</span>
@@ -104,7 +104,8 @@ function addManualLeader() {
   const name = manualName.value.trim().replace(/\s+/g, ' ');
   manualError.value = '';
   manualNotice.value = '';
-  if (!name || name.length > 120) {
+  if (!name) return;
+  if (name.length > 120) {
     manualError.value = 'Skriv lederens navn på højst 120 tegn.';
   } else if (props.modelValue.some(leader => leader.name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('da') === name.toLocaleLowerCase('da'))) {
     manualError.value = 'En leder med dette navn er allerede valgt.';
