@@ -44,22 +44,6 @@
             </div>
           </div>
 
-          <div v-if="!isSignupAttendance" class="attendance-filter-group">
-            <div class="group-title">Grene</div>
-            <div class="day-filter-list">
-              <button
-                v-for="branch in attendanceBranches.filter(branch => dayMeetings.some(meeting => meeting.branchId === branch.id))"
-                :key="branch.id"
-                type="button"
-                class="day-filter-btn"
-                :class="{ active: isBranchActive(branch.id) }"
-                @click="toggleBranch(branch.id)"
-              >
-                <span class="label">{{ branch.label }}</span>
-              </button>
-            </div>
-          </div>
-
           <div v-if="dayMeetings.length > 1" class="attendance-filter-group">
             <div class="group-title">Hold</div>
             <div class="meeting-list">
@@ -146,14 +130,12 @@ const {
   loading,
   loadError,
   retryLoad,
-  attendanceBranches,
   branchLabel,
   currentDateShortLabel,
   dayMeetings,
   filteredMembers,
   hasRequestedDate,
   isArrived,
-  isBranchActive,
   meetingSummary,
   meetingCompleted,
   saveError,
@@ -162,7 +144,6 @@ const {
   selectMeeting,
   setSearchTerm,
   toggleArrival,
-  toggleBranch,
 } = useAttendancePage();
 
 const heroTitle = computed(() => (selectedMeeting.value ? `Check-in · ${selectedMeeting.value.title}` : 'Check-in'));
