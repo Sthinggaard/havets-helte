@@ -9,7 +9,6 @@
     :hero-title="heroTitle"
     :section-chip="sectionChip"
     section-eyebrow="Check-in"
-    :section-lead="sectionLead"
     :section-title="sectionTitle"
   >
     <template #info v-if="hasRequestedDate">
@@ -179,11 +178,6 @@ const heroCopy = computed(() =>
 const heroCountLabel = computed(() => (hasRequestedDate.value ? `${meetingSummary.value.total} ${isSignupAttendance.value ? 'tilmeldinger' : 'medlemmer'}` : 'Ingen dag valgt'));
 const sectionTitle = computed(() => (selectedMeeting.value ? selectedMeeting.value.title : 'Fremmøde'));
 const sectionChip = computed(() => (hasRequestedDate.value ? currentDateShortLabel.value : 'Afventer dag'));
-const sectionLead = computed(() =>
-  hasRequestedDate.value
-    ? 'Tryk på et navn for at registrere fremmøde.'
-    : 'Siden bliver aktiveret fra admin, når en leder vælger dagens dato.',
-);
 
 function onSearchInput(event: Event) {
   const target = event.target as HTMLInputElement | null;
