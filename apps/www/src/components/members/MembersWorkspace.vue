@@ -31,7 +31,7 @@
       </div>
 
       <Teleport to="body">
-      <dialog ref="createDialog" class="member-create-dialog" aria-labelledby="member-create-title" @click="onCreateDialogClick">
+      <dialog ref="createDialog" class="member-dialog member-create-dialog" aria-labelledby="member-create-title" @click="onDialogClick">
         <h2 id="member-create-title" class="member-create-title">Opret medlem</h2>
         <form class="member-create-form" @submit.prevent="handleCreateMember">
           <label class="field">
@@ -118,15 +118,15 @@
         </div>
       </section>
 
-      <div class="members-layout members-layout--legacy">
-        <div class="members-list legacy-member-list">
+        <div class="members-list legacy-member-list member-directory">
           <button
             v-for="member in filteredMembers"
             :key="member.id"
             type="button"
             class="member-card-shell"
             :class="{ active: selectedMember?.id === member.id }"
-            @click="selectMember(member.id)"
+            aria-haspopup="dialog"
+            @click="openMemberProfile(member.id)"
           >
             <div class="member-card-main">
               <img v-if="member.imageUrl" class="member-card-image" :src="member.imageUrl" :alt="member.name" loading="lazy" decoding="async" />
@@ -153,13 +153,18 @@
           <div v-if="!filteredMembers.length" class="calendar-empty">Ingen medlemmer matcher filteret.</div>
         </div>
 
-        <aside class="member-profile-panel legacy-member-panel">
+      <Teleport to="body">
+      <dialog ref="profileDialog" class="member-dialog member-profile-dialog" aria-labelledby="member-profile-title" @click="onDialogClick">
+        <div class="member-profile-close">
+          <button type="button" class="btn-action" autofocus @click="profileDialog?.close()">Luk</button>
+        </div>
+        <div class="member-profile-panel legacy-member-panel">
           <section class="member-profile-card">
             <div class="member-profile-card-head">
               <div>
-                <div class="member-profile-title">
+                <h2 id="member-profile-title" class="member-profile-title">
                   {{ selectedMember ? selectedMember.name : 'Vælg et medlem' }}
-                </div>
+                </h2>
                 <div class="member-profile-sub" v-if="selectedMember">
                   {{ selectedMember.branchLabel }} · {{ selectedMember.team }} · {{ selectedMember.weekday }}
                 </div>
@@ -220,7 +225,7 @@
                 </div>
               </div>
               <div class="member-profile-actions">
-                <button type="button" class="btn-action" @click="setBranchFilter(selectedMember?.branchId ?? 'all')">
+                <button type="button" class="btn-action" @click="showMemberBranch">
                   Til gren og hold
                 </button>
               </div>
@@ -243,8 +248,9 @@
               </div>
             </section>
           </div>
-        </aside>
-      </div>
+        </div>
+      </dialog>
+      </Teleport>
 
       <LibraryPickerModal
         :open="pickerOpen"
@@ -252,7 +258,7 @@
         subtitle="Vælg et eksisterende billede eller upload et nyt."
         :items="items"
         :categories="categories"
-        @close="pickerOpen = false"
+        @close="closeImagePicker"
         @pick="handleImagePick"
         @upload="handleImageUpload"
       />
@@ -303,6 +309,7 @@ function formatSeasonDate(value: string) {
 
 const pickerOpen = ref(false);
 const createDialog = ref<HTMLDialogElement | null>(null);
+const profileDialog = ref<HTMLDialogElement | null>(null);
 
 const currentYear = new Date().getFullYear();
 
@@ -322,9 +329,9 @@ function openCreateMember() {
   createDialog.value?.showModal();
 }
 
-function onCreateDialogClick(event: MouseEvent) {
-  const dialog = createDialog.value;
-  if (!dialog || event.target !== dialog) return;
+function onDialogClick(event: MouseEvent) {
+  const dialog = event.currentTarget as HTMLDialogElement;
+  if (event.target !== dialog) return;
   const bounds = dialog.getBoundingClientRect();
   if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) {
     dialog.close();
@@ -335,15 +342,32 @@ function handleCreateMember() {
   if (createMember()) createDialog.value?.close();
 }
 
+function openMemberProfile(memberId: string) {
+  selectMember(memberId);
+  profileDialog.value?.showModal();
+}
+
+function showMemberBranch() {
+  setBranchFilter(selectedMember.value?.branchId ?? 'all');
+  profileDialog.value?.close();
+}
+
 function openImagePicker() {
   if (!selectedMember.value) return;
+  // The existing library overlay must be outside the native dialog's top layer.
+  profileDialog.value?.close();
   pickerOpen.value = true;
+}
+
+function closeImagePicker() {
+  pickerOpen.value = false;
+  profileDialog.value?.showModal();
 }
 
 function handleImagePick(item: LibraryItem) {
   if (!selectedMember.value) return;
   setMemberImage(selectedMember.value.id, item.imageUrl);
-  pickerOpen.value = false;
+  closeImagePicker();
 }
 
 async function handleImageUpload(file: File, categoryId: string) {
@@ -351,7 +375,7 @@ async function handleImageUpload(file: File, categoryId: string) {
   const uploaded = await uploadItem(file, categoryId);
   if (uploaded) {
     setMemberImage(selectedMember.value.id, uploaded.imageUrl);
-    pickerOpen.value = false;
+    closeImagePicker();
   }
 }
 </script>
@@ -361,7 +385,7 @@ async function handleImageUpload(file: File, categoryId: string) {
   margin-bottom: 18px;
 }
 
-.member-create-dialog {
+.member-dialog {
   width: min(520px, calc(100% - 32px));
   max-height: calc(100dvh - 32px);
   margin: auto;
@@ -374,8 +398,30 @@ async function handleImageUpload(file: File, categoryId: string) {
   box-shadow: var(--shadow-lift);
 }
 
-.member-create-dialog::backdrop {
+.member-dialog::backdrop {
   background: rgba(0, 15, 30, 0.55);
+}
+
+.member-profile-dialog {
+  width: min(720px, calc(100% - 32px));
+}
+
+.member-profile-close {
+  position: sticky;
+  top: -24px;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  padding-block: 8px;
+  background: var(--surface);
+}
+
+.member-profile-dialog h2 {
+  margin: 0;
+}
+
+.member-directory .member-card-shell {
+  max-width: none;
 }
 
 .member-create-title {
