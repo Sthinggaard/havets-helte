@@ -18,7 +18,8 @@
     "lighthouse": "lighthouse",
     "lighthouse:local": "npm run build:prod && start-server-and-test preview http://127.0.0.1:4173 'npm run lighthouse -- http://127.0.0.1:4173'",
     "preview": "vite preview --host 127.0.0.1",
-    "typecheck": "vue-tsc -p tsconfig.app.json --noEmit"
+    "typecheck": "vue-tsc -p tsconfig.app.json --noEmit",
+    "check:attendance": "node scripts/checkAttendance.mjs"
   },
   "dependencies": {
     "firebase": "^12.15.0",

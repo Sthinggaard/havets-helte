@@ -12,4 +12,12 @@ export interface Meeting {
   location: string;
   capacity: number;
   summary: string;
+  teamId?: string;
+}
+
+export interface AttendanceRecord {
+  meeting: Meeting;
+  expectedMembers: Array<{ id: string; name: string }>;
+  presentMemberIds: string[];
+  completedAt: string | null;
 }

@@ -96,14 +96,16 @@
             </div>
             <div v-if="selectedMeeting" class="calendar-date-panel-meta">
               <span class="pill">{{ selectedMeeting.time }}</span>
-              <span class="pill soft">{{ meetingSummary.arrived }}/{{ filteredMembers.length }}</span>
+              <span class="pill soft">{{ meetingSummary.arrived }}/{{ meetingSummary.total }}</span>
             </div>
           </div>
 
           <div v-if="selectedMeeting" class="attendance-summary">
             <span class="att-chip present">{{ meetingSummary.arrived }} ankommet</span>
-            <span class="att-chip absent">{{ meetingSummary.waiting }} afventer</span>
+            <span class="att-chip absent">{{ meetingSummary.waiting }} {{ meetingCompleted ? 'fraværende' : 'afventer' }}</span>
           </div>
+          <p v-if="saveError" role="alert">{{ saveError }}</p>
+          <p v-if="meetingCompleted" role="status">Registreringen er afsluttet. En leder kan rette den fra fremmødeoversigten.</p>
 
           <div class="day-search-panel">
             <input class="day-search-input" type="search" placeholder="Søg medlem" :value="searchTerm" @input="onSearchInput" />
@@ -115,6 +117,8 @@
               :key="member.id"
               type="button"
               class="member-row"
+              :disabled="meetingCompleted"
+              :aria-pressed="!!selectedMeeting && isArrived(selectedMeeting.id, member.id)"
               :class="selectedMeeting && isArrived(selectedMeeting.id, member.id) ? 'arrived' : 'waiting'"
               @click="selectedMeeting && toggleArrival(selectedMeeting.id, member.id)"
             >
@@ -148,6 +152,8 @@ const {
   isArrived,
   isBranchActive,
   meetingSummary,
+  meetingCompleted,
+  saveError,
   searchTerm,
   selectedMeeting,
   selectMeeting,

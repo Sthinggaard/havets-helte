@@ -61,12 +61,34 @@ are skipped. Junior and Ulv use Monday/Tuesday teams from the workbook;
 Troppen retains the app's existing Wednesday meeting day. Full birthdays
 and group start dates are not imported into the current member model.
 
+### Attendance dashboard
+
+`/admin/fremmoede` opens the attendance overview. Filter by period, current
+branch and team; sort by attendance rate or consecutive absences. Expand a
+member's name to inspect the dated registrations. Members without completed
+registrations show “Ingen data”. Demo check-ins are not treated as history.
+
+Use “Registrer fremmøde” to choose a date and team and check the members who
+attended. “Gem foreløbigt” saves a draft that can also be opened through the
+calendar for check-in. “Afslut registrering” confirms the list: unchecked
+members count as absent. Completed registrations can be corrected from the
+overview; the kiosk cannot change them. Future meetings cannot be finalized.
+
+Attendance is stored locally in the browser under a roster-specific key and
+updates other tabs of the same origin. It is not shared through Firebase yet.
+Each registration preserves its expected member list, so subsequent transfers
+and newly added members do not rewrite historic attendance. When creating a
+new registration for an old date, the initial list comes from the current
+team; review that list before finalizing. Closing without saving makes no
+changes. Browser-storage failures are reported without updating the totals.
+
 ## Checks
 
 ```bash
 cd apps/www
 npm run typecheck
 npm run build
+npm run check:attendance
 ```
 
 ## Notes

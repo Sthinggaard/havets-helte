@@ -1,9 +1,10 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { attendanceMeetings, attendanceMembers, seedAttendance } from './attendance.data';
+import { attendanceMeetings } from './attendance.data';
+import { attendanceRecords, membersForMeeting, toggleRecordedArrival } from './attendance.records';
 import { formatDateLong, formatDateShort, sameDate, toIsoDate } from './attendanceCalendar';
-import { publicRosterBranches, rosterBranches } from '../roster/roster.data';
+import { buildMemberInitials, publicRosterBranches, rosterBranches } from '../roster/roster.data';
 import type { BranchId } from './attendance.types';
 
 export function useAttendancePage() {
@@ -13,11 +14,11 @@ export function useAttendancePage() {
   const requestedDate = computed(() => (typeof route.query.date === 'string' ? route.query.date : ''));
   const fallbackDate = toIsoDate(new Date());
   const selectedDate = computed(() => requestedDate.value || fallbackDate);
-  const attendanceMap = ref<Record<string, string[]>>({ ...seedAttendance });
+  const saveError = ref('');
   const searchTerm = ref('');
 
   const dayMeetings = computed(() =>
-    attendanceMeetings
+    attendanceMeetings.value
       .filter(meeting => visibleBranchIds.value.has(meeting.branchId))
       .filter(meeting => sameDate(meeting.date, selectedDate.value))
       .sort((a, b) => a.time.localeCompare(b.time, 'da') || a.title.localeCompare(b.title, 'da')),
@@ -55,20 +56,21 @@ export function useAttendancePage() {
     const meeting = selectedMeeting.value;
     if (!meeting) return [];
     const term = searchTerm.value.trim().toLowerCase();
-    return attendanceMembers
-      .filter(member => member.active)
-      .filter(member => member.branchId === meeting.branchId)
+    return membersForMeeting(meeting)
       .filter(member => !term || member.name.toLowerCase().includes(term))
+      .map(member => ({ ...member, initials: buildMemberInitials(member.name) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'da'));
   });
 
   const meetingSummary = computed(() => {
     const meeting = selectedMeeting.value;
-    if (!meeting) return { arrived: 0, waiting: 0 };
-    const arrived = filteredMembers.value.filter(member => isArrived(meeting.id, member.id)).length;
+    if (!meeting) return { arrived: 0, waiting: 0, total: 0 };
+    const members = membersForMeeting(meeting);
+    const arrived = members.filter(member => isArrived(meeting.id, member.id)).length;
     return {
       arrived,
-      waiting: Math.max(filteredMembers.value.length - arrived, 0),
+      total: members.length,
+      waiting: Math.max(members.length - arrived, 0),
     };
   });
 
@@ -97,13 +99,11 @@ export function useAttendancePage() {
   }
 
   function toggleArrival(meetingId: string, memberId: string) {
-    const current = attendanceMap.value[meetingId] ?? [];
-    attendanceMap.value = {
-      ...attendanceMap.value,
-      [meetingId]: current.includes(memberId)
-        ? current.filter(id => id !== memberId)
-        : [...current, memberId],
-    };
+    const meeting = attendanceMeetings.value.find(item => item.id === meetingId);
+    if (!meeting) return;
+    saveError.value = '';
+    try { toggleRecordedArrival(meeting, memberId); }
+    catch (error) { saveError.value = error instanceof Error ? error.message : 'Fremmødet kunne ikke gemmes.'; }
   }
 
   function branchLabel(branchId: BranchId) {
@@ -111,7 +111,7 @@ export function useAttendancePage() {
   }
 
   function isArrived(meetingId: string, memberId: string) {
-    return (attendanceMap.value[meetingId] ?? []).includes(memberId);
+    return attendanceRecords.find(record => record.meeting.id === meetingId)?.presentMemberIds.includes(memberId) ?? false;
   }
 
   return {
@@ -125,6 +125,8 @@ export function useAttendancePage() {
     isArrived,
     isBranchActive: (branchId: BranchId) => activeBranchIds.value.includes(branchId),
     meetingSummary,
+    saveError,
+    meetingCompleted: computed(() => !!attendanceRecords.find(record => record.meeting.id === selectedMeeting.value?.id)?.completedAt),
     searchTerm,
     selectedDate,
     selectedMeeting,

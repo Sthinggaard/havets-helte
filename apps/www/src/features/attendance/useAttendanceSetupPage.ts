@@ -16,8 +16,8 @@ export function useAttendanceSetupPage() {
   const currentMonthCells = computed(() => makeCalendarCells(currentYear.value, currentMonthIndex.value));
 
   const meetingsByDate = computed(() => {
-    const map = new Map<string, typeof attendanceMeetings>();
-    for (const meeting of attendanceMeetings) {
+    const map = new Map<string, typeof attendanceMeetings.value>();
+    for (const meeting of attendanceMeetings.value) {
       const list = map.get(meeting.date) ?? [];
       list.push(meeting);
       map.set(meeting.date, list);

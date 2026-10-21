@@ -1,24 +1,31 @@
 <template>
-  <AdminPageTemplate title="Vælg dag til check-in" copy="Administrer fremmøde og check-in for foreningens hold.">
+  <AdminPageTemplate title="Fremmøde og fravær" copy="Se deltagelsen over tid, og registrer fremmøde for foreningens hold.">
     <div class="page-stack">
     <PageCard>
       <template #header>
         <div class="workspace-header">
           <div>
             <p class="eyebrow">Fremmøde</p>
-            <h1 class="page-title">Vælg dag til check-in</h1>
+            <h1 class="page-title">Fremmøde og fravær</h1>
           </div>
 
-          <div class="month-nav">
-            <button type="button" class="calendar-day-btn" @click="shiftMonth(-1)">‹</button>
+          <div class="filter-tabs filter-tabs--tight" role="group" aria-label="Visning">
+            <button type="button" class="filter-tab" :class="{ active: view === 'overview' }" :aria-pressed="view === 'overview'" @click="view = 'overview'">Overblik</button>
+            <button type="button" class="filter-tab" :class="{ active: view === 'calendar' }" :aria-pressed="view === 'calendar'" @click="view = 'calendar'">Kalender og check-in</button>
+          </div>
+        </div>
+      </template>
+
+      <AttendanceDashboard v-if="view === 'overview'" />
+      <template v-else>
+          <div class="month-nav calendar-nav">
+            <button type="button" class="calendar-day-btn" aria-label="Forrige måned" @click="shiftMonth(-1)">‹</button>
             <div>
               <div class="month-nav-title">{{ currentMonthLabel }}</div>
               <div class="month-nav-sub">{{ currentDateLabel }}</div>
             </div>
-            <button type="button" class="calendar-day-btn" @click="shiftMonth(1)">›</button>
+            <button type="button" class="calendar-day-btn" aria-label="Næste måned" @click="shiftMonth(1)">›</button>
           </div>
-        </div>
-      </template>
 
       <div class="attendance-setup-layout">
         <section class="month-card">
@@ -68,6 +75,7 @@
           </div>
         </aside>
       </div>
+      </template>
     </PageCard>
     </div>
   </AdminPageTemplate>
@@ -77,6 +85,10 @@
 import PageCard from '@/components/PageCard.vue';
 import AdminPageTemplate from '@/components/admin/AdminPageTemplate.vue';
 import { useAttendanceSetupPage } from '@/features/attendance/useAttendanceSetupPage';
+import { ref } from 'vue';
+import AttendanceDashboard from './AttendanceDashboard.vue';
+
+const view = ref<'overview' | 'calendar'>('overview');
 
 const {
   currentDateLabel,
@@ -113,6 +125,8 @@ const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 .month-nav {
   align-items: center;
 }
+
+.calendar-nav { justify-content: flex-end; margin-bottom: 20px; }
 
 .month-nav-title {
   color: var(--navy-dark);

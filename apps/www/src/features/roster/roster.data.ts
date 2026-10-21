@@ -7,7 +7,8 @@ const localRoster = Object.values(import.meta.env.DEV
   ? import.meta.glob<{ members: Member[]; branchMeetingDays: Record<string, string[]> }>('./roster.local.json', { eager: true, import: 'default' })
   : {})[0];
 // Keep edits to the imported test list separate from the existing demo data.
-const storageVersion = localRoster ? 'local.v1' : 'v1';
+export const rosterStorageVersion = localRoster ? 'local.v1' : 'v1';
+const storageVersion = rosterStorageVersion;
 const rosterBranchStorageKey = `sankthans.rosterBranches.${storageVersion}`;
 const rosterStorageKey = `sankthans.rosterMembers.${storageVersion}`;
 const rosterTeamStorageKey = `sankthans.rosterTeams.${storageVersion}`;
