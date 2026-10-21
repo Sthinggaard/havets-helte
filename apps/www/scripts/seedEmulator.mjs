@@ -248,7 +248,10 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(error => {
+main().then(() => {
+  // Firebase keeps connections open even when existing data makes main return early.
+  process.exit(0);
+}).catch(error => {
   log(`Seed sprunget over: ${error.message}`);
   process.exit(0);
 });
