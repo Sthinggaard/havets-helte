@@ -1,6 +1,7 @@
 import type { EventSlot } from './eventAdmin.types';
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const LEGACY_DATE_TEXT_PATTERN = /\b\d{1,2}\.?\s+(?:januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)\b/i;
 
 /**
  * Returns the effective calendar date for a slot.
@@ -55,6 +56,14 @@ export function isValidIsoDate(value: string | undefined): value is string {
   const day = Number(match[3]);
   const parsed = new Date(Date.UTC(year, month - 1, day));
   return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+}
+
+/** Older live events have a Danish date in `dateText` but no ISO `eventDate`.
+ * Keep those dated records visible while hiding undated records; new saves use
+ * the required, validated ISO date.
+ */
+export function hasDisplayableEventDate(event: { eventDate?: string; dateText?: string }): boolean {
+  return isValidIsoDate(event.eventDate) || LEGACY_DATE_TEXT_PATTERN.test(event.dateText ?? '');
 }
 
 export function calculateRecurringDates(slot: Pick<EventSlot, 'scheduleMode' | 'recurrenceWeekdays' | 'recurrenceWeekday' | 'recurrenceStartDate' | 'recurrenceEndDate'>): string[] {

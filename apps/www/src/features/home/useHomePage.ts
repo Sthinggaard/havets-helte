@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { collection, count, getAggregateFromServer, query, sum, where } from 'firebase/firestore';
 
 import { fetchAllAdminEvents } from '@/features/eventAdmin/eventAdmin.data';
-import { isValidIsoDate } from '@/features/eventAdmin/eventScheduling';
+import { hasDisplayableEventDate } from '@/features/eventAdmin/eventScheduling';
 import type { AdminEvent, EventSlot } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
 
@@ -60,7 +60,7 @@ export function useHomePage() {
     route.query.tab === 'scout-signups' || route.query.tab === 'event' ? 'scout-signups' : 'parents',
   );
   function isLivePublic(event: AdminEvent) {
-    return event.active && isValidIsoDate(event.eventDate);
+    return event.active && hasDisplayableEventDate(event);
   }
 
   onMounted(async () => {

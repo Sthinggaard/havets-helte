@@ -305,7 +305,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 
 import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.vue';
 import PublicSignupModal from '@/components/public/PublicSignupModal.vue';
-import { isValidIsoDate } from '@/features/eventAdmin/eventScheduling';
+import { hasDisplayableEventDate } from '@/features/eventAdmin/eventScheduling';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import EventLeaders from '@/components/public/EventLeaders.vue';
 import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
@@ -528,7 +528,7 @@ function normalizeLiveEvent(event: AdminEvent): PublicEvent {
 async function loadEvents() {
   loading.value = true;
   try {
-    const live = (await fetchAllAdminEvents()).filter(event => isValidIsoDate(event.eventDate)).map(normalizeLiveEvent);
+    const live = (await fetchAllAdminEvents()).filter(hasDisplayableEventDate).map(normalizeLiveEvent);
     allEvents.value = live.filter(event => event.type === props.section && event.active);
   } catch (error) {
     console.error('[signup-landing] failed to load live events', error);
