@@ -181,7 +181,7 @@ const sectionTitle = computed(() => (selectedMeeting.value ? selectedMeeting.val
 const sectionChip = computed(() => (hasRequestedDate.value ? currentDateShortLabel.value : 'Afventer dag'));
 const sectionLead = computed(() =>
   hasRequestedDate.value
-    ? 'Tryk på dit navn for at tjekke ind.'
+    ? 'Tryk på et navn for at registrere fremmøde.'
     : 'Siden bliver aktiveret fra admin, når en leder vælger dagens dato.',
 );
 
