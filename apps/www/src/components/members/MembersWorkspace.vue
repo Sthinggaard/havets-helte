@@ -26,19 +26,17 @@
         </div>
       </template>
 
-      <section class="member-create-panel">
-        <div class="member-create-head">
-          <div>
-            <p class="eyebrow">Nyt medlem</p>
-            <h2 class="member-create-title">Opret medlem</h2>
-          </div>
-          <p class="member-create-copy">Det nye medlem bliver tilføjet til listen med det samme og kan vælges videre herfra.</p>
-        </div>
+      <div class="member-create-launch">
+        <button type="button" class="btn-action btn-action--primary" aria-haspopup="dialog" @click="openCreateMember">Opret medlem</button>
+      </div>
 
+      <Teleport to="body">
+      <dialog ref="createDialog" class="member-create-dialog" aria-labelledby="member-create-title" @click="onCreateDialogClick">
+        <h2 id="member-create-title" class="member-create-title">Opret medlem</h2>
         <form class="member-create-form" @submit.prevent="handleCreateMember">
           <label class="field">
             <span class="field-label">Navn</span>
-            <input v-model="memberName" class="field-input" type="text" autocomplete="name" placeholder="Fulde navn" />
+            <input v-model="memberName" class="field-input" type="text" autocomplete="name" placeholder="Fulde navn" autofocus />
           </label>
 
           <label class="field">
@@ -77,13 +75,15 @@
             <span>Aktiv</span>
           </label>
 
+          <p v-if="memberError" class="member-create-error" role="alert">{{ memberError }}</p>
           <div class="member-create-actions">
-            <p v-if="memberError" class="member-create-error" role="alert">{{ memberError }}</p>
+            <button type="button" class="btn-action" @click="createDialog?.close()">Annuller</button>
             <button type="submit" class="btn-action btn-action--primary">Opret medlem</button>
           </div>
         </form>
 
-      </section>
+      </dialog>
+      </Teleport>
 
       <section class="members-toolbar">
         <input
@@ -302,6 +302,7 @@ function formatSeasonDate(value: string) {
 }
 
 const pickerOpen = ref(false);
+const createDialog = ref<HTMLDialogElement | null>(null);
 
 const currentYear = new Date().getFullYear();
 
@@ -316,8 +317,22 @@ function onSearchInput(event: Event) {
   searchTerm.value = target?.value ?? '';
 }
 
+function openCreateMember() {
+  memberError.value = '';
+  createDialog.value?.showModal();
+}
+
+function onCreateDialogClick(event: MouseEvent) {
+  const dialog = createDialog.value;
+  if (!dialog || event.target !== dialog) return;
+  const bounds = dialog.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) {
+    dialog.close();
+  }
+}
+
 function handleCreateMember() {
-  createMember();
+  if (createMember()) createDialog.value?.close();
 }
 
 function openImagePicker() {
@@ -342,41 +357,43 @@ async function handleImageUpload(file: File, categoryId: string) {
 </script>
 
 <style scoped>
-.member-create-panel {
-  display: grid;
-  gap: 14px;
+.member-create-launch {
   margin-bottom: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(216, 225, 234, 0.92);
 }
 
-.member-create-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+.member-create-dialog {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 24px;
+  overflow-y: auto;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-lift);
+}
+
+.member-create-dialog::backdrop {
+  background: rgba(0, 15, 30, 0.55);
 }
 
 .member-create-title {
-  margin: 0;
-  color: var(--navy-dark);
-  font-size: 1.02rem;
-  font-weight: 800;
-}
-
-.member-create-copy {
-  margin: 0;
-  max-width: 560px;
-  color: var(--muted);
-  line-height: 1.5;
+  margin: 0 0 20px;
+  color: var(--navy);
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .member-create-form {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
   align-items: end;
+}
+
+.member-create-form > .field:first-child {
+  grid-column: 1 / -1;
 }
 
 .field {
@@ -393,17 +410,27 @@ async function handleImageUpload(file: File, categoryId: string) {
 
 .field-input {
   width: 100%;
+  min-height: 44px;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: #fff;
   color: var(--text);
   font: inherit;
+  font-size: 16px;
 }
 
-.field-input:focus {
-  outline: 2px solid rgba(15, 70, 123, 0.18);
-  outline-offset: 1px;
+.field-input:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+select.field-input {
+  appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23003366' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
 }
 
 .member-create-switch {
@@ -419,23 +446,18 @@ async function handleImageUpload(file: File, categoryId: string) {
 .member-create-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
   grid-column: 1 / -1;
 }
 
 .member-create-error {
+  grid-column: 1 / -1;
   margin: 0;
   color: #c94853;
   font-size: 0.92rem;
   font-weight: 600;
-}
-
-@media (max-width: 900px) {
-  .member-create-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 640px) {
