@@ -2,9 +2,15 @@ import { computed, reactive } from 'vue';
 
 import type { Branch, Member, BranchId, BranchMeetingDay, RosterTeam } from './roster.types';
 
-const rosterBranchStorageKey = 'sankthans.rosterBranches.v1';
-const rosterStorageKey = 'sankthans.rosterMembers.v1';
-const rosterTeamStorageKey = 'sankthans.rosterTeams.v1';
+// Optional private fixture, generated locally and excluded from production builds.
+const localRoster = Object.values(import.meta.env.DEV
+  ? import.meta.glob<{ members: Member[]; branchMeetingDays: Record<string, string[]> }>('./roster.local.json', { eager: true, import: 'default' })
+  : {})[0];
+// Keep edits to the imported test list separate from the existing demo data.
+const storageVersion = localRoster ? 'local.v1' : 'v1';
+const rosterBranchStorageKey = `sankthans.rosterBranches.${storageVersion}`;
+const rosterStorageKey = `sankthans.rosterMembers.${storageVersion}`;
+const rosterTeamStorageKey = `sankthans.rosterTeams.${storageVersion}`;
 
 const defaultRosterBranches: Branch[] = [
   {
@@ -80,14 +86,14 @@ function memberTeam(weekday: string) {
 }
 
 function cloneDefaults(): Member[] {
-  return defaultRosterMembers.map(member => ({ ...member }));
+  return (localRoster?.members ?? defaultRosterMembers).map(member => ({ ...member }));
 }
 
 function cloneDefaultBranches(): Branch[] {
   return defaultRosterBranches.map(branch => ({
     ...branch,
-    meetingDays: [...branch.meetingDays],
-    meetingSchedules: branch.meetingDays.map(weekday => ({ weekday, startTime: '', endTime: '' })),
+    meetingDays: [...(localRoster?.branchMeetingDays[branch.id] ?? branch.meetingDays)],
+    meetingSchedules: (localRoster?.branchMeetingDays[branch.id] ?? branch.meetingDays).map(weekday => ({ weekday, startTime: '', endTime: '' })),
     seasonStartDate: '',
     seasonEndDate: '',
   }));

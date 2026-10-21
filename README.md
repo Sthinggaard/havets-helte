@@ -42,6 +42,25 @@ To point local dev at the live `havets-helte` project instead of emulators
 reads `.env` files at server startup, so a browser refresh alone won't pick
 up the change. This file is gitignored and only affects your local checkout.
 
+### Local scout list
+
+To test the spreadsheet list on `/medlemmer`, run from the repository root:
+
+```bash
+python3 apps/www/scripts/importLocalRoster.py spejdere.xlsx
+```
+
+Restart Vite after the first import. This creates a gitignored development
+fixture and uses separate browser storage for members, branches, and teams,
+preserving the previous demo data. Changes to this test list stay in that
+browser. The workbook and generated fixture are not committed; the fixture
+is excluded from production builds. No Firebase data is written.
+
+The import reads names, branches, meeting days, and birth years. Blank names
+are skipped. Junior and Ulv use Monday/Tuesday teams from the workbook;
+Troppen retains the app's existing Wednesday meeting day. Full birthdays
+and group start dates are not imported into the current member model.
+
 ## Checks
 
 ```bash

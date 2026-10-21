@@ -81,3 +81,7 @@ dist/
 functions/.npm-cache/
 functions/.env.*
 !functions/.env.havets-helte
+
+# Private local roster test data
+/spejdere.xlsx
+/apps/www/src/features/roster/roster.local.json
