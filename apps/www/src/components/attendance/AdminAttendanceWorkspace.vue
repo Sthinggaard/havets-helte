@@ -1,23 +1,28 @@
 <template>
-  <AdminPageTemplate title="Fremmøde og fravær" copy="Se deltagelsen over tid, og registrer fremmøde for foreningens hold.">
+  <AdminPageTemplate title="Fremmøde" copy="Se deltagelsen over tid, og registrer fremmøde for foreningens hold.">
     <div class="page-stack">
     <PageCard>
       <template #header>
         <div class="workspace-header">
           <div>
             <p class="eyebrow">Fremmøde</p>
-            <h1 class="page-title">Fremmøde og fravær</h1>
+            <h1 class="page-title">Fremmøde</h1>
           </div>
 
           <div class="filter-tabs filter-tabs--tight" role="group" aria-label="Visning">
             <button type="button" class="filter-tab" :class="{ active: view === 'overview' }" :aria-pressed="view === 'overview'" @click="view = 'overview'">Overblik</button>
-            <button type="button" class="filter-tab" :class="{ active: view === 'calendar' }" :aria-pressed="view === 'calendar'" @click="view = 'calendar'">Kalender og check-in</button>
+            <button type="button" class="filter-tab" :class="{ active: view === 'calendar' }" :aria-pressed="view === 'calendar'" @click="view = 'calendar'; loadCalendarEvents()">Kalender og check-in</button>
           </div>
         </div>
       </template>
 
       <AttendanceDashboard v-if="view === 'overview'" />
       <template v-else>
+          <p v-if="eventsLoading" role="status">Henter arrangementer…</p>
+          <div v-if="eventsError" role="alert" class="calendar-load-error">
+            <span>{{ eventsError }}</span>
+            <button type="button" class="btn-action" @click="loadCalendarEvents">Prøv igen</button>
+          </div>
           <div class="month-nav calendar-nav">
             <button type="button" class="calendar-day-btn" aria-label="Forrige måned" @click="shiftMonth(-1)">‹</button>
             <div>
@@ -30,25 +35,32 @@
       <div class="attendance-setup-layout">
         <section class="month-card">
           <div class="month-grid">
+            <div class="month-day-label">Uge</div>
             <div v-for="label in weekdayLabels" :key="label" class="month-day-label">{{ label }}</div>
+            <template v-for="(cell, index) in currentMonthCells" :key="cell.isoDate">
+            <div v-if="index % 7 === 0" class="week-number" :aria-label="`Uge ${isoWeekNumber(cell.date)}`">{{ isoWeekNumber(cell.date) }}</div>
             <button
-              v-for="cell in currentMonthCells"
-              :key="cell.isoDate"
               type="button"
               class="month-day"
               :class="{
                 'other-month': !cell.inMonth,
                 today: cell.isoDate === todayIso,
                 selected: cell.isoDate === selectedDate,
-                'has-meetings': meetingsByDate.get(cell.isoDate)?.length,
+                'has-meetings': meetingsByDate.get(cell.isoDate)?.length || eventsByDate.get(cell.isoDate)?.length,
               }"
               @click="selectDate(cell.isoDate)"
             >
+              <span class="sr-only">{{ cell.isoDate }}: </span>
               <span class="month-day-num">{{ cell.date.getDate() }}</span>
               <span v-if="meetingsByDate.get(cell.isoDate)?.length" class="month-day-badge">
                 {{ meetingsByDate.get(cell.isoDate)?.length }} hold
               </span>
+              <span v-if="eventsByDate.get(cell.isoDate)?.length" class="month-event-label">
+                <span aria-hidden="true">{{ eventsByDate.get(cell.isoDate)?.length }} arr.</span>
+                <span class="sr-only">{{ eventsByDate.get(cell.isoDate)?.length }} arrangementer</span>
+              </span>
             </button>
+            </template>
           </div>
         </section>
 
@@ -56,14 +68,25 @@
           <div class="calendar-date-panel-head">
             <div>
               <div class="calendar-date-panel-title">{{ currentDateLabel }}</div>
-              <div class="calendar-date-panel-sub">{{ selectedDateMeetings.length }} hold på dagen</div>
+              <div class="calendar-date-panel-sub">{{ selectedDateMeetings.length }} hold · {{ selectedDateEvents.length }} {{ selectedDateEvents.length === 1 ? 'arrangement' : 'arrangementer' }}</div>
             </div>
             <button type="button" class="btn-action btn-action--primary" :disabled="!selectedDateMeetings.length" @click="openAttendance">
               Åbn fremmøde
             </button>
           </div>
 
+          <div v-if="selectedDateEvents.length" class="calendar-date-meetings">
+            <h2 class="calendar-section-title">Arrangementer</h2>
+            <article v-for="event in selectedDateEvents" :key="event.id" class="calendar-date-meeting">
+              <div class="calendar-date-meeting-main">
+                <div class="calendar-date-meeting-title">{{ event.title }}</div>
+                <div v-if="event.location" class="calendar-date-meeting-sub">{{ event.location }}</div>
+                <div v-if="event.times.length" class="calendar-date-meeting-sub">{{ event.times.join(' · ') }}</div>
+              </div>
+            </article>
+          </div>
           <div class="calendar-date-meetings">
+            <h2 v-if="selectedDateMeetings.length" class="calendar-section-title">Hold</h2>
             <article v-for="meeting in selectedDateMeetings" :key="meeting.id" class="calendar-date-meeting static">
               <div class="calendar-date-meeting-main">
                 <div class="calendar-date-meeting-title">{{ meeting.title }}</div>
@@ -84,6 +107,7 @@
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
 import AdminPageTemplate from '@/components/admin/AdminPageTemplate.vue';
+import { isoWeekNumber } from '@/features/attendance/attendanceCalendar';
 import { useAttendanceSetupPage } from '@/features/attendance/useAttendanceSetupPage';
 import { ref } from 'vue';
 import AttendanceDashboard from './AttendanceDashboard.vue';
@@ -91,6 +115,11 @@ import AttendanceDashboard from './AttendanceDashboard.vue';
 const view = ref<'overview' | 'calendar'>('overview');
 
 const {
+  eventsByDate,
+  eventsError,
+  eventsLoading,
+  loadCalendarEvents,
+  selectedDateEvents,
   currentDateLabel,
   currentMonthCells,
   currentMonthLabel,
@@ -107,6 +136,13 @@ const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 </script>
 
 <style scoped>
+.calendar-load-error { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.calendar-section-title { margin: 0; font-size: 1rem; color: var(--navy-dark); }
+.month-event-label { display: block; margin-top: 6px; color: var(--navy-dark); font-size: 0.76rem; font-weight: 700; }
+.calendar-date-meeting-main { min-width: 0; overflow-wrap: anywhere; }
+.calendar-date-meetings { max-height: 420px; overflow-y: auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
 .workspace-header,
 .month-nav,
 .calendar-date-panel-head,
@@ -161,9 +197,11 @@ const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 
 .month-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: 28px repeat(7, minmax(0, 1fr));
   gap: 10px;
 }
+
+.week-number { align-self: center; text-align: center; color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 
 .month-day-label {
   text-align: center;
@@ -267,5 +305,11 @@ const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
     min-height: 74px;
     padding: 8px;
   }
+}
+@media (max-width: 480px) {
+  .month-grid { gap: 4px; grid-template-columns: 22px repeat(7, minmax(0, 1fr)); }
+  .month-day { padding: 4px; }
+  .month-day-badge { padding: 2px 3px; font-size: 0.7rem; }
+  .month-event-label { font-size: 0.7rem; }
 }
 </style>

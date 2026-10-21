@@ -68,3 +68,11 @@ export function makeCalendarCells(year: number, monthIndex: number) {
   }
   return cells;
 }
+
+/** ISO weeks start on Monday; week 1 contains the year's first Thursday. */
+export function isoWeekNumber(date: Date) {
+  const thursday = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  thursday.setUTCDate(thursday.getUTCDate() + 3 - ((thursday.getUTCDay() + 6) % 7));
+  const yearStart = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 1));
+  return Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}

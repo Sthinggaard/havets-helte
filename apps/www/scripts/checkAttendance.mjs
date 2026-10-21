@@ -21,7 +21,7 @@ globalThis.window = {
   removeEventListener: name => listeners.delete(name),
 };
 const server = await createServer({
-  root, configFile: false, optimizeDeps: { noDiscovery: true, include: [] },
+  root, configFile: false, resolve: { alias: { '@': `${root}/src` } }, optimizeDeps: { noDiscovery: true, include: [] },
   server: { middlewareMode: true, hmr: false }, ssr: { noExternal: ['vue-router'] },
   plugins: [{ name: 'test-router', enforce: 'pre',
     resolveId(source) { if (source === 'vue-router') return '\0test-router'; },
@@ -29,6 +29,40 @@ const server = await createServer({
   }],
 });
 try {
+  const {isoWeekNumber,fromIsoDate} = await server.ssrLoadModule('/src/features/attendance/attendanceCalendar.ts');
+  for (const [date,week] of [['2026-10-21',43],['2027-01-01',53],['2027-01-04',1],['2024-12-30',1]]) {
+    assert.equal(isoWeekNumber(fromIsoDate(date)),week, `ISO week for ${date}`);
+  }
+  const {calendarEventOccurrences} = await server.ssrLoadModule('/src/features/attendance/attendance.events.ts');
+  const event = {id:'test-event',title:'Testarrangement',active:true,eventDate:'2026-10-21',location:'Teststed',slots:[]};
+  const shift = {componentType:'shift',date:'2026-10-21',startTime:'17:00',endTime:'18:00'};
+  const events = [{...event,slots:[shift, {...shift}, {...shift,componentType:'task',date:'2026-10-19'}, {...shift,componentType:'signup',date:'2026-10-22'}]}, {...event,id:'draft',active:false}, {...event,id:'undated',eventDate:'2026-02-30'}];
+  const occurrences = calendarEventOccurrences(events);
+  assert.deepEqual(occurrences.map(item => item.date), ['2026-10-21','2026-10-22']);
+  assert.deepEqual(occurrences[0].times, ['17:00–18:00'], 'same-day shifts do not duplicate arrangements or times');
+  assert.equal(occurrences[0].location, 'Teststed');
+  const relative = calendarEventOccurrences([{...event,slots:[{...shift,date:'',scheduleMode:'relative',offsetDays:2}]}]);
+  assert.deepEqual(relative.map(item => item.date), ['2026-10-21','2026-10-23']);
+  const recurring = {...shift,date:'',scheduleMode:'weekly',recurrenceWeekdays:[1],recurrenceStartDate:'2026-10-19',recurrenceEndDate:'2026-11-02'};
+  assert.deepEqual(calendarEventOccurrences([{...event,eventDate:undefined,slots:[recurring]}]).map(item => item.date), ['2026-10-19','2026-10-26','2026-11-02']);
+  assert.deepEqual(calendarEventOccurrences([{...event,eventDate:undefined,slots:[{...recurring,date:'2026-10-26',recurrenceMaterialized:true}]}]).map(item => item.date), ['2026-10-26'], 'materialized shifts stay on their actual date');
+  const {useAttendanceSetupPage} = await server.ssrLoadModule('/src/features/attendance/useAttendanceSetupPage.ts');
+  let eventReads = 0;
+  const calendar = useAttendanceSetupPage(async () => {eventReads++; return events;});
+  assert.equal(eventReads, 0, 'overview does not fetch calendar events');
+  await Promise.all([calendar.loadCalendarEvents(),calendar.loadCalendarEvents()]);
+  calendar.selectDate('2026-10-21');
+  assert.equal(calendar.selectedDateEvents.value[0].title, 'Testarrangement');
+  calendar.shiftMonth(1);
+  await calendar.loadCalendarEvents();
+  assert.equal(eventReads, 1, 'month/tab changes reuse a single read');
+  let attempts = 0;
+  const retry = useAttendanceSetupPage(async () => {if (++attempts === 1) throw Error('offline'); return [event];});
+  await retry.loadCalendarEvents();
+  assert.ok(retry.eventsError.value);
+  await retry.loadCalendarEvents();
+  assert.equal(retry.eventsError.value, '');
+  assert.equal(retry.eventsByDate.value.get('2026-10-21').length, 1);
   const roster = await server.ssrLoadModule('/src/features/roster/roster.data.ts');
   const member = (id, branchId = 'junior', team = 'Mandagshold', weekday = 'Mandag') => ({id, name: `Test ${id}`, initials: id.toUpperCase(), branchId, team, weekday, birthYear: 2015, active: true});
   roster.rosterMembers.splice(0, roster.rosterMembers.length, member('a'), member('b'), member('c', 'junior', 'Tirsdagshold', 'Tirsdag'));
