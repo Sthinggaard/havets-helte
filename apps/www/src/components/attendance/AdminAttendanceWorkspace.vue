@@ -70,36 +70,23 @@
               <div class="calendar-date-panel-title">{{ currentDateLabel }}</div>
               <div class="calendar-date-panel-sub">{{ selectedDateMeetings.length }} hold · {{ selectedDateEvents.length }} {{ selectedDateEvents.length === 1 ? 'arrangement' : 'arrangementer' }}</div>
             </div>
-            <button type="button" class="btn-action btn-action--primary" :disabled="!selectedDateMeetings.length" @click="openAttendance">
+            <button type="button" class="btn-action btn-action--primary" :disabled="!canOpenAttendance" @click="openAttendance">
               Åbn fremmøde
             </button>
           </div>
 
-          <div v-if="selectedDateEvents.length" class="calendar-date-meetings">
-            <h2 class="calendar-section-title">Arrangementer</h2>
-            <article v-for="event in selectedDateEvents" :key="event.id" class="calendar-date-meeting calendar-event">
-              <div class="calendar-date-meeting-main">
-                <div class="calendar-date-meeting-title">{{ event.title }}</div>
-                <div v-if="event.location" class="calendar-date-meeting-sub">{{ event.location }}</div>
-                <div v-if="event.times.length" class="calendar-date-meeting-sub">{{ event.times.join(' · ') }}</div>
-              </div>
-              <div v-for="slot in event.signups" :key="slot.id" class="calendar-signup">
-                <span>{{ slot.label }}<template v-if="slot.time"> · {{ slot.time }}</template></span>
-                <span v-if="slot.external" class="calendar-date-meeting-sub">Tilmeldinger håndteres i Medlemsservice.</span>
-                <button v-else type="button" class="btn-action" :aria-label="`Fremmøde: ${event.title} · ${slot.label}`" @click="openSignupAttendance(event, slot)">Fremmøde</button>
-              </div>
-            </article>
-          </div>
           <div class="calendar-date-meetings">
-            <h2 v-if="selectedDateMeetings.length" class="calendar-section-title">Hold</h2>
-            <article v-for="meeting in selectedDateMeetings" :key="meeting.id" class="calendar-date-meeting static">
-              <div class="calendar-date-meeting-main">
-                <div class="calendar-date-meeting-title">{{ meeting.title }}</div>
-                <div class="calendar-date-meeting-sub">{{ [meeting.time, meeting.location].filter(Boolean).join(' · ') }}</div>
-              </div>
-              <div class="calendar-date-meeting-badge">{{ meeting.capacity }} medlemmer</div>
-            </article>
-            <div v-if="!selectedDateMeetings.length" class="calendar-empty">Ingen hold på denne dato.</div>
+            <h2 v-if="dayEntries.length" class="calendar-section-title">På dagen</h2>
+            <button v-for="entry in dayEntries" :key="entry.id" type="button" class="calendar-date-meeting"
+              :class="{ active: selectedEntry?.id === entry.id }" :disabled="!entry.query"
+              :aria-pressed="selectedEntry?.id === entry.id" @click="selectEntry(entry.id)">
+              <span class="calendar-date-meeting-main">
+                <span class="calendar-date-meeting-title">{{ entry.title }}</span>
+                <span v-if="entry.detail" class="calendar-date-meeting-sub">{{ entry.detail }}</span>
+              </span>
+              <span class="calendar-date-meeting-badge">{{ entry.badge }}</span>
+            </button>
+            <div v-if="!dayEntries.length" class="calendar-empty">Ingen hold eller arrangementer på denne dato.</div>
           </div>
         </aside>
       </div>
@@ -120,7 +107,10 @@ import AttendanceDashboard from './AttendanceDashboard.vue';
 const view = ref<'overview' | 'calendar'>('overview');
 
 const {
-  openSignupAttendance,
+  dayEntries,
+  selectedEntry,
+  selectEntry,
+  canOpenAttendance,
   eventsByDate,
   eventsError,
   eventsLoading,
@@ -142,8 +132,6 @@ const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 </script>
 
 <style scoped>
-.calendar-event { flex-direction: column; }
-.calendar-signup { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); font-size: 0.9rem; }
 .calendar-load-error { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .calendar-section-title { margin: 0; font-size: 1rem; color: var(--navy-dark); }
 .month-event-label { display: block; margin-top: 6px; color: var(--navy-dark); font-size: 0.76rem; font-weight: 700; }
@@ -287,8 +275,19 @@ const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
   background: #fff;
 }
 
-.calendar-date-meeting.static {
+.calendar-date-meeting {
+  width: 100%;
   align-items: center;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.calendar-date-meeting-title, .calendar-date-meeting-sub { display: block; }
+.calendar-date-meeting.active { border-color: var(--navy); background: #f8fbff; }
+.calendar-date-meeting:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
+.calendar-date-meeting:disabled { cursor: default; opacity: 1; }
+@media (max-width: 480px) {
+  .calendar-date-meeting { flex-wrap: wrap; }
 }
 
 .calendar-date-meeting-badge {

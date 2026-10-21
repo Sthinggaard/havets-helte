@@ -59,7 +59,7 @@ export function useAttendancePage(loadSignupAttendance = fetchSignupAttendance) 
 
   const availableBranchIds = computed(() => Array.from(new Set(dayMeetings.value.map(meeting => meeting.branchId))));
   const activeBranchIds = ref<BranchId[]>([]);
-  const selectedMeetingId = ref('');
+  const selectedMeetingId = ref(typeof route.query.meeting === 'string' ? route.query.meeting : '');
 
   watch(
     availableBranchIds,

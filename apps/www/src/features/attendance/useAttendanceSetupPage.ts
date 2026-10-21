@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchAllAdminEvents } from '../eventAdmin/eventAdmin.data';
-import { calendarEventOccurrences, type CalendarEvent, type CalendarSignup } from './attendance.events';
+import { calendarEventOccurrences, type CalendarEvent } from './attendance.events';
 
 import { getAttendanceMeetings } from './attendance.data';
 import type { Meeting } from './attendance.types';
@@ -31,11 +31,6 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
     } finally {
       eventsLoading.value = false;
     }
-  }
-
-  function openSignupAttendance(event: CalendarEvent, slot: CalendarSignup) {
-    if (slot.external) return;
-    return router.push({ path: '/attendance', query: { date: event.date, event: event.id, slot: slot.id } });
   }
 
   const currentMonthLabel = computed(() => `${monthLabel(currentMonthIndex.value)} ${currentYear.value}`);
@@ -70,6 +65,26 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
       .sort((a, b) => a.time.localeCompare(b.time, 'da') || a.title.localeCompare(b.title, 'da')),
   );
 
+  const selectedEntryId = ref('');
+  const dayEntries = computed(() => [
+    ...selectedDateMeetings.value.map(meeting => ({
+      id: meeting.id, title: meeting.title,
+      detail: [meeting.time, meeting.location].filter(Boolean).join(' · '),
+      badge: `${meeting.capacity} medlemmer`,
+      query: { date: meeting.date, meeting: meeting.id } as Record<string, string> | null,
+    })),
+    ...selectedDateEvents.value.flatMap(event => event.signups.length ? event.signups.map(slot => ({
+      id: JSON.stringify([event.id, slot.id]), title: `${event.title} · ${slot.label}`,
+      detail: slot.external ? 'Tilmeldinger håndteres i Medlemsservice.' : [slot.time, event.location].filter(Boolean).join(' · '),
+      badge: 'Tilmeldte',
+      query: slot.external ? null : { date: event.date, event: event.id, slot: slot.id } as Record<string, string>,
+    })) : [{ id: event.id, title: event.title, detail: [event.times.join(' · '), event.location].filter(Boolean).join(' · '), badge: 'Arrangement', query: null }]),
+  ]);
+  const selectedEntry = computed(() => dayEntries.value.find(entry => entry.id === selectedEntryId.value && entry.query)
+    ?? dayEntries.value.find(entry => entry.query));
+  const canOpenAttendance = computed(() => !!selectedEntry.value);
+  function selectEntry(id: string) { selectedEntryId.value = id; }
+
   function selectDate(isoDate: string) {
     selectedDate.value = isoDate;
     const date = fromIsoDate(isoDate);
@@ -85,14 +100,15 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   }
 
   function openAttendance() {
-    return router.push({
-      path: '/attendance',
-      query: { date: selectedDate.value },
-    });
+    if (!selectedEntry.value?.query) return;
+    return router.push({ path: '/attendance', query: selectedEntry.value.query });
   }
 
   return {
-    openSignupAttendance,
+    dayEntries,
+    selectedEntry,
+    selectEntry,
+    canOpenAttendance,
     eventsByDate,
     eventsError,
     eventsLoading,

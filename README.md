@@ -82,8 +82,9 @@ calendar for check-in. “Afslut registrering” confirms the list: unchecked
 members count as absent. Completed registrations can be corrected from the
 overview; the kiosk cannot change them. Future meetings cannot be finalized.
 
-Signup sections in the calendar have their own “Fremmøde” button. It opens
-that same check-in screen with confirmed signups for the selected event,
+Teams and signup sections use the same selectable rows in the calendar.
+Select a row and use the shared “Åbn fremmøde” button. For signup sections it
+opens the same check-in screen with confirmed signups for the selected event,
 section and date, rather than a branch roster. Waitlisted signups are excluded.
 The event and its signup list are read once when the screen opens; reopening a
 draft refreshes the list after new signups or cancellations. Group signups are
