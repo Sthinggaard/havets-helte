@@ -54,7 +54,9 @@ async function login() {
     password.value = '';
   } catch (err) {
     console.error('[admin-auth] login failed', err);
-    error.value = 'Forkert mail eller adgangskode.';
+    error.value = (err as { code?: string })?.code === 'auth/network-request-failed'
+      ? 'Login-serveren svarer ikke. Prøv igen om lidt.'
+      : 'Forkert mail eller adgangskode.';
   } finally {
     busy.value = false;
   }
