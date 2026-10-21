@@ -68,6 +68,9 @@ branch and team; sort by attendance rate or consecutive absences. Expand a
 member's name to inspect the dated registrations. Members without completed
 registrations show “Ingen data”. Demo check-ins are not treated as history.
 
+The calendar offers month, week and day views. Navigation follows the selected
+view, and “I dag” returns to today. Switching views reuses the loaded events.
+
 The calendar and registration form read the saved team schedules from
 `/grene`: weekly meeting days, start/end times and inclusive season dates.
 Only the displayed calendar range is calculated. Inactive or incomplete

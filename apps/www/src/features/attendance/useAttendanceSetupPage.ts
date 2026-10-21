@@ -5,7 +5,7 @@ import { calendarEventOccurrences, type CalendarEvent } from './attendance.event
 
 import { getAttendanceMeetings } from './attendance.data';
 import type { Meeting } from './attendance.types';
-import { fromIsoDate, formatDateLong, monthLabel, makeCalendarCells, toIsoDate } from './attendanceCalendar';
+import { addDays, getStartOfWeek, isoWeekNumber, fromIsoDate, formatDateLong, formatDateShort, monthLabel, makeCalendarCells, toIsoDate } from './attendanceCalendar';
 
 export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   const router = useRouter();
@@ -14,6 +14,7 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   const currentYear = ref(fromIsoDate(selectedDate.value).getFullYear());
   const currentMonthIndex = ref(fromIsoDate(selectedDate.value).getMonth());
 
+  const calendarView = ref<'month' | 'week' | 'day'>('month');
   const calendarEvents = ref<CalendarEvent[]>([]);
   const eventsLoading = ref(false);
   const eventsError = ref('');
@@ -37,6 +38,39 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   const currentDateLabel = computed(() => formatDateLong(fromIsoDate(selectedDate.value)));
   const currentMonthCells = computed(() => makeCalendarCells(currentYear.value, currentMonthIndex.value));
 
+  const visibleCalendarCells = computed(() => {
+    if (calendarView.value === 'month') return currentMonthCells.value;
+    const date = fromIsoDate(selectedDate.value);
+    const start = calendarView.value === 'week' ? getStartOfWeek(date) : date;
+    return Array.from({ length: calendarView.value === 'week' ? 7 : 1 }, (_, index) => {
+      const day = addDays(start, index);
+      return { date: day, isoDate: toIsoDate(day), inMonth: true };
+    });
+  });
+  const calendarPeriodLabel = computed(() => {
+    if (calendarView.value === 'month') return currentMonthLabel.value;
+    if (calendarView.value === 'day') return currentDateLabel.value;
+    const cells = visibleCalendarCells.value;
+    const first = cells[0].date;
+    const last = cells[6].date;
+    return `Uge ${isoWeekNumber(first)} · ${formatDateShort(first)} ${first.getFullYear()} – ${formatDateShort(last)} ${last.getFullYear()}`;
+  });
+  const periodUnit = computed(() => calendarView.value === 'month' ? 'måned' : calendarView.value === 'week' ? 'uge' : 'dag');
+  function setCalendarView(value: 'month' | 'week' | 'day') {
+    calendarView.value = value;
+    selectDate(selectedDate.value);
+  }
+  function shiftPeriod(direction: number) {
+    if (calendarView.value !== 'month') {
+      selectDate(toIsoDate(addDays(fromIsoDate(selectedDate.value), direction * (calendarView.value === 'week' ? 7 : 1))));
+      return;
+    }
+    const oldDay = fromIsoDate(selectedDate.value).getDate();
+    shiftMonth(direction);
+    const lastDay = new Date(currentYear.value, currentMonthIndex.value + 1, 0).getDate();
+    selectDate(toIsoDate(new Date(currentYear.value, currentMonthIndex.value, Math.min(oldDay, lastDay))));
+  }
+
   const eventsByDate = computed(() => {
     const map = new Map<string, CalendarEvent[]>();
     for (const event of calendarEvents.value) {
@@ -49,7 +83,7 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   const selectedDateEvents = computed(() => eventsByDate.value.get(selectedDate.value) ?? []);
 
   const meetingsByDate = computed(() => {
-    const cells = currentMonthCells.value;
+    const cells = visibleCalendarCells.value;
     const map = new Map<string, Meeting[]>();
     for (const meeting of getAttendanceMeetings(cells[0].isoDate, cells[cells.length - 1].isoDate)) {
       const list = map.get(meeting.date) ?? [];
@@ -66,20 +100,24 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   );
 
   const selectedEntryId = ref('');
-  const dayEntries = computed(() => [
-    ...selectedDateMeetings.value.map(meeting => ({
+  function entriesForDate(date: string) {
+    return [
+    ...(meetingsByDate.value.get(date) ?? []).map(meeting => ({
       id: meeting.id, title: meeting.title,
       detail: [meeting.time, meeting.location].filter(Boolean).join(' · '),
       badge: `${meeting.capacity} medlemmer`,
       query: { date: meeting.date, meeting: meeting.id } as Record<string, string> | null,
     })),
-    ...selectedDateEvents.value.flatMap(event => event.signups.length ? event.signups.map(slot => ({
+    ...(eventsByDate.value.get(date) ?? []).flatMap(event => event.signups.length ? event.signups.map(slot => ({
       id: JSON.stringify([event.id, slot.id]), title: `${event.title} · ${slot.label}`,
       detail: slot.external ? 'Tilmeldinger håndteres i Medlemsservice.' : [slot.time, event.location].filter(Boolean).join(' · '),
       badge: 'Tilmeldte',
       query: slot.external ? null : { date: event.date, event: event.id, slot: slot.id } as Record<string, string>,
     })) : [{ id: event.id, title: event.title, detail: [event.times.join(' · '), event.location].filter(Boolean).join(' · '), badge: 'Arrangement', query: null }]),
-  ]);
+    ];
+  }
+  const dayEntries = computed(() => entriesForDate(selectedDate.value));
+  const weekEntriesByDate = computed(() => new Map(visibleCalendarCells.value.map(cell => [cell.isoDate, entriesForDate(cell.isoDate)])));
   const selectedEntry = computed(() => dayEntries.value.find(entry => entry.id === selectedEntryId.value && entry.query)
     ?? dayEntries.value.find(entry => entry.query));
   const canOpenAttendance = computed(() => !!selectedEntry.value);
@@ -105,6 +143,13 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   }
 
   return {
+    calendarView,
+    setCalendarView,
+    calendarPeriodLabel,
+    periodUnit,
+    shiftPeriod,
+    visibleCalendarCells,
+    weekEntriesByDate,
     dayEntries,
     selectedEntry,
     selectEntry,

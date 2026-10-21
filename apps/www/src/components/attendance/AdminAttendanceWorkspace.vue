@@ -23,21 +23,27 @@
             <span>{{ eventsError }}</span>
             <button type="button" class="btn-action" @click="loadCalendarEvents">Prøv igen</button>
           </div>
+          <div class="calendar-toolbar">
+          <div class="filter-tabs filter-tabs--tight" role="group" aria-label="Kalendervisning">
+            <button v-for="option in calendarViewOptions" :key="option.id" type="button" class="filter-tab" :class="{ active: calendarView === option.id }" :aria-pressed="calendarView === option.id" @click="setCalendarView(option.id)">{{ option.label }}</button>
+          </div>
+          <button type="button" class="btn-action" @click="selectDate(todayIso)">I dag</button>
           <div class="month-nav calendar-nav">
-            <button type="button" class="calendar-day-btn" aria-label="Forrige måned" @click="shiftMonth(-1)">‹</button>
+            <button type="button" class="calendar-day-btn" :aria-label="`Forrige ${periodUnit}`" @click="shiftPeriod(-1)">‹</button>
             <div>
-              <div class="month-nav-title">{{ currentMonthLabel }}</div>
-              <div class="month-nav-sub">{{ currentDateLabel }}</div>
+              <div class="month-nav-title">{{ calendarPeriodLabel }}</div>
+              <div v-if="calendarView === 'month'" class="month-nav-sub">{{ currentDateLabel }}</div>
             </div>
-            <button type="button" class="calendar-day-btn" aria-label="Næste måned" @click="shiftMonth(1)">›</button>
+            <button type="button" class="calendar-day-btn" :aria-label="`Næste ${periodUnit}`" @click="shiftPeriod(1)">›</button>
           </div>
 
-      <div class="attendance-setup-layout">
-        <section class="month-card">
+          </div>
+      <div class="attendance-setup-layout" :class="`attendance-setup-layout--${calendarView}`">
+        <section v-if="calendarView !== 'day'" class="month-card" :aria-label="calendarView === 'month' ? 'Månedskalender' : 'Ugekalender'">
           <div class="month-grid">
             <div class="month-day-label">Uge</div>
             <div v-for="label in weekdayLabels" :key="label" class="month-day-label">{{ label }}</div>
-            <template v-for="(cell, index) in currentMonthCells" :key="cell.isoDate">
+            <template v-for="(cell, index) in visibleCalendarCells" :key="cell.isoDate">
             <div v-if="index % 7 === 0" class="week-number" :aria-label="`Uge ${isoWeekNumber(cell.date)}`">{{ isoWeekNumber(cell.date) }}</div>
             <button
               type="button"
@@ -52,12 +58,18 @@
             >
               <span class="sr-only">{{ cell.isoDate }}: </span>
               <span class="month-day-num">{{ cell.date.getDate() }}</span>
-              <span v-if="meetingsByDate.get(cell.isoDate)?.length" class="month-day-badge">
+              <span v-if="calendarView === 'month' && meetingsByDate.get(cell.isoDate)?.length" class="month-day-badge">
                 {{ meetingsByDate.get(cell.isoDate)?.length }} hold
               </span>
-              <span v-if="eventsByDate.get(cell.isoDate)?.length" class="month-event-label">
+              <span v-if="calendarView === 'month' && eventsByDate.get(cell.isoDate)?.length" class="month-event-label">
                 <span aria-hidden="true">{{ eventsByDate.get(cell.isoDate)?.length }} arr.</span>
                 <span class="sr-only">{{ eventsByDate.get(cell.isoDate)?.length }} arrangementer</span>
+              </span>
+              <span v-if="calendarView === 'week'" class="week-day-entries">
+                <span v-for="entry in weekEntriesByDate.get(cell.isoDate)" :key="entry.id" class="week-day-entry">
+                  <strong>{{ entry.title }}</strong><span v-if="entry.detail">{{ entry.detail }}</span>
+                </span>
+                <span v-if="!weekEntriesByDate.get(cell.isoDate)?.length" class="week-day-empty">Ingen aktiviteter</span>
               </span>
             </button>
             </template>
@@ -107,6 +119,13 @@ import AttendanceDashboard from './AttendanceDashboard.vue';
 const view = ref<'overview' | 'calendar'>('overview');
 
 const {
+  calendarView,
+  setCalendarView,
+  calendarPeriodLabel,
+  periodUnit,
+  shiftPeriod,
+  visibleCalendarCells,
+  weekEntriesByDate,
   dayEntries,
   selectedEntry,
   selectEntry,
@@ -117,21 +136,27 @@ const {
   loadCalendarEvents,
   selectedDateEvents,
   currentDateLabel,
-  currentMonthCells,
-  currentMonthLabel,
   meetingsByDate,
   openAttendance,
   selectedDate,
   selectedDateMeetings,
   selectDate,
-  shiftMonth,
   todayIso,
 } = useAttendanceSetupPage();
 
+const calendarViewOptions = [{ id: 'month', label: 'Måned' }, { id: 'week', label: 'Uge' }, { id: 'day', label: 'Dag' }] as const;
 const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 </script>
 
 <style scoped>
+.calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; }
+.calendar-toolbar .calendar-nav { margin: 0 0 0 auto; }
+.attendance-setup-layout--week .month-card { flex-basis: 100%; overflow-x: auto; }
+.attendance-setup-layout--week .month-grid { min-width: 850px; }
+.attendance-setup-layout--week .month-day { align-self: stretch; min-height: 180px; vertical-align: top; }
+.week-day-entries { display: grid; gap: 8px; margin-top: 12px; }
+.week-day-entry { display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 0.8rem; overflow-wrap: anywhere; }
+.week-day-entry span, .week-day-empty { color: var(--muted); font-size: 0.75rem; }
 .calendar-load-error { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .calendar-section-title { margin: 0; font-size: 1rem; color: var(--navy-dark); }
 .month-event-label { display: block; margin-top: 6px; color: var(--navy-dark); font-size: 0.76rem; font-weight: 700; }
