@@ -1,13 +1,11 @@
 import { reactive } from 'vue';
 import { rosterMembers, rosterStorageVersion, rosterTeams } from '../roster/roster.data';
-import { fromIsoDate, toIsoDate } from './attendanceCalendar';
+import { isAttendanceDate, toIsoDate } from './attendanceCalendar';
 import type { AttendanceRecord, Meeting } from './attendance.types';
 
 const storageKey = `sankthans.attendance.${rosterStorageVersion}`;
 
-export function isAttendanceDate(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) && toIsoDate(fromIsoDate(value)) === value;
-}
+export { isAttendanceDate } from './attendanceCalendar';
 
 function loadRecords(): AttendanceRecord[] {
   if (typeof window === 'undefined') return [];

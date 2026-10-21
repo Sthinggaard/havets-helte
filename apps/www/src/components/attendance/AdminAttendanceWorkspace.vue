@@ -67,9 +67,9 @@
             <article v-for="meeting in selectedDateMeetings" :key="meeting.id" class="calendar-date-meeting static">
               <div class="calendar-date-meeting-main">
                 <div class="calendar-date-meeting-title">{{ meeting.title }}</div>
-                <div class="calendar-date-meeting-sub">{{ meeting.time }} · {{ meeting.location }}</div>
+                <div class="calendar-date-meeting-sub">{{ [meeting.time, meeting.location].filter(Boolean).join(' · ') }}</div>
               </div>
-              <div class="calendar-date-meeting-badge">{{ meeting.capacity }} pladser</div>
+              <div class="calendar-date-meeting-badge">{{ meeting.capacity }} medlemmer</div>
             </article>
             <div v-if="!selectedDateMeetings.length" class="calendar-empty">Ingen hold på denne dato.</div>
           </div>

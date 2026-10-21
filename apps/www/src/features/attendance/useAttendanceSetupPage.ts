@@ -1,7 +1,8 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { attendanceMeetings } from './attendance.data';
+import { getAttendanceMeetings } from './attendance.data';
+import type { Meeting } from './attendance.types';
 import { fromIsoDate, formatDateLong, monthLabel, makeCalendarCells, toIsoDate } from './attendanceCalendar';
 
 export function useAttendanceSetupPage() {
@@ -16,8 +17,9 @@ export function useAttendanceSetupPage() {
   const currentMonthCells = computed(() => makeCalendarCells(currentYear.value, currentMonthIndex.value));
 
   const meetingsByDate = computed(() => {
-    const map = new Map<string, typeof attendanceMeetings.value>();
-    for (const meeting of attendanceMeetings.value) {
+    const cells = currentMonthCells.value;
+    const map = new Map<string, Meeting[]>();
+    for (const meeting of getAttendanceMeetings(cells[0].isoDate, cells[cells.length - 1].isoDate)) {
       const list = map.get(meeting.date) ?? [];
       list.push(meeting);
       map.set(meeting.date, list);
@@ -26,7 +28,7 @@ export function useAttendanceSetupPage() {
   });
 
   const selectedDateMeetings = computed(() =>
-    (meetingsByDate.value.get(selectedDate.value) ?? [])
+    getAttendanceMeetings(selectedDate.value)
       .slice()
       .sort((a, b) => a.time.localeCompare(b.time, 'da') || a.title.localeCompare(b.title, 'da')),
   );

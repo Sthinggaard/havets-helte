@@ -55,7 +55,7 @@
       <p v-if="!records.length" class="muted">Ingen registreringer i den valgte periode.</p>
       <div v-else class="record-list">
         <button v-for="record in records" :key="record.meeting.id" type="button" class="record-row" @click="register?.open(record)">
-          <span><strong>{{ record.meeting.title }}</strong><small>{{ shortDate(record.meeting.date) }} · {{ record.presentMemberIds.length }} af {{ record.expectedMembers.length }} mødt</small></span>
+          <span><strong>{{ record.meeting.title }}</strong><small>{{ shortDate(record.meeting.date) }}<template v-if="record.meeting.time"> · {{ record.meeting.time }}</template> · {{ record.presentMemberIds.length }} af {{ record.expectedMembers.length }} mødt</small></span>
           <span class="record-state" :class="{ complete: record.completedAt }">{{ record.completedAt ? 'Afsluttet' : 'Skal afsluttes' }}<i class="ti ti-chevron-right" aria-hidden="true"></i></span>
         </button>
       </div>

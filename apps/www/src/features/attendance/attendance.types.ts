@@ -13,6 +13,8 @@ export interface Meeting {
   capacity: number;
   summary: string;
   teamId?: string;
+  seasonStartDate?: string;
+  seasonEndDate?: string;
 }
 
 export interface AttendanceRecord {

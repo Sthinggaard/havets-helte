@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-import { attendanceMeetings } from './attendance.data';
+import { getAttendanceMeetings } from './attendance.data';
 import { attendanceRecords, membersForMeeting, toggleRecordedArrival } from './attendance.records';
 import { formatDateLong, formatDateShort, sameDate, toIsoDate } from './attendanceCalendar';
 import { buildMemberInitials, publicRosterBranches, rosterBranches } from '../roster/roster.data';
@@ -18,7 +18,7 @@ export function useAttendancePage() {
   const searchTerm = ref('');
 
   const dayMeetings = computed(() =>
-    attendanceMeetings.value
+    getAttendanceMeetings(selectedDate.value)
       .filter(meeting => visibleBranchIds.value.has(meeting.branchId))
       .filter(meeting => sameDate(meeting.date, selectedDate.value))
       .sort((a, b) => a.time.localeCompare(b.time, 'da') || a.title.localeCompare(b.title, 'da')),
@@ -99,7 +99,7 @@ export function useAttendancePage() {
   }
 
   function toggleArrival(meetingId: string, memberId: string) {
-    const meeting = attendanceMeetings.value.find(item => item.id === meetingId);
+    const meeting = getAttendanceMeetings(selectedDate.value).find(item => item.id === meetingId);
     if (!meeting) return;
     saveError.value = '';
     try { toggleRecordedArrival(meeting, memberId); }

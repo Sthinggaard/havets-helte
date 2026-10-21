@@ -68,7 +68,15 @@ branch and team; sort by attendance rate or consecutive absences. Expand a
 member's name to inspect the dated registrations. Members without completed
 registrations show “Ingen data”. Demo check-ins are not treated as history.
 
-Use “Registrer fremmøde” to choose a date and team and check the members who
+The calendar and registration form read the saved team schedules from
+`/grene`: weekly meeting days, start/end times and inclusive season dates.
+Only the displayed calendar range is calculated. Inactive or incomplete
+schedules produce no planned meetings. Existing branch-level schedules are
+used as a fallback for older team settings. These are read-only calendar
+entries, not attendance writes or automatic absences. Saved registrations
+remain visible with their original times after a schedule or season changes.
+
+Use “Registrer fremmøde” to choose a date and one of its scheduled teams and check the members who
 attended. “Gem foreløbigt” saves a draft that can also be opened through the
 calendar for check-in. “Afslut registrering” confirms the list: unchecked
 members count as absent. Completed registrations can be corrected from the

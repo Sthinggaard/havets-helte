@@ -8,9 +8,10 @@
         </div>
         <div class="register-fields">
           <label>Dato<FormControl :model-value="date" type="date" :max="today" required @update:model-value="changeDate(String($event))" /></label>
-          <label>Gren<FormControl :model-value="branchId" as="select" @update:model-value="changeBranch(String($event))"><option v-for="branch in publicRosterBranches" :key="branch.id" :value="branch.id">{{ branch.label }}</option></FormControl></label>
-          <label>Hold<FormControl :model-value="teamId" as="select" :disabled="!teams.length" @update:model-value="changeTeam(String($event))"><option v-if="!teams.length" value="">Ingen aktive hold</option><option v-for="team in teams" :key="team.id" :value="team.id">{{ team.label }} · {{ team.weekday }}</option></FormControl></label>
+          <label>Gren<FormControl :model-value="branchId" as="select" @update:model-value="changeBranch(String($event))"><option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.label }}</option></FormControl></label>
+          <label>Hold<FormControl :model-value="teamId" as="select" :disabled="!teams.length" @update:model-value="changeTeam(String($event))"><option v-if="!teams.length" value="">Ingen planlagte hold</option><option v-for="team in teams" :key="team.id" :value="team.id">{{ team.label }} · {{ team.meeting.time }}</option></FormControl></label>
         </div>
+        <p v-if="selectedTeam" class="register-schedule">{{ selectedTeam.meeting.weekday }} · {{ selectedTeam.meeting.time }}<template v-if="selectedTeam.meeting.seasonStartDate && selectedTeam.meeting.seasonEndDate"> · Sæson {{ shortDate(selectedTeam.meeting.seasonStartDate) }}–{{ shortDate(selectedTeam.meeting.seasonEndDate) }}</template></p>
         <p class="register-count">{{ presentIds.length }} af {{ expected.length }} mødt</p>
         <div class="register-members">
           <label v-for="member in expected" :key="member.id" class="register-member">
@@ -18,7 +19,8 @@
             <span>{{ member.name }}</span>
             <span class="register-state">{{ presentIds.includes(member.id) ? 'Mødt' : 'Fravær' }}</span>
           </label>
-          <p v-if="!expected.length">Ingen medlemmer på det valgte hold.</p>
+          <p v-if="!teams.length">Ingen hold er planlagt på datoen. Mødedage og sæson sættes under Grene.</p>
+          <p v-else-if="!expected.length">Ingen medlemmer på det valgte hold.</p>
         </div>
         <p class="register-explanation">Ikke markerede medlemmer tæller som fraværende, når du afslutter registreringen.</p>
         <p v-if="error" class="register-error" role="alert">{{ error }}</p>
@@ -35,9 +37,10 @@
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue';
 import FormControl from '@/components/form/FormControl.vue';
-import { publicRosterBranches, rosterMembers, rosterTeams } from '@/features/roster/roster.data';
-import { isAttendanceDate, attendanceRecords, saveAttendance } from '@/features/attendance/attendance.records';
-import { toIsoDate } from '@/features/attendance/attendanceCalendar';
+import { publicRosterBranches, rosterBranches, rosterTeams } from '@/features/roster/roster.data';
+import { isAttendanceDate, attendanceRecords, membersForMeeting, saveAttendance } from '@/features/attendance/attendance.records';
+import { getAttendanceMeetings } from '@/features/attendance/attendance.data';
+import { fromIsoDate, toIsoDate } from '@/features/attendance/attendanceCalendar';
 import type { AttendanceRecord } from '@/features/attendance/attendance.types';
 
 const emit = defineEmits<{ saved: [] }>();
@@ -51,18 +54,32 @@ const presentIds = ref<string[]>([]);
 const expected = ref<AttendanceRecord['expectedMembers']>([]);
 const savedRecord = ref<AttendanceRecord | null>(null);
 const error = ref('');
-const teams = computed(() => rosterTeams.filter(team => team.active && team.branchId === branchId.value));
+const branches = computed(() => {
+  const historical = rosterBranches.find(branch => branch.id === branchId.value && !branch.active);
+  return historical ? [...publicRosterBranches.value, historical] : publicRosterBranches.value;
+});
+const meetings = computed(() => getAttendanceMeetings(date.value));
+const teams = computed(() => meetings.value.filter(meeting => meeting.branchId === branchId.value).map(meeting => ({
+  id: meeting.teamId ?? meeting.id,
+  label: rosterTeams.find(team => team.id === meeting.teamId)?.label ?? meeting.title,
+  meeting,
+})));
+const selectedTeam = computed(() => teams.value.find(team => team.id === teamId.value));
+
+function shortDate(value: string) { return fromIsoDate(value).toLocaleDateString('da-DK'); }
 
 function refresh() {
   error.value = '';
-  const team = teams.value.find(item => item.id === teamId.value);
-  savedRecord.value = attendanceRecords.find(record => record.meeting.date === date.value && team
-    && (record.meeting.teamId === team.id || (!record.meeting.teamId && record.meeting.branchId === team.branchId && record.meeting.weekday === team.weekday))) ?? null;
-  expected.value = savedRecord.value?.expectedMembers.map(member => ({ ...member })) ?? (team
-    ? rosterMembers.filter(member => member.active && member.branchId === team.branchId && member.team === team.label && member.weekday === team.weekday).map(member => ({ id: member.id, name: member.name })) : []);
+  const meeting = selectedTeam.value?.meeting;
+  savedRecord.value = attendanceRecords.find(record => record.meeting.id === meeting?.id) ?? null;
+  expected.value = meeting ? membersForMeeting(meeting).map(member => ({ ...member })) : [];
   presentIds.value = [...(savedRecord.value?.presentMemberIds ?? [])];
 }
-function changeDate(value: string) { date.value = value; refresh(); }
+function changeDate(value: string) {
+  date.value = value;
+  if (!teams.value.some(team => team.id === teamId.value)) teamId.value = teams.value[0]?.id ?? '';
+  refresh();
+}
 function changeTeam(value: string) { teamId.value = value; refresh(); }
 function changeBranch(value: string) {
   branchId.value = value;
@@ -71,21 +88,17 @@ function changeBranch(value: string) {
 }
 function open(record?: AttendanceRecord) {
   date.value = record?.meeting.date ?? today;
-  branchId.value = record?.meeting.branchId ?? publicRosterBranches.value[0]?.id ?? '';
-  teamId.value = record?.meeting.teamId ?? teams.value.find(team => team.weekday === record?.meeting.weekday)?.id ?? teams.value[0]?.id ?? '';
+  branchId.value = record?.meeting.branchId ?? meetings.value[0]?.branchId ?? publicRosterBranches.value[0]?.id ?? '';
+  teamId.value = record ? teams.value.find(team => team.meeting.id === record.meeting.id)?.id ?? '' : teams.value[0]?.id ?? '';
   refresh();
   dialog.value?.showModal();
 }
 function save(complete: boolean) {
-  const team = teams.value.find(item => item.id === teamId.value);
-  if (!team || !isAttendanceDate(date.value) || date.value > today) { error.value = 'Vælg et hold og en dato senest i dag.'; return; }
+  const meeting = selectedTeam.value?.meeting;
+  if (!meeting || !isAttendanceDate(date.value) || date.value > today) { error.value = 'Vælg et planlagt hold og en dato senest i dag.'; return; }
   try {
     saveAttendance({
-      meeting: savedRecord.value?.meeting ?? {
-        id: `attendance-${team.id}-${date.value}`, date: date.value, branchId: team.branchId,
-        teamId: team.id, weekday: team.weekday, title: `${publicRosterBranches.value.find(branch => branch.id === team.branchId)?.label} · ${team.label}`,
-        time: team.startTime && team.endTime ? `${team.startTime}–${team.endTime}` : '', location: '', capacity: expected.value.length, summary: '',
-      },
+      meeting,
       expectedMembers: expected.value, presentMemberIds: presentIds.value, completedAt: complete ? new Date().toISOString() : null,
     });
     dialog.value?.close();
@@ -105,6 +118,7 @@ defineExpose({ open });
 .register-fields label { display: grid; gap: 6px; min-width: 0; font-size: 14px; font-weight: 700; color: var(--navy); }
 .register-fields :deep(.form-control) { min-height: 44px; font-size: 16px; }
 .register-count { margin: 0; font-weight: 700; color: var(--navy); }
+.register-schedule { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .register-members { max-height: 42dvh; overflow-y: auto; border-block: 1px solid var(--border-soft); }
 .register-member { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 52px; padding: 10px 2px; cursor: pointer; }
 .register-member + .register-member { border-top: 1px solid var(--border-soft); }

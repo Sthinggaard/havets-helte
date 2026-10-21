@@ -9,6 +9,10 @@ export function fromIsoDate(isoDate: string) {
   return new Date(`${isoDate}T12:00:00`);
 }
 
+export function isAttendanceDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && toIsoDate(fromIsoDate(value)) === value;
+}
+
 export function addDays(date: Date, amount: number) {
   const next = new Date(date);
   next.setDate(next.getDate() + amount);
