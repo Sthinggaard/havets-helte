@@ -7,6 +7,7 @@
     hero-image="/og-sankthans.webp"
     hero-image-alt="Fremmøde"
     :hero-title="heroTitle"
+    :section-chip="hasRequestedDate ? currentDateShortLabel : ''"
     section-eyebrow="Check-in"
     :section-title="sectionTitle"
   >
@@ -36,7 +37,6 @@
         <section class="attendance-controls">
           <div class="attendance-day-head">
             <div>
-              <div class="day-view-title">{{ currentDateLabel }}</div>
               <div class="day-view-sub">{{ isSignupAttendance ? 'Tilmeldte til arrangementet' : `${dayMeetings.length} hold på dagen` }}</div>
             </div>
           </div>
@@ -145,7 +145,7 @@ const {
   retryLoad,
   attendanceBranches,
   branchLabel,
-  currentDateLabel,
+  currentDateShortLabel,
   dayMeetings,
   filteredMembers,
   hasRequestedDate,
