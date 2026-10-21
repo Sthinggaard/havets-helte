@@ -87,6 +87,53 @@ export function useMembersPage() {
 
   const selectedMember = computed(() => filteredMembers.value.find(member => member.id === selectedMemberId.value) ?? filteredMembers.value[0] ?? null);
 
+  const moveBranchId = ref<BranchId>('');
+  const moveTeamId = ref('');
+  const moveError = ref('');
+  const moveNotice = ref('');
+  const moveTeamOptions = computed(() => rosterTeams.filter(team => team.active && team.branchId === moveBranchId.value
+    && branchOptions.value.some(branch => branch.id === team.branchId && branch.meetingDays.includes(team.weekday))));
+  const canMoveMember = computed(() => {
+    const member = selectedMember.value;
+    const team = moveTeamOptions.value.find(option => option.id === moveTeamId.value);
+    return !!member && !!team && (member.branchId !== team.branchId || member.team !== team.label || member.weekday !== team.weekday);
+  });
+
+  watch(() => selectedMember.value?.id, () => {
+    moveBranchId.value = selectedMember.value?.branchId ?? '';
+    moveTeamId.value = moveTeamOptions.value.find(team => team.label === selectedMember.value?.team && team.weekday === selectedMember.value?.weekday)?.id ?? '';
+    moveError.value = '';
+    moveNotice.value = '';
+  }, { immediate: true });
+
+  watch(moveTeamOptions, teams => {
+    if (!teams.some(team => team.id === moveTeamId.value)) moveTeamId.value = teams[0]?.id ?? '';
+  }, { immediate: true });
+
+  watch([moveBranchId, moveTeamId], () => {
+    moveError.value = '';
+    moveNotice.value = '';
+  });
+
+  function moveMember() {
+    const member = rosterMembers.find(item => item.id === selectedMember.value?.id);
+    const branch = branchOptions.value.find(item => item.id === moveBranchId.value);
+    const team = moveTeamOptions.value.find(item => item.id === moveTeamId.value);
+    if (!member || !branch || !team) {
+      moveError.value = 'Vælg en gren og et aktivt hold.';
+      return false;
+    }
+    if (!canMoveMember.value) return false;
+    member.branchId = branch.id;
+    member.team = team.label;
+    member.weekday = team.weekday;
+    branchFilter.value = branch.id;
+    selectedMemberId.value = member.id;
+    moveError.value = '';
+    moveNotice.value = `${member.name} er flyttet til ${branch.label} · ${team.label}.`;
+    return true;
+  }
+
   const counts = computed(() => ({
     total: rosterMembers.filter(member => visibleBranchIds.value.has(member.branchId)).length,
     active: rosterMembers.filter(member => visibleBranchIds.value.has(member.branchId) && member.active).length,
@@ -190,6 +237,13 @@ export function useMembersPage() {
     memberName,
     memberTeam,
     memberTeamOptions,
+    canMoveMember,
+    moveBranchId,
+    moveTeamId,
+    moveTeamOptions,
+    moveMember,
+    moveError,
+    moveNotice,
     searchTerm,
     selectedMember,
     selectedMemberId,

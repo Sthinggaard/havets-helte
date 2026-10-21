@@ -221,14 +221,28 @@
               <div class="member-profile-card-head">
                 <div>
                   <div class="member-profile-title">Flyt medlem</div>
-                  <div class="member-profile-sub">Skift gren eller hold direkte herfra</div>
                 </div>
               </div>
-              <div class="member-profile-actions">
-                <button type="button" class="btn-action" @click="showMemberBranch">
-                  Til gren og hold
-                </button>
-              </div>
+              <form class="member-move-form" @submit.prevent="moveMember">
+                <label class="field">
+                  <span class="field-label">Gren</span>
+                  <select v-model="moveBranchId" class="field-input">
+                    <option v-for="branch in branchOptions" :key="branch.id" :value="branch.id">{{ branch.label }}</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Hold</span>
+                  <select v-model="moveTeamId" class="field-input" :disabled="!moveTeamOptions.length">
+                    <option v-if="!moveTeamOptions.length" value="">Ingen aktive hold i grenen</option>
+                    <option v-for="team in moveTeamOptions" :key="team.id" :value="team.id">{{ team.label }} · {{ team.weekday }}</option>
+                  </select>
+                </label>
+                <p v-if="moveError" class="member-create-error" role="alert">{{ moveError }}</p>
+                <div class="member-profile-actions">
+                  <button type="submit" class="btn-action" :disabled="!canMoveMember">Flyt medlem</button>
+                </div>
+                <p v-if="moveNotice" class="member-move-notice" role="status">{{ moveNotice }}</p>
+              </form>
             </section>
 
             <section class="member-profile-card">
@@ -290,6 +304,13 @@ const {
   memberName,
   memberTeam,
   memberTeamOptions,
+  canMoveMember,
+  moveBranchId,
+  moveTeamId,
+  moveTeamOptions,
+  moveMember,
+  moveError,
+  moveNotice,
   searchTerm,
   selectedMember,
   selectMember,
@@ -345,11 +366,6 @@ function handleCreateMember() {
 function openMemberProfile(memberId: string) {
   selectMember(memberId);
   profileDialog.value?.showModal();
-}
-
-function showMemberBranch() {
-  setBranchFilter(selectedMember.value?.branchId ?? 'all');
-  profileDialog.value?.close();
 }
 
 function openImagePicker() {
@@ -436,6 +452,17 @@ async function handleImageUpload(file: File, categoryId: string) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   align-items: end;
+}
+
+.member-move-form {
+  display: grid;
+  gap: 16px;
+}
+
+.member-move-notice {
+  margin: 0;
+  color: var(--navy);
+  font-size: 14px;
 }
 
 .member-create-form > .field:first-child {
