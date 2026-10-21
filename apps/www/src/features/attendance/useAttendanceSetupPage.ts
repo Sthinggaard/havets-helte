@@ -2,16 +2,12 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { attendanceMeetings } from './attendance.data';
-import { fromIsoDate, formatDateLong, monthLabel, sameDate, makeCalendarCells, toIsoDate } from './attendanceCalendar';
+import { fromIsoDate, formatDateLong, monthLabel, makeCalendarCells, toIsoDate } from './attendanceCalendar';
 
 export function useAttendanceSetupPage() {
   const router = useRouter();
   const todayIso = toIsoDate(new Date());
-  const selectedDate = ref(
-    attendanceMeetings.find(meeting => sameDate(meeting.date, todayIso))?.date
-      ?? attendanceMeetings[0]?.date
-      ?? todayIso,
-  );
+  const selectedDate = ref(todayIso);
   const currentYear = ref(fromIsoDate(selectedDate.value).getFullYear());
   const currentMonthIndex = ref(fromIsoDate(selectedDate.value).getMonth());
 
