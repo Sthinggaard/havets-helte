@@ -77,11 +77,16 @@
 
           <div v-if="selectedDateEvents.length" class="calendar-date-meetings">
             <h2 class="calendar-section-title">Arrangementer</h2>
-            <article v-for="event in selectedDateEvents" :key="event.id" class="calendar-date-meeting">
+            <article v-for="event in selectedDateEvents" :key="event.id" class="calendar-date-meeting calendar-event">
               <div class="calendar-date-meeting-main">
                 <div class="calendar-date-meeting-title">{{ event.title }}</div>
                 <div v-if="event.location" class="calendar-date-meeting-sub">{{ event.location }}</div>
                 <div v-if="event.times.length" class="calendar-date-meeting-sub">{{ event.times.join(' · ') }}</div>
+              </div>
+              <div v-for="slot in event.signups" :key="slot.id" class="calendar-signup">
+                <span>{{ slot.label }}<template v-if="slot.time"> · {{ slot.time }}</template></span>
+                <span v-if="slot.external" class="calendar-date-meeting-sub">Tilmeldinger håndteres i Medlemsservice.</span>
+                <button v-else type="button" class="btn-action" :aria-label="`Fremmøde: ${event.title} · ${slot.label}`" @click="openSignupAttendance(event, slot)">Fremmøde</button>
               </div>
             </article>
           </div>
@@ -115,6 +120,7 @@ import AttendanceDashboard from './AttendanceDashboard.vue';
 const view = ref<'overview' | 'calendar'>('overview');
 
 const {
+  openSignupAttendance,
   eventsByDate,
   eventsError,
   eventsLoading,
@@ -136,6 +142,8 @@ const weekdayLabels = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
 </script>
 
 <style scoped>
+.calendar-event { flex-direction: column; }
+.calendar-signup { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); font-size: 0.9rem; }
 .calendar-load-error { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .calendar-section-title { margin: 0; font-size: 1rem; color: var(--navy-dark); }
 .month-event-label { display: block; margin-top: 6px; color: var(--navy-dark); font-size: 0.76rem; font-weight: 700; }

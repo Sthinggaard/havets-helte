@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchAllAdminEvents } from '../eventAdmin/eventAdmin.data';
-import { calendarEventOccurrences, type CalendarEvent } from './attendance.events';
+import { calendarEventOccurrences, type CalendarEvent, type CalendarSignup } from './attendance.events';
 
 import { getAttendanceMeetings } from './attendance.data';
 import type { Meeting } from './attendance.types';
@@ -31,6 +31,11 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
     } finally {
       eventsLoading.value = false;
     }
+  }
+
+  function openSignupAttendance(event: CalendarEvent, slot: CalendarSignup) {
+    if (slot.external) return;
+    return router.push({ path: '/attendance', query: { date: event.date, event: event.id, slot: slot.id } });
   }
 
   const currentMonthLabel = computed(() => `${monthLabel(currentMonthIndex.value)} ${currentYear.value}`);
@@ -87,6 +92,7 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   }
 
   return {
+    openSignupAttendance,
     eventsByDate,
     eventsError,
     eventsLoading,

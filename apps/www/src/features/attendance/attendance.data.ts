@@ -6,6 +6,7 @@ export function getAttendanceMeetings(from: string, to = from) {
   const planned = scheduledAttendanceMeetings(rosterBranches, rosterTeams, rosterMembers, from, to);
   const meetings = new Map(planned.map(meeting => [meeting.id, meeting]));
   for (const record of attendanceRecords) {
+    if (record.meeting.source === 'signup') continue;
     if (record.meeting.date < from || record.meeting.date > to) continue;
     // Saved registrations retain their original time and member list when a schedule changes.
     const matching = planned.find(meeting => meeting.id === record.meeting.id

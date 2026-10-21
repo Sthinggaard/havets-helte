@@ -39,6 +39,7 @@ if (typeof window !== 'undefined') {
 export function membersForMeeting(meeting: Meeting) {
   const saved = attendanceRecords.find(record => record.meeting.id === meeting.id);
   if (saved) return saved.expectedMembers;
+  if (meeting.source === 'signup') return [];
   const team = rosterTeams.find(item => item.id === meeting.teamId);
   return rosterMembers.filter(member => member.active && member.branchId === meeting.branchId
     && (team ? member.team === team.label && member.weekday === team.weekday : member.weekday === meeting.weekday))
@@ -66,10 +67,10 @@ export function saveAttendance(record: AttendanceRecord) {
   attendanceRecords.splice(0, attendanceRecords.length, ...records);
 }
 
-export function toggleRecordedArrival(meeting: Meeting, memberId: string) {
+export function toggleRecordedArrival(meeting: Meeting, memberId: string, participants?: AttendanceRecord['expectedMembers']) {
   const record = attendanceRecords.find(item => item.meeting.id === meeting.id);
   if (record?.completedAt) return;
-  const expectedMembers = record?.expectedMembers ?? membersForMeeting(meeting);
+  const expectedMembers = participants ?? record?.expectedMembers ?? membersForMeeting(meeting);
   if (!expectedMembers.some(member => member.id === memberId)) return;
   const present = record?.presentMemberIds ?? [];
   saveAttendance({

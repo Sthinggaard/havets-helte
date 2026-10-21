@@ -19,7 +19,7 @@
       </span>
       <span class="info-chip">
         <i class="ti ti-users" aria-hidden="true"></i>
-        {{ filteredMembers.length }} medlemmer
+        {{ meetingSummary.total }} {{ isSignupAttendance ? 'tilmeldinger' : 'medlemmer' }}
       </span>
       <span v-if="selectedMeeting" class="info-chip">
         <i class="ti ti-check" aria-hidden="true"></i>
@@ -34,17 +34,21 @@
         <p class="attendance-empty-copy">Fremmøde kan kun startes fra admin, når en leder har valgt dagens hold.</p>
       </div>
 
+      <div v-else-if="loading" class="attendance-empty-state" role="status">Henter tilmeldte…</div>
+      <div v-else-if="loadError" class="attendance-empty-state" role="alert">
+        <p>{{ loadError }}</p><button type="button" class="btn-action" @click="retryLoad">Prøv igen</button>
+      </div>
       <div v-else class="attendance-center">
         <section class="attendance-controls">
           <div class="attendance-day-head">
             <div>
               <div class="day-view-title">{{ currentDateLabel }}</div>
-              <div class="day-view-sub">{{ dayMeetings.length }} hold på dagen</div>
+              <div class="day-view-sub">{{ isSignupAttendance ? 'Tilmeldte til arrangementet' : `${dayMeetings.length} hold på dagen` }}</div>
             </div>
             <span class="pill">{{ currentDateShortLabel }}</span>
           </div>
 
-          <div class="attendance-filter-group">
+          <div v-if="!isSignupAttendance" class="attendance-filter-group">
             <div class="group-title">Grene</div>
             <div class="day-filter-list">
               <button
@@ -88,10 +92,10 @@
           <div class="calendar-date-panel-head">
             <div>
               <div class="calendar-date-panel-title">
-                {{ selectedMeeting ? selectedMeeting.title : 'Vælg et hold' }}
+                {{ selectedMeeting ? selectedMeeting.title : isSignupAttendance ? 'Ingen tilmelding valgt' : 'Vælg et hold' }}
               </div>
               <div class="calendar-date-panel-sub" v-if="selectedMeeting">
-                {{ currentDateLabel }} · {{ selectedMeeting.location }} · {{ branchLabel(selectedMeeting.branchId) }}
+                {{ [currentDateLabel, selectedMeeting.location, isSignupAttendance ? '' : branchLabel(selectedMeeting.branchId)].filter(Boolean).join(' · ') }}
               </div>
             </div>
             <div v-if="selectedMeeting" class="calendar-date-panel-meta">
@@ -108,7 +112,7 @@
           <p v-if="meetingCompleted" role="status">Registreringen er afsluttet. En leder kan rette den fra fremmødeoversigten.</p>
 
           <div class="day-search-panel">
-            <input class="day-search-input" type="search" placeholder="Søg medlem" :value="searchTerm" @input="onSearchInput" />
+            <input class="day-search-input" type="search"  :placeholder="isSignupAttendance ? 'Søg tilmeldt' : 'Søg medlem'" :aria-label="isSignupAttendance ? 'Søg tilmeldt' : 'Søg medlem'" :value="searchTerm" @input="onSearchInput" />
           </div>
 
           <div class="attendance-member-list">
@@ -126,7 +130,7 @@
               <span class="member-name">{{ member.name }}</span>
               <span class="member-check">{{ selectedMeeting && isArrived(selectedMeeting.id, member.id) ? '✓' : '○' }}</span>
             </button>
-            <div v-if="selectedMeeting && !filteredMembers.length" class="calendar-empty">Ingen medlemmer matcher den valgte gren eller søgning.</div>
+            <div v-if="selectedMeeting && !filteredMembers.length" class="calendar-empty">{{ isSignupAttendance ? searchTerm ? 'Ingen tilmeldte matcher søgningen.' : 'Ingen bekræftede tilmeldinger til denne sektion.' : 'Ingen medlemmer matcher den valgte gren eller søgning.' }}</div>
             <div v-if="!selectedMeeting" class="calendar-empty">Ingen hold er valgt.</div>
           </div>
         </section>
@@ -142,6 +146,10 @@ import PublicLandingPageShell from '@/components/public/PublicLandingPageShell.v
 import { useAttendancePage } from '@/features/attendance/useAttendancePage';
 
 const {
+  isSignupAttendance,
+  loading,
+  loadError,
+  retryLoad,
   attendanceBranches,
   branchLabel,
   currentDateLabel,
@@ -165,15 +173,15 @@ const {
 const heroTitle = computed(() => (selectedMeeting.value ? `Check-in · ${selectedMeeting.value.title}` : 'Check-in'));
 const heroCopy = computed(() =>
   hasRequestedDate.value
-    ? 'Tjek medlemmer ind fra dagens valgte hold.'
+    ? isSignupAttendance.value ? 'Tjek arrangementets tilmeldte ind.' : 'Tjek medlemmer ind fra dagens valgte hold.'
     : 'Start fremmøde fra admin ved at vælge en dag i kalenderen.',
 );
-const heroCountLabel = computed(() => (hasRequestedDate.value ? `${filteredMembers.value.length} medlemmer` : 'Ingen dag valgt'));
+const heroCountLabel = computed(() => (hasRequestedDate.value ? `${meetingSummary.value.total} ${isSignupAttendance.value ? 'tilmeldinger' : 'medlemmer'}` : 'Ingen dag valgt'));
 const sectionTitle = computed(() => (selectedMeeting.value ? selectedMeeting.value.title : 'Fremmøde'));
 const sectionChip = computed(() => (hasRequestedDate.value ? currentDateShortLabel.value : 'Afventer dag'));
 const sectionLead = computed(() =>
   hasRequestedDate.value
-    ? 'Dagen ligger over medlemslisten, og check-in sker direkte i den centrale liste.'
+    ? isSignupAttendance.value ? 'Tryk på dit navn for at tjekke ind.' : 'Dagen ligger over medlemslisten, og check-in sker direkte i den centrale liste.'
     : 'Siden bliver aktiveret fra admin, når en leder vælger dagens dato.',
 );
 

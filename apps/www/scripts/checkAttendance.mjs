@@ -20,12 +20,13 @@ globalThis.window = {
   addEventListener: (name, listener) => listeners.set(name, listener),
   removeEventListener: name => listeners.delete(name),
 };
+globalThis.__attendanceTestRoute = {query:{date:'2026-10-20'}};
 const server = await createServer({
   root, configFile: false, resolve: { alias: { '@': `${root}/src` } }, optimizeDeps: { noDiscovery: true, include: [] },
   server: { middlewareMode: true, hmr: false }, ssr: { noExternal: ['vue-router'] },
   plugins: [{ name: 'test-router', enforce: 'pre',
     resolveId(source) { if (source === 'vue-router') return '\0test-router'; },
-    load(id) { if (id === '\0test-router') return "export const useRoute = () => ({query: {date: '2026-10-20'}}); export const useRouter = () => ({push: value => value});"; },
+    load(id) { if (id === '\0test-router') return "export const useRoute = () => globalThis.__attendanceTestRoute; export const useRouter = () => ({push: value => value});"; },
   }],
 });
 try {
@@ -193,9 +194,64 @@ try {
   values.set(key, JSON.stringify([record('from-other-tab','2026-10-21',['b'])]));
   listeners.get('storage')({key});
   assert.equal(reloaded.attendanceRecords[0].meeting.id, 'from-other-tab');
-  console.log('PASS: schedule days/times/seasons, inclusive boundaries, DST/year change, schedule edits, historical snapshots, attendance rates, absence streaks, filters, drafts, team eligibility, transfers, correction, failed saves, reload and synchronization between tabs.');
+  const {signupAttendanceTarget} = await server.ssrLoadModule('/src/features/attendance/attendance.signups.ts');
+  const signupSlot = {id:'signup-a',label:'Lejr',time:'17:00–19:00',external:false};
+  const signupEvent = {...event,date:'2026-10-21',times:[],signups:[signupSlot]};
+  const signupRows = [
+    {id:'first',eventId:event.id,slotId:signupSlot.id,name:'Test tilmeldt'},
+    {id:'second',eventId:event.id,slotId:signupSlot.id,name:'Test gruppe',groupSize:3},
+    {id:'wait',eventId:event.id,slotId:signupSlot.id,name:'Test venteliste',waitlist:true},
+    {id:'other-slot',eventId:event.id,slotId:'other',name:'Anden sektion'},
+    {id:'other-event',eventId:'other',slotId:signupSlot.id,name:'Andet arrangement'},
+  ];
+  const signupTarget = signupAttendanceTarget(signupEvent, signupSlot, signupRows);
+  assert.deepEqual(signupTarget.expectedMembers.map(member => member.id).sort(), ['signup:first','signup:second']);
+  assert.ok(signupTarget.expectedMembers.some(member => member.name.includes('3 deltagere')));
+  const inheritedSignup = calendarEventOccurrences([{...event,slots:[{...shift,id:'signup-a',componentType:'signup',date:''}]}]);
+  assert.equal(inheritedSignup[0].signups[0].id, 'signup-a', 'undated signup sections inherit the event date');
+  globalThis.__attendanceTestRoute = {query:{date:signupEvent.date,event:signupEvent.id,slot:signupSlot.id}};
+  let signupReads = 0;
+  const signupCheckIn = useAttendancePage(async () => { signupReads++; return signupTarget; });
+  await new Promise(resolve => setTimeout(resolve, 0));
+  await nextTick();
+  assert.equal(signupCheckIn.isSignupAttendance.value, true);
+  assert.equal(signupCheckIn.dayMeetings.value.length, 1);
+  assert.equal(signupCheckIn.meetingSummary.value.total, 2, 'only confirmed signups, never the branch roster');
+  assert.equal(signupCheckIn.filteredMembers.value.some(member => member.id === 'a'), false);
+  const signupId = signupTarget.meeting.id;
+  signupCheckIn.toggleArrival(signupId, 'a');
+  assert.equal(attendanceRecords.some(record => record.meeting.id === signupId), false, 'non-signups cannot check in');
+  signupCheckIn.toggleArrival(signupId, 'signup:first');
+  assert.equal(signupCheckIn.meetingSummary.value.arrived, 1);
+  signupCheckIn.setSearchTerm('gruppe');
+  assert.equal(signupCheckIn.filteredMembers.value.length, 1);
+  assert.equal(signupCheckIn.meetingSummary.value.total, 2, 'search never alters totals');
+  assert.equal(signupReads, 1, 'check-in and search do not fetch again');
+  assert.equal(getAttendanceMeetings(signupEvent.date).some(meeting => meeting.id === signupId), false, 'signup attendance never becomes a branch meeting');
+  const refreshedTarget = signupAttendanceTarget(signupEvent,signupSlot,signupRows.filter(signup => signup.id !== 'first'));
+  const refreshedCheckIn = useAttendancePage(async () => refreshedTarget);
+  await new Promise(resolve => setTimeout(resolve, 0)); await nextTick();
+  assert.equal(refreshedCheckIn.meetingSummary.value.total, 1, 'cancelled signups disappear on reopening a draft');
+  assert.equal(refreshedCheckIn.meetingSummary.value.arrived, 0);
+  refreshedCheckIn.toggleArrival(signupId, 'signup:second');
+  assert.deepEqual(attendanceRecords.find(record => record.meeting.id === signupId).expectedMembers.map(member => member.id), ['signup:second']);
+  const finalized = attendanceRecords.find(record => record.meeting.id === signupId);
+  saveAttendance({...finalized,completedAt:'2026-10-21T12:00:00Z'});
+  refreshedCheckIn.toggleArrival(signupId,'signup:second');
+  assert.equal(refreshedCheckIn.meetingSummary.value.arrived, 1, 'completed signup history cannot be changed by kiosk taps');
+  let failSignupLoad = true;
+  const retryCheckIn = useAttendancePage(async () => { if (failSignupLoad) throw Error('offline'); return signupTarget; });
+  await new Promise(resolve => setTimeout(resolve,0)); await nextTick();
+  assert.ok(retryCheckIn.loadError.value);
+  assert.equal(retryCheckIn.dayMeetings.value.length, 0, 'a failed signup load must never fall back to a branch roster');
+  failSignupLoad = false; retryCheckIn.retryLoad();
+  await new Promise(resolve => setTimeout(resolve,0)); await nextTick();
+  assert.equal(retryCheckIn.loadError.value, '');
+  assert.equal(retryCheckIn.dayMeetings.value.length, 1);
+  console.log('PASS: signup check-in, confirmed-only lists, groups, cancellations, retry, ISO weeks, event occurrences, schedule days/times/seasons, inclusive boundaries, DST/year change, schedule edits, historical snapshots, attendance rates, absence streaks, filters, drafts, team eligibility, transfers, correction, failed saves, reload and synchronization between tabs.');
 } finally {
   await server.close();
   globalThis.Date = ActualDate;
   delete globalThis.window;
+  delete globalThis.__attendanceTestRoute;
 }

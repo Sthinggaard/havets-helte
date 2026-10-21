@@ -1,13 +1,14 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
+import { fetchSignupAttendance } from './attendance.signups';
 import { getAttendanceMeetings } from './attendance.data';
 import { attendanceRecords, membersForMeeting, toggleRecordedArrival } from './attendance.records';
 import { formatDateLong, formatDateShort, sameDate, toIsoDate } from './attendanceCalendar';
 import { buildMemberInitials, publicRosterBranches, rosterBranches } from '../roster/roster.data';
-import type { BranchId } from './attendance.types';
+import type { AttendanceRecord, BranchId, Meeting } from './attendance.types';
 
-export function useAttendancePage() {
+export function useAttendancePage(loadSignupAttendance = fetchSignupAttendance) {
   const route = useRoute();
   const attendanceBranches = computed(() => publicRosterBranches.value);
   const visibleBranchIds = computed(() => new Set(attendanceBranches.value.map(branch => branch.id)));
@@ -16,9 +17,41 @@ export function useAttendancePage() {
   const selectedDate = computed(() => requestedDate.value || fallbackDate);
   const saveError = ref('');
   const searchTerm = ref('');
+  const requestedEvent = computed(() => typeof route.query.event === 'string' ? route.query.event : '');
+  const requestedSlot = computed(() => typeof route.query.slot === 'string' ? route.query.slot : '');
+  const isSignupAttendance = computed(() => Boolean(requestedEvent.value || requestedSlot.value));
+  const signupTarget = ref<{meeting: Meeting; expectedMembers: AttendanceRecord['expectedMembers']} | null>(null);
+  const loading = ref(false);
+  const loadError = ref('');
+  const loadVersion = ref(0);
+  function retryLoad() { loadVersion.value++; }
+  watch([requestedEvent, requestedSlot, selectedDate, loadVersion], async ([eventId, slotId, date], _, onCleanup) => {
+    let stale = false;
+    onCleanup(() => { stale = true; });
+    signupTarget.value = null;
+    loadError.value = '';
+    saveError.value = '';
+    searchTerm.value = '';
+    loading.value = false;
+    if (!isSignupAttendance.value) return;
+    loading.value = true;
+    try {
+      const target = await loadSignupAttendance(String(eventId), String(slotId), String(date));
+      if (!stale) signupTarget.value = target;
+    } catch (error) {
+      if (!stale) loadError.value = error instanceof Error ? error.message : 'De tilmeldte kunne ikke hentes. Prøv igen.';
+    } finally { if (!stale) loading.value = false; }
+  }, { immediate: true });
 
-  const dayMeetings = computed(() =>
-    getAttendanceMeetings(selectedDate.value)
+  function meetingMembers(meeting: Meeting) {
+    if (meeting.source !== 'signup') return membersForMeeting(meeting);
+    const saved = attendanceRecords.find(record => record.meeting.id === meeting.id);
+    return saved?.completedAt ? saved.expectedMembers : signupTarget.value?.expectedMembers ?? [];
+  }
+
+  const dayMeetings = computed(() => isSignupAttendance.value
+    ? signupTarget.value ? [signupTarget.value.meeting] : []
+    : getAttendanceMeetings(selectedDate.value)
       .filter(meeting => visibleBranchIds.value.has(meeting.branchId))
       .filter(meeting => sameDate(meeting.date, selectedDate.value))
       .sort((a, b) => a.time.localeCompare(b.time, 'da') || a.title.localeCompare(b.title, 'da')),
@@ -56,7 +89,7 @@ export function useAttendancePage() {
     const meeting = selectedMeeting.value;
     if (!meeting) return [];
     const term = searchTerm.value.trim().toLowerCase();
-    return membersForMeeting(meeting)
+    return meetingMembers(meeting)
       .filter(member => !term || member.name.toLowerCase().includes(term))
       .map(member => ({ ...member, initials: buildMemberInitials(member.name) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'da'));
@@ -65,7 +98,7 @@ export function useAttendancePage() {
   const meetingSummary = computed(() => {
     const meeting = selectedMeeting.value;
     if (!meeting) return { arrived: 0, waiting: 0, total: 0 };
-    const members = membersForMeeting(meeting);
+    const members = meetingMembers(meeting);
     const arrived = members.filter(member => isArrived(meeting.id, member.id)).length;
     return {
       arrived,
@@ -99,10 +132,10 @@ export function useAttendancePage() {
   }
 
   function toggleArrival(meetingId: string, memberId: string) {
-    const meeting = getAttendanceMeetings(selectedDate.value).find(item => item.id === meetingId);
+    const meeting = dayMeetings.value.find(item => item.id === meetingId);
     if (!meeting) return;
     saveError.value = '';
-    try { toggleRecordedArrival(meeting, memberId); }
+    try { toggleRecordedArrival(meeting, memberId, meeting.source === 'signup' ? meetingMembers(meeting) : undefined); }
     catch (error) { saveError.value = error instanceof Error ? error.message : 'Fremmødet kunne ikke gemmes.'; }
   }
 
@@ -115,6 +148,10 @@ export function useAttendancePage() {
   }
 
   return {
+    isSignupAttendance,
+    loading,
+    loadError,
+    retryLoad,
     attendanceBranches,
     branchLabel,
     currentDateLabel,

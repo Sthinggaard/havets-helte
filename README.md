@@ -82,6 +82,17 @@ calendar for check-in. “Afslut registrering” confirms the list: unchecked
 members count as absent. Completed registrations can be corrected from the
 overview; the kiosk cannot change them. Future meetings cannot be finalized.
 
+Signup sections in the calendar have their own “Fremmøde” button. It opens
+that same check-in screen with confirmed signups for the selected event,
+section and date, rather than a branch roster. Waitlisted signups are excluded.
+The event and its signup list are read once when the screen opens; reopening a
+draft refreshes the list after new signups or cancellations. Group signups are
+shown as one named registration with their participant count. Medlemsservice
+registrations have no local participant list and cannot be checked in here.
+Signup attendance uses its own IDs and appears under registrations in the
+overview, where a leader can finalize or correct it. It is not matched to scout
+profiles by name or included in their regular team attendance percentages.
+
 Attendance is stored locally in the browser under a roster-specific key and
 updates other tabs of the same origin. It is not shared through Firebase yet.
 Each registration preserves its expected member list, so subsequent transfers
