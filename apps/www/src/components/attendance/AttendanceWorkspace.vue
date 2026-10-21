@@ -7,7 +7,6 @@
     hero-image="/og-sankthans.webp"
     hero-image-alt="Fremmøde"
     :hero-title="heroTitle"
-    :section-chip="hasRequestedDate ? currentDateShortLabel : ''"
     section-eyebrow="Check-in"
     :section-title="sectionTitle"
   >
@@ -19,6 +18,10 @@
       <span v-if="selectedMeeting" class="info-chip">
         <i class="ti ti-check" aria-hidden="true"></i>
         {{ meetingSummary.arrived }} ankommet
+      </span>
+      <span class="info-chip">
+        <i class="ti ti-calendar" aria-hidden="true"></i>
+        {{ currentDateShortLabel }}
       </span>
     </template>
 
