@@ -220,8 +220,8 @@ function onSearchInput(event: Event) {
 }
 
 .attendance-center {
-  width: min(100%, 760px);
-  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .calendar-date-panel-head,
@@ -244,8 +244,8 @@ function onSearchInput(event: Event) {
 .attendance-empty-state {
   display: grid;
   gap: 10px;
-  width: min(100%, 760px);
-  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
   padding: 12px 0 8px;
 }
 
