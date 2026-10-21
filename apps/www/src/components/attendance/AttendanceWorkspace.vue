@@ -7,15 +7,10 @@
     hero-image="/og-sankthans.webp"
     hero-image-alt="Fremmøde"
     :hero-title="heroTitle"
-    :section-chip="sectionChip"
     section-eyebrow="Check-in"
     :section-title="sectionTitle"
   >
     <template #info v-if="hasRequestedDate">
-      <span class="info-chip">
-        <i class="ti ti-calendar" aria-hidden="true"></i>
-        {{ currentDateLabel }}
-      </span>
       <span class="info-chip">
         <i class="ti ti-users" aria-hidden="true"></i>
         {{ meetingSummary.total }} {{ isSignupAttendance ? 'tilmeldinger' : 'medlemmer' }}
@@ -44,7 +39,6 @@
               <div class="day-view-title">{{ currentDateLabel }}</div>
               <div class="day-view-sub">{{ isSignupAttendance ? 'Tilmeldte til arrangementet' : `${dayMeetings.length} hold på dagen` }}</div>
             </div>
-            <span class="pill">{{ currentDateShortLabel }}</span>
           </div>
 
           <div v-if="!isSignupAttendance" class="attendance-filter-group">
@@ -94,7 +88,7 @@
                 {{ selectedMeeting ? selectedMeeting.title : isSignupAttendance ? 'Ingen tilmelding valgt' : 'Vælg et hold' }}
               </div>
               <div class="calendar-date-panel-sub" v-if="selectedMeeting">
-                {{ [currentDateLabel, selectedMeeting.location, isSignupAttendance ? '' : branchLabel(selectedMeeting.branchId)].filter(Boolean).join(' · ') }}
+                {{ [selectedMeeting.location, isSignupAttendance ? '' : branchLabel(selectedMeeting.branchId)].filter(Boolean).join(' · ') }}
               </div>
             </div>
             <div v-if="selectedMeeting" class="calendar-date-panel-meta">
@@ -152,7 +146,6 @@ const {
   attendanceBranches,
   branchLabel,
   currentDateLabel,
-  currentDateShortLabel,
   dayMeetings,
   filteredMembers,
   hasRequestedDate,
@@ -177,7 +170,6 @@ const heroCopy = computed(() =>
 );
 const heroCountLabel = computed(() => (hasRequestedDate.value ? `${meetingSummary.value.total} ${isSignupAttendance.value ? 'tilmeldinger' : 'medlemmer'}` : 'Ingen dag valgt'));
 const sectionTitle = computed(() => (selectedMeeting.value ? selectedMeeting.value.title : 'Fremmøde'));
-const sectionChip = computed(() => (hasRequestedDate.value ? currentDateShortLabel.value : 'Afventer dag'));
 
 function onSearchInput(event: Event) {
   const target = event.target as HTMLInputElement | null;
