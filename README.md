@@ -63,7 +63,10 @@ and group start dates are not imported into the current member model.
 
 ### Attendance dashboard
 
-`/admin/fremmoede` opens the attendance overview. Filter by period, current
+`/admin/fremmoede` opens the compact attendance calendar with activity labels,
+a selected-day panel, the next arrangement and the five most recent local
+registrations. Counts use actual active members/teams and arrangements in the
+visible period. Choose “Overblik” to inspect attendance statistics. Filter by period, current
 branch and team; sort by attendance rate or consecutive absences. Expand a
 member's name to inspect the dated registrations. Members without completed
 registrations show “Ingen data”. Demo check-ins are not treated as history.

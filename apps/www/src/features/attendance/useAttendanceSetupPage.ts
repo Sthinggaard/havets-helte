@@ -3,6 +3,8 @@ import { useRouter } from 'vue-router';
 import { fetchAllAdminEvents } from '../eventAdmin/eventAdmin.data';
 import { calendarEventOccurrences, type CalendarEvent } from './attendance.events';
 
+import { rosterBranches, rosterMembers, rosterTeams } from '../roster/roster.data';
+import { attendanceRecords } from './attendance.records';
 import { getAttendanceMeetings } from './attendance.data';
 import type { Meeting } from './attendance.types';
 import { addDays, getStartOfWeek, isoWeekNumber, fromIsoDate, formatDateLong, formatDateShort, monthLabel, makeCalendarCells, toIsoDate } from './attendanceCalendar';
@@ -99,6 +101,25 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
       .sort((a, b) => a.time.localeCompare(b.time, 'da') || a.title.localeCompare(b.title, 'da')),
   );
 
+  const calendarSummary = computed(() => {
+    const dates = visibleCalendarCells.value.filter(cell => cell.inMonth);
+    return {
+      members: rosterMembers.filter(member => member.active).length,
+      teams: rosterTeams.filter(team => team.active && rosterBranches.some(branch => branch.id === team.branchId && branch.active)).length,
+      events: new Set(calendarEvents.value.filter(event => event.date >= dates[0].isoDate && event.date <= dates[dates.length - 1].isoDate).map(event => event.id)).size,
+    };
+  });
+  const calendarActivitiesByDate = computed(() => new Map(visibleCalendarCells.value.map(cell => [cell.isoDate, [
+    ...(meetingsByDate.value.get(cell.isoDate) ?? []).map(meeting => ({
+      id: meeting.id, kind: 'team', title: meeting.title,
+      label: [rosterBranches.find(branch => branch.id === meeting.branchId)?.label ?? meeting.title, meeting.time.split('–')[0]].filter(Boolean).join(' '),
+    })),
+    ...(eventsByDate.value.get(cell.isoDate) ?? []).map(event => ({ id: `event:${event.id}`, kind: 'event', title: event.title, label: event.title })),
+  ]])));
+  const nextEvent = computed(() => calendarEvents.value.find(event => event.date >= todayIso) ?? null);
+  const recentRecords = computed(() => attendanceRecords.slice().sort((a, b) => b.meeting.date.localeCompare(a.meeting.date)
+    || (b.completedAt ?? '').localeCompare(a.completedAt ?? '')).slice(0, 5));
+
   const selectedEntryId = ref('');
   function entriesForDate(date: string) {
     return [
@@ -143,6 +164,10 @@ export function useAttendanceSetupPage(fetchEvents = fetchAllAdminEvents) {
   }
 
   return {
+    calendarSummary,
+    calendarActivitiesByDate,
+    nextEvent,
+    recentRecords,
     calendarView,
     setCalendarView,
     calendarPeriodLabel,

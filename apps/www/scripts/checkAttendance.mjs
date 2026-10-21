@@ -295,6 +295,15 @@ try {
   unifiedCalendar.selectDate('2027-01-31'); unifiedCalendar.shiftPeriod(1);
   assert.equal(unifiedCalendar.selectedDate.value,'2027-02-28');
   assert.equal(eventReads,1,'calendar view changes do not fetch events again');
+  unifiedCalendar.selectDate('2026-10-20'); unifiedCalendar.setCalendarView('month');
+  assert.deepEqual(unifiedCalendar.calendarSummary.value, {members:4,teams:1,events:1}, 'summary uses active roster and events in the visible period');
+  assert.equal(signupOnlyCalendar.calendarActivitiesByDate.value.get('2026-10-31').filter(item => item.kind === 'event').length,1);
+  assert.equal(signupOnlyCalendar.calendarActivitiesByDate.value.get('2026-10-28').length,0, 'event activity stays on its scheduled date');
+  assert.equal(signupOnlyCalendar.nextEvent.value.date,'2026-10-31');
+  assert.ok(unifiedCalendar.recentRecords.value.some(item => item.meeting.source === 'signup'), 'recent registrations include real signup history');
+  assert.ok(unifiedCalendar.recentRecords.value.length <= 5);
+  signupOnlyCalendar.setCalendarView('day'); signupOnlyCalendar.shiftPeriod(-1);
+  assert.equal(signupOnlyCalendar.calendarSummary.value.events,0, 'period count follows the selected view');
   console.log('PASS: signup check-in, confirmed-only lists, groups, cancellations, retry, ISO weeks, event occurrences, schedule days/times/seasons, inclusive boundaries, DST/year change, schedule edits, historical snapshots, attendance rates, absence streaks, filters, drafts, team eligibility, transfers, correction, failed saves, reload and synchronization between tabs.');
 } finally {
   await server.close();
