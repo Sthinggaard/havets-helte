@@ -213,8 +213,21 @@ async function signupCountForSlot(transaction, eventId, slotId) {
   );
   return snapshot.docs.reduce((total, signup) => {
     const data = signup.data();
-    return data.waitlist === true ? total : total + Math.max(1, Number(data.groupSize) || 1);
+    return data.waitlist === true || data.isLeader === true ? total : total + Math.max(1, Number(data.groupSize) || 1);
   }, 0);
+}
+
+async function authenticatedAdminEmail(req) {
+  const authorization = String(req.get('authorization') || '');
+  const token = authorization.startsWith('Bearer ') ? authorization.slice('Bearer '.length).trim() : '';
+  if (!token) return '';
+  try {
+    const identity = await admin.auth().verifyIdToken(token);
+    const email = normalizeEmail(identity.email);
+    return isAdminEmail(email) ? email : '';
+  } catch {
+    return '';
+  }
 }
 
 async function loadParentSignups(email) {
@@ -251,6 +264,7 @@ async function loadParentSignups(email) {
         location: event.location || '',
         slotLabel: slotLabel(slot || {}),
         waitlist: signup.waitlist === true,
+        isLeader: signup.isLeader === true,
         groupSize: Math.max(1, Number(signup.groupSize) || 1),
         audienceGroupLabel: typeof signup.audienceGroupLabel === 'string' ? signup.audienceGroupLabel : '',
         createdAt: contact.get('created')?.toMillis?.() || 0,
@@ -290,7 +304,7 @@ function volunteerRoleWeight(role) {
 }
 
 async function volunteerContribution(signup, contact, eventCache) {
-  if (!signup || signup.waitlist === true || !signup.eventId || !signup.slotId) return null;
+  if (!signup || signup.waitlist === true || signup.isLeader === true || !signup.eventId || !signup.slotId) return null;
 
   const name = normalizeName(signup.name);
   if (!name) return null;
@@ -534,6 +548,7 @@ exports.manageVolunteerSignup = onRequest({ region: 'europe-west1', cors: true, 
       const source = Array.isArray(event.slots) ? event.slots.find(slot => slot?.id === signup.slotId) : null;
       if (!source) throw apiError(409, 'invalid_slot', 'Den nuværende plads findes ikke længere.');
       const groupSize = Math.max(1, Number(signup.groupSize) || 1);
+      const isLeader = signup.isLeader === true;
       const sourceUsageRef = eventSlotUsageRef(signup.eventId, signup.slotId);
       await transaction.get(sourceUsageRef);
       const sourceConfirmed = await signupCountForSlot(transaction, signup.eventId, signup.slotId);
@@ -543,7 +558,7 @@ exports.manageVolunteerSignup = onRequest({ region: 'europe-west1', cors: true, 
         transaction.update(signupRef, { waitlist: false });
         transaction.set(sourceUsageRef, {
           eventId: signup.eventId, slotId: signup.slotId,
-          confirmed: sourceConfirmed + groupSize, updatedAt: FieldValue.serverTimestamp(),
+          confirmed: sourceConfirmed + (isLeader ? 0 : groupSize), updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true });
         return { slotId: signup.slotId, waitlist: false };
       }
@@ -562,14 +577,14 @@ exports.manageVolunteerSignup = onRequest({ region: 'europe-west1', cors: true, 
       await transaction.get(targetUsageRef);
       const targetConfirmed = await signupCountForSlot(transaction, signup.eventId, targetSlotId);
       const capacity = Number(target.capacity) || 0;
-      const waitlist = signup.waitlist === true || (capacity > 0 && targetConfirmed + groupSize > capacity);
+      const waitlist = !isLeader && (signup.waitlist === true || (capacity > 0 && targetConfirmed + groupSize > capacity));
 
       transaction.update(signupRef, { slotId: targetSlotId, waitlist });
-      if (signup.waitlist !== true) transaction.set(sourceUsageRef, {
+      if (signup.waitlist !== true && !isLeader) transaction.set(sourceUsageRef, {
         eventId: signup.eventId, slotId: signup.slotId,
         confirmed: Math.max(0, sourceConfirmed - groupSize), updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
-      if (!waitlist) transaction.set(targetUsageRef, {
+      if (!waitlist && !isLeader) transaction.set(targetUsageRef, {
         eventId: signup.eventId, slotId: targetSlotId,
         confirmed: targetConfirmed + groupSize, updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
@@ -658,6 +673,7 @@ exports.submitSignup = onRequest({
     const name = requiredString(data.name, 'Navnet');
     const childMode = data.childMode === true;
     const email = childMode ? '' : normalizeEmail(data.email);
+    const signedInAdminEmail = await authenticatedAdminEmail(req);
     if (!childMode && !isValidEmail(email)) {
       throw apiError(400, 'invalid', 'Mailadressen er ugyldig.');
     }
@@ -680,6 +696,7 @@ exports.submitSignup = onRequest({
       const event = eventSnap.data() || {};
       const slot = Array.isArray(event.slots) ? event.slots.find(candidate => candidate?.id === slotId) : null;
       if (!slot) throw apiError(404, 'not_found', 'Pladsen findes ikke længere.');
+      const isLeader = slot.componentType === 'task' && signedInAdminEmail === email;
       if (slot.registrationMode === 'memberService') {
         throw apiError(409, 'external_registration', 'Tilmeldingen foregår i Medlemsservice.');
       }
@@ -695,10 +712,10 @@ exports.submitSignup = onRequest({
 
       const groupMin = Number.isInteger(slot.groupMin) ? slot.groupMin : 1;
       const groupMax = Number.isInteger(slot.groupMax) ? slot.groupMax : 1;
-      if (groupSize < groupMin || groupSize > groupMax) {
+      if (!isLeader && (groupSize < groupMin || groupSize > groupMax)) {
         throw apiError(400, 'invalid', `Vælg et tal mellem ${groupMin} og ${groupMax}.`);
       }
-      const adult = !childMode && data.adult === true;
+      const adult = !childMode && (data.adult === true || isLeader);
       if (slot.requiresAdult === true && !adult) {
         throw apiError(400, 'invalid', 'Bekræft at du er over 18 år.');
       }
@@ -710,7 +727,7 @@ exports.submitSignup = onRequest({
       await transaction.get(usageRef);
       const confirmed = await signupCountForSlot(transaction, eventId, slotId);
       const capacity = Number(slot.capacity) || 0;
-      const wouldOverflow = capacity !== 0 && confirmed + groupSize > capacity;
+      const wouldOverflow = !isLeader && capacity !== 0 && confirmed + groupSize > capacity;
       if (wouldOverflow && !waitlistPreferred) {
         throw apiError(409, 'full', 'Pladsen er fyldt.');
       }
@@ -722,6 +739,7 @@ exports.submitSignup = onRequest({
         name,
         adult,
         groupSize,
+        ...(isLeader ? { isLeader: true } : {}),
         ...(audienceGroup ? { audienceGroupId: audienceGroup.id, audienceGroupLabel: audienceGroup.label } : {}),
         created: FieldValue.serverTimestamp(),
         ...(waitlist ? { waitlist: true } : {}),
@@ -737,7 +755,7 @@ exports.submitSignup = onRequest({
       transaction.set(usageRef, {
         eventId,
         slotId,
-        confirmed: waitlist ? confirmed : confirmed + groupSize,
+        confirmed: waitlist ? confirmed : confirmed + (isLeader ? 0 : groupSize),
         updatedAt: FieldValue.serverTimestamp(),
       });
 
@@ -855,7 +873,7 @@ exports.cancelParentSignup = onRequest({
         transaction,
         signupSnap.get('eventId'),
         signupSnap.get('slotId'),
-      ) - (signupSnap.get('waitlist') === true ? 0 : Math.max(1, Number(signupSnap.get('groupSize')) || 1));
+      ) - (signupSnap.get('waitlist') === true || signupSnap.get('isLeader') === true ? 0 : Math.max(1, Number(signupSnap.get('groupSize')) || 1));
       if (remainingConfirmed >= 0) {
         transaction.set(usageRef, {
           confirmed: remainingConfirmed,

@@ -1,4 +1,5 @@
 import { postFunction } from './functionApi';
+import { getAppAuth } from './firebase';
 
 export type SignupRequestPayload = {
   eventId: string;
@@ -44,6 +45,13 @@ export async function submitSignupRequest(payload: SignupRequestPayload): Promis
   }
   if (groupSize < 1) throw signupError('invalid', 'Antal deltagere er ugyldigt.');
 
+  const currentUser = (await getAppAuth()).currentUser;
+  const authenticatedEmail = currentUser?.email?.trim().toLocaleLowerCase('en-US') || '';
+  const maySignUpAsLeader = !!currentUser
+    && authenticatedEmail.endsWith('@havetshelte.dk')
+    && authenticatedEmail === email.trim().toLocaleLowerCase('en-US');
+  const idToken = maySignUpAsLeader ? await currentUser.getIdToken() : undefined;
+
   try {
     return await postFunction<SignupResponsePayload>('submitSignup', '/api/submit-signup', {
       eventId,
@@ -55,7 +63,7 @@ export async function submitSignupRequest(payload: SignupRequestPayload): Promis
       groupSize,
       ...(payload.audienceGroupId ? { audienceGroupId: payload.audienceGroupId.trim() } : {}),
       waitlistPreferred: payload.waitlistPreferred,
-    });
+    }, idToken);
   } catch (error) {
     const typed = error as { code?: string; message?: string };
     throw signupError(typed.code || 'error', typed.message || 'Tilmeldingen kunne ikke sendes.');

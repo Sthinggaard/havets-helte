@@ -13,6 +13,7 @@ export type LeaderSignup = {
   slotLabel: string;
   audienceGroupLabel: string;
   waitlist: boolean;
+  isLeader: boolean;
   groupSize: number;
   createdAt: number;
 };
@@ -62,6 +63,7 @@ export async function loadLeaderSignups() {
       slotLabel: slot?.sublabel ? `${slot.label || ''} · ${slot.sublabel}`.trim() : String(slot?.label || ''),
       audienceGroupLabel: typeof signup.audienceGroupLabel === 'string' ? signup.audienceGroupLabel : '',
       waitlist: signup.waitlist === true,
+      isLeader: signup.isLeader === true,
       groupSize: Math.max(1, Number(signup.groupSize) || 1),
       createdAt: created?.toMillis?.() || 0,
     } satisfies LeaderSignup;

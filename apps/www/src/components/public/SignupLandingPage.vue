@@ -137,7 +137,7 @@
                     <span v-if="signup.groupSize > 1" class="group-badge">× {{ signup.groupSize }}</span>
                   </div>
                   <div class="signup-sub">
-                    {{ signup.waitlist ? 'Venteliste' : 'Bekræftet' }}
+                    {{ signup.isLeader ? 'Leder' : signup.waitlist ? 'Venteliste' : 'Bekræftet' }}
                     <span v-if="signup.adult"> · 18+</span>
                     <span v-if="signup.audienceGroupLabel"> · {{ signup.audienceGroupLabel }}</span>
                   </div>
@@ -163,8 +163,8 @@
                 v-else
                 type="button"
                 class="slot-button"
-                :class="{ primary: slotRemaining(slot) > 0 || slot.capacity === 0, waitlist: slotRemaining(slot) === 0 && slot.capacity !== 0 }"
-                @click="openSignup(slot, slotRemaining(slot) === 0 && slot.capacity !== 0)"
+                :class="{ primary: canSignupAsLeader(slot) || slotRemaining(slot) > 0 || slot.capacity === 0, waitlist: !canSignupAsLeader(slot) && slotRemaining(slot) === 0 && slot.capacity !== 0 }"
+                @click="openSignup(slot, !canSignupAsLeader(slot) && slotRemaining(slot) === 0 && slot.capacity !== 0)"
               >
                 <i class="ti" :class="slotActionIcon(slot)" aria-hidden="true"></i>
                 {{ slotActionLabel(slot) }}
@@ -199,12 +199,12 @@
                     <span class="signup-av">{{ initials(signup.name) }}</span>
                     <div class="signup-main">
                       <div class="signup-name">{{ signup.name }}<span v-if="signup.groupSize > 1" class="group-badge">× {{ signup.groupSize }}</span></div>
-                      <div class="signup-sub">{{ signup.waitlist ? 'Venteliste' : 'Bekræftet' }}<span v-if="signup.adult"> · 18+</span><span v-if="signup.audienceGroupLabel"> · {{ signup.audienceGroupLabel }}</span></div>
+                      <div class="signup-sub">{{ signup.isLeader ? 'Leder' : signup.waitlist ? 'Venteliste' : 'Bekræftet' }}<span v-if="signup.adult"> · 18+</span><span v-if="signup.audienceGroupLabel"> · {{ signup.audienceGroupLabel }}</span></div>
                     </div>
                   </div>
                 </div>
                 <div class="slot-card-actions">
-                  <button type="button" class="slot-button" :class="{ primary: slotRemaining(slot) > 0 || slot.capacity === 0, waitlist: slotRemaining(slot) === 0 && slot.capacity !== 0 }" @click="openSignup(slot, slotRemaining(slot) === 0 && slot.capacity !== 0)">
+                  <button type="button" class="slot-button" :class="{ primary: canSignupAsLeader(slot) || slotRemaining(slot) > 0 || slot.capacity === 0, waitlist: !canSignupAsLeader(slot) && slotRemaining(slot) === 0 && slot.capacity !== 0 }" @click="openSignup(slot, !canSignupAsLeader(slot) && slotRemaining(slot) === 0 && slot.capacity !== 0)">
                     <i class="ti" :class="slotActionIcon(slot)" aria-hidden="true"></i>{{ slotActionLabel(slot) }}
                   </button>
                 </div>
@@ -230,7 +230,7 @@
         :open="modalOpen"
         :title="selectedEvent?.title || ''"
         :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
-        :banner-text="waitlistMode ? 'Denne plads er fuld. Tilmeld dig ventelisten.' : ''"
+        :banner-text="waitlistMode && !leaderTaskSignup ? 'Denne plads er fuld. Tilmeld dig ventelisten.' : leaderTaskSignup ? 'Som leder bliver du vist på opgaven uden at bruge en plads.' : ''"
         banner-icon="ti ti-clock"
         banner-class="warning"
         submit-label="Bekræft tilmelding"
@@ -309,6 +309,7 @@ import { hasDisplayableEventDate } from '@/features/eventAdmin/eventScheduling';
 import { fetchAllAdminEvents, formatSlotDate } from '@/features/eventAdmin/eventAdmin.data';
 import EventLeaders from '@/components/public/EventLeaders.vue';
 import { calculateSlotDeadline } from '@/features/eventAdmin/eventScheduling';
+import { useAdminAuth } from '@/features/admin/useAdminAuth';
 import type { AdminEvent, EventSlot, EventType, SignupAudienceGroup } from '@/features/eventAdmin/eventAdmin.types';
 import { getAppFirestore } from '@/lib/firebase';
 import { buildMapsEmbedUrl, buildMapsUrl } from '@/lib/maps';
@@ -322,6 +323,7 @@ type SignupRow = {
   adult: boolean;
   groupSize: number;
   id: string;
+  isLeader: boolean;
   name: string;
   waitlist: boolean;
 };
@@ -407,6 +409,10 @@ const form = reactive({
   adult: false,
   groupSize: 1,
 });
+const { user: signedInUser, isAdmin } = useAdminAuth();
+const leaderTaskSignup = computed(() => modalSlot.value?.componentType === 'task'
+  && isAdmin.value
+  && signedInUser.value?.email?.trim().toLocaleLowerCase('en-US') === form.email.trim().toLocaleLowerCase('en-US'));
 
 const errors = reactive({
   name: '',
@@ -492,7 +498,7 @@ const backHref = computed(() => {
 });
 
 const showChildToggle = computed(() => modalSlot.value?.kind === 'volunteer');
-const showAdultToggle = computed(() => !!modalSlot.value && (modalSlot.value.requiresAdult || modalSlot.value.minAge > 0));
+const showAdultToggle = computed(() => !!modalSlot.value && (modalSlot.value.requiresAdult || modalSlot.value.minAge > 0) && !leaderTaskSignup.value);
 const showGroupSize = computed(() => !!modalSlot.value && (modalSlot.value.groupMax > 1 || modalSlot.value.groupMin > 1));
 const groupMin = computed(() => modalSlot.value?.groupMin || 1);
 const groupMax = computed(() => modalSlot.value?.groupMax || modalSlot.value?.groupSize || 1);
@@ -595,6 +601,7 @@ async function loadSignups(eventId: string) {
         adult: !!data.adult,
         groupSize: Number.isFinite(Number(data.groupSize)) ? Number(data.groupSize) : 1,
         waitlist: !!data.waitlist,
+        isLeader: data.isLeader === true,
         audienceGroupLabel: typeof data.audienceGroupLabel === 'string' ? data.audienceGroupLabel : '',
       };
       if (!next[slotId]) next[slotId] = [];
@@ -618,7 +625,7 @@ function slotSignups(slotId: string) {
 
 function slotConfirmedUnits(slot: EventSlot) {
   return slotSignups(slot.id)
-    .filter(signup => !signup.waitlist)
+    .filter(signup => !signup.waitlist && !signup.isLeader)
     .reduce((sum, signup) => sum + (signup.groupSize || 1), 0);
 }
 
@@ -761,6 +768,7 @@ function componentLabel(slot: EventSlot) {
 
 function slotActionLabel(slot: EventSlot) {
   if (hasSignupDeadlinePassed(slot)) return 'Tilmeldingsfristen er udløbet';
+  if (canSignupAsLeader(slot)) return 'Meld dig på som leder';
   const remaining = slotRemaining(slot);
   if (remaining === 0 && slot.capacity !== 0) return 'Skriv på venteliste';
   if (slot.kind === 'paid' && slot.price) return `Tilmeld og betal ${slot.price} kr`;
@@ -769,7 +777,12 @@ function slotActionLabel(slot: EventSlot) {
 }
 
 function slotActionIcon(slot: EventSlot) {
+  if (canSignupAsLeader(slot)) return 'ti-user-check';
   return slotRemaining(slot) === 0 && slot.capacity !== 0 ? 'ti-clock' : KIND_ICON[slot.kind];
+}
+
+function canSignupAsLeader(slot: EventSlot) {
+  return isAdmin.value && slot.componentType === 'task';
 }
 
 function initials(name: string) {
@@ -804,7 +817,7 @@ function openSignup(slot: EventSlot, waitlistPreferred = false) {
   form.groupSize = slot.groupSize || slot.groupMax || 1;
   form.audienceGroupId = slot.eligibleGroups.length === 1 ? slot.eligibleGroups[0].id : '';
   form.name = '';
-  form.email = '';
+  form.email = isAdmin.value ? signedInUser.value?.email || '' : '';
   adultLabel.value = `Jeg er ${slot.minAge || 18}+ år`;
 }
 
@@ -835,7 +848,7 @@ function validateForm() {
   if (eligibleGroups.value.length && !eligibleGroups.value.some(group => group.id === form.audienceGroupId)) {
     errors.audienceGroup = 'Vælg den klan eller det hold, du tilmelder.';
   }
-  if (showGroupSize.value) {
+  if (showGroupSize.value && !leaderTaskSignup.value) {
     const value = Number(form.groupSize);
     if (!Number.isInteger(value) || value < groupMin.value || value > groupMax.value) {
       errors.groupSize = `Vælg et tal mellem ${groupMin.value} og ${groupMax.value}.`;
@@ -861,7 +874,7 @@ async function submit() {
       email: form.childMode ? '' : form.email.trim(),
       adult: form.childMode ? false : form.adult,
       childMode: form.childMode,
-      groupSize: showGroupSize.value ? Number(form.groupSize) : 1,
+      groupSize: leaderTaskSignup.value ? 1 : showGroupSize.value ? Number(form.groupSize) : 1,
       audienceGroupId: form.audienceGroupId,
       waitlistPreferred: waitlistMode.value,
     });

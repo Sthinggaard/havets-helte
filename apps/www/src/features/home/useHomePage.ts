@@ -22,12 +22,16 @@ function slotsForFeedItem(event: AdminEvent, item: HomeFeedItem): EventSlot[] {
   return event.slots.filter(slot => types.includes(slot.componentType as typeof types[number]));
 }
 
-async function confirmedSignupCount(eventId: string, slotIds: string[]) {
+async function confirmedSignupCount(eventId: string, slotIds: string[], leaderSlotIds: string[]) {
   const db = await getAppFirestore();
   let allCount = 0;
   let allUnits = 0;
   let waitlistCount = 0;
   let waitlistUnits = 0;
+  let leaderCount = 0;
+  let leaderUnits = 0;
+  let waitlistLeaderCount = 0;
+  let waitlistLeaderUnits = 0;
 
   for (let index = 0; index < slotIds.length; index += 30) {
     const slotBatch = slotIds.slice(index, index + 30);
@@ -46,9 +50,35 @@ async function confirmedSignupCount(eventId: string, slotIds: string[]) {
     allUnits += all.data().units;
     waitlistCount += waitlist.data().count;
     waitlistUnits += waitlist.data().units;
+
   }
 
-  return Math.max(0, Math.max(allUnits, allCount) - Math.max(waitlistUnits, waitlistCount));
+  if (leaderSlotIds.length) {
+    // Only authenticated leaders can create `isLeader` records, and the
+    // backend only sets that flag for task slots.
+    const leaderBase = [where('eventId', '==', eventId), where('isLeader', '==', true)];
+    const [leaders, waitlistLeaders] = await Promise.all([
+      getAggregateFromServer(query(collection(db, 'signups'), ...leaderBase), {
+        count: count(),
+        units: sum('groupSize'),
+      }),
+      getAggregateFromServer(query(collection(db, 'signups'), ...leaderBase, where('waitlist', '==', true)), {
+        count: count(),
+        units: sum('groupSize'),
+      }),
+    ]);
+    leaderCount = leaders.data().count;
+    leaderUnits = leaders.data().units;
+    waitlistLeaderCount = waitlistLeaders.data().count;
+    waitlistLeaderUnits = waitlistLeaders.data().units;
+  }
+
+  return Math.max(0,
+    Math.max(allUnits, allCount)
+    - Math.max(waitlistUnits, waitlistCount)
+    - Math.max(leaderUnits, leaderCount)
+    + Math.max(waitlistLeaderUnits, waitlistLeaderCount),
+  );
 }
 
 export function useHomePage() {
@@ -75,7 +105,9 @@ export function useHomePage() {
         const slots = slotsForFeedItem(event, item);
         if (!slots.length || slots.some(slot => slot.capacity === 0)) return;
         try {
-          item.confirmedCount = await confirmedSignupCount(event.id, slots.map(slot => slot.id));
+          const slotIds = slots.map(slot => slot.id);
+          const leaderSlotIds = slots.filter(slot => slot.componentType === 'task').map(slot => slot.id);
+          item.confirmedCount = await confirmedSignupCount(event.id, slotIds, leaderSlotIds);
         } catch (error) {
           console.error(`[home] failed to count signups for ${event.id}`, error);
         }

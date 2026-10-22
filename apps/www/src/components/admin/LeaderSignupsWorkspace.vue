@@ -22,6 +22,7 @@
             <span>{{ signup.dateText }}<template v-if="signup.location"> · {{ signup.location }}</template></span>
             <span>{{ signup.slotLabel }}<template v-if="signup.groupSize > 1"> · {{ signup.groupSize }} deltagere</template><template v-if="signup.audienceGroupLabel"> · {{ signup.audienceGroupLabel }}</template></span>
             <span v-if="signup.waitlist" class="signup-item__status">Venteliste</span>
+            <span v-else-if="signup.isLeader" class="signup-item__status">Leder</span>
             <span class="signup-item__link">Se arrangementet →</span>
           </button>
         </li>
