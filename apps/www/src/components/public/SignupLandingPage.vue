@@ -230,7 +230,7 @@
         :open="modalOpen"
         :title="selectedEvent?.title || ''"
         :subtitle="modalSlot ? `${modalSlot.label}${modalSlot?.sublabel ? ` · ${modalSlot.sublabel}` : ''}` : ''"
-        :banner-text="waitlistMode && !leaderTaskSignup ? 'Denne plads er fuld. Tilmeld dig ventelisten.' : leaderTaskSignup ? 'Som leder bliver du vist på opgaven uden at bruge en plads.' : ''"
+        :banner-text="waitlistMode && !leaderTaskSignup ? 'Denne plads er fuld. Tilmeld dig ventelisten.' : leaderTaskSignup ? 'Som leder bliver du vist på opgaven uden at optage en plads fra listen.' : ''"
         banner-icon="ti ti-clock"
         banner-class="warning"
         submit-label="Bekræft tilmelding"
